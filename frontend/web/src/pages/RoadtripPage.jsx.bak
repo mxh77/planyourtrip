@@ -1,0 +1,1283 @@
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import {
+  DndContext, PointerSensor, useSensor, useSensors,
+  closestCenter, DragOverlay,
+} from '@dnd-kit/core';
+import {
+  SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import api from '../api.js';
+import StepModal from '../components/StepModal.jsx';
+import CollaboratorsPanel from '../components/CollaboratorsPanel.jsx';
+import AccommodationModal from '../components/AccommodationModal.jsx';
+import ActivityModal from '../components/ActivityModal.jsx';
+import SuggestionModal from '../components/SuggestionModal.jsx';
+import MapView from '../components/MapView.jsx';
+import PlanningTableView, { StepPhotosModal } from '../components/PlanningTableView.jsx';
+import RouteAlternativesPanel from '../components/RouteAlternativesPanel.jsx';
+import BudgetSummary from '../components/BudgetSummary.jsx';
+import PhotosPanel from '../components/PhotosPanel.jsx';
+import { computeRoute, reverseGeocode } from '../utils/directions.js';
+import { useStepReorder } from '../hooks/useStepReorder.js';
+
+const STEP_TYPE_LABELS = { DEPARTURE: 'Départ', STAGE: 'Étape', STOP: 'Arrêt', RETURN: 'Retour' };
+const STEP_TYPE_ICONS = { DEPARTURE: '🚀', STAGE: '📍', STOP: '⏸️', RETURN: '🏠' };
+
+const ACCOMMODATION_STATUS_BADGES = {
+  PLANNED: { label: '🗓️ Planifié', className: 'bg-gray-100 text-gray-600' },
+  BOOKED: { label: '✅ Réservé', className: 'bg-green-100 text-green-700' },
+  CANCELLED: { label: '❌ Annulé', className: 'bg-red-100 text-red-600' },
+};
+
+const ACCOMMODATION_TYPE_ICONS = {
+  HOTEL: '🏨',
+  CAMPING: '🏕️',
+  PARKING: '🅿️',
+  OTHER: '🏪',
+};
+
+const ACTIVITY_TYPE_ICONS = {
+  ACTIVITY: '🎯',
+  RESTAURANT: '🍽️',
+  TRANSPORT: '🚗',
+  SUPERMARKET: '🛒',
+  HIKING: '🥾',
+  PARKING: '🅿️',
+  OTHER: '📍',
+};
+
+const ACTIVITY_STATUS_BADGES = {
+  PLANNED: { label: '📅 Planifié', className: 'bg-gray-100 text-gray-600' },
+  BOOKED: { label: '✅ Réservé', className: 'bg-green-100 text-green-700' },
+  DONE: { label: '🏁 Fait', className: 'bg-blue-100 text-blue-700' },
+  CANCELLED: { label: '❌ Annulé', className: 'bg-red-100 text-red-600' },
+};
+
+function formatDate(d) {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatDateTime(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  const h = String(dt.getHours()).padStart(2, '0');
+  const min = String(dt.getMinutes()).padStart(2, '0');
+  return `${day}/${m}/${y} ${h}:${min}`;
+}
+
+// ─── Booking email modal ────────────────────────────────────────────────────
+
+const BOOKING_LANGS = [
+  { id: 'fr', flag: '🇫🇷', label: 'Français' },
+  { id: 'es', flag: '🇪🇸', label: 'Español' },
+  { id: 'en', flag: '🇬🇧', label: 'English' },
+];
+
+function nightsBetween(d1, d2) {
+  if (!d1 || !d2) return null;
+  const a = new Date(d1);
+  const b = new Date(d2);
+  const diff = Math.round((b - a) / (1000 * 60 * 60 * 24));
+  return diff > 0 ? diff : null;
+}
+
+function localDateStr(d, lang) {
+  if (!d) return '?';
+  const dt = new Date(d);
+  const locales = { fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
+  return dt.toLocaleDateString(locales[lang] || 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function generateBookingEmail(accom, step, lang) {
+  const checkIn  = accom.checkIn  || step?.startDate;
+  const checkOut = accom.checkOut || step?.endDate;
+  const nights   = nightsBetween(checkIn, checkOut);
+  const name     = accom.name || '?';
+  const cin      = localDateStr(checkIn, lang);
+  const cout     = localDateStr(checkOut, lang);
+
+  if (lang === 'fr') {
+    const nightsStr = nights ? `${nights} nuit${nights > 1 ? 's' : ''}` : 'à préciser';
+    return `Objet : Demande de réservation — ${cin} au ${cout}
+
+Madame, Monsieur,
+
+Je souhaite effectuer une réservation dans votre établissement : ${name}.
+
+Dates de séjour : du ${cin} au ${cout} (${nightsStr})
+Nombre de personnes : 4
+Véhicule : camping-car (longueur 7,50 m)
+
+Pourriez-vous me confirmer la disponibilité ainsi que le tarif pour ces dates, en précisant si vous disposez d'un emplacement adapté à un camping-car de 7,50 m ?
+
+Dans l'attente de votre réponse, je vous adresse mes cordiales salutations.`;
+  }
+
+  if (lang === 'es') {
+    const nightsStr = nights ? `${nights} noche${nights > 1 ? 's' : ''}` : 'a concretar';
+    return `Asunto: Solicitud de reserva — del ${cin} al ${cout}
+
+Estimado/a señor/a,
+
+Me dirijo a ustedes para solicitar una reserva en su establecimiento: ${name}.
+
+Fechas de estancia: del ${cin} al ${cout} (${nightsStr})
+Número de personas: 4
+Vehículo: autocaravana (longitud 7,50 m)
+
+¿Podría confirmarme la disponibilidad y el precio para estas fechas, indicando si disponen de plaza adecuada para una autocaravana de 7,50 m?
+
+Quedando a la espera de su respuesta, les saluda atentamente.`;
+  }
+
+  // en
+  const nightsStr = nights ? `${nights} night${nights > 1 ? 's' : ''}` : 'to be confirmed';
+  return `Subject: Booking Request — ${cin} to ${cout}
+
+Dear Sir/Madam,
+
+I would like to make a booking at your establishment: ${name}.
+
+Dates of stay: from ${cin} to ${cout} (${nightsStr})
+Number of guests: 4
+Vehicle: motorhome (length 7.50 m)
+
+Could you please confirm availability and the rate for these dates, and let us know whether you have a pitch suitable for a 7.50 m motorhome?
+
+Looking forward to your reply, yours faithfully.`;
+}
+
+function BookingEmailModal({ accom, step, onClose }) {
+  const [lang, setLang] = useState('fr');
+  const [copied, setCopied] = useState(false);
+  const textRef = useRef(null);
+
+  const emailText = generateBookingEmail(accom, step, lang);
+
+  function handleCopy() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(emailText).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    } else {
+      textRef.current?.select();
+      document.execCommand('copy');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="font-semibold text-gray-900">📧 Email de réservation</h2>
+            <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{accom.name}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+
+        {/* Sélecteur de langue */}
+        <div className="flex gap-2 px-5 pt-4 shrink-0">
+          {BOOKING_LANGS.map(l => (
+            <button
+              key={l.id}
+              onClick={() => { setLang(l.id); setCopied(false); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                lang === l.id
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <span>{l.flag}</span>
+              <span>{l.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Texte généré */}
+        <div className="px-5 pt-3 pb-2 flex-1 overflow-y-auto">
+          <textarea
+            ref={textRef}
+            readOnly
+            value={emailText}
+            className="w-full h-64 text-sm font-mono text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-brand/30"
+            onFocus={e => e.target.select()}
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 pb-5 pt-1 shrink-0">
+          <button
+            onClick={handleCopy}
+            className={`w-full py-2.5 rounded-xl font-semibold text-sm transition ${
+              copied
+                ? 'bg-green-500 text-white'
+                : 'bg-brand text-white hover:opacity-90'
+            }`}
+          >
+            {copied ? '✅ Copié !' : '📋 Copier dans le presse-papier'}
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Collez ensuite ce texte dans votre messagerie pour l'envoyer manuellement.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step detail panel ──────────────────────────────────────────────────────
+
+function SelectedStepDetail({
+  step, canWrite, onEdit, onAddAccom, onEditAccom, onAddActivity, onEditActivity,
+  roadtripId, onBookingEmail,
+}) {
+  const [activeTab, setActiveTab] = useState('detail');
+
+  if (!step) return null;
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Tabs */}
+      <div className="flex items-center gap-0 border-b border-gray-100 px-4 shrink-0">
+        {[
+          { id: 'detail', label: '📋 Détail' },
+          { id: 'photos', label: '📸 Photos' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+              activeTab === tab.id
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === 'detail' && (
+          <div className="px-4 py-4 space-y-5 max-w-3xl mx-auto">
+      {/* Step header */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl shrink-0 mt-0.5">{STEP_TYPE_ICONS[step.type] || '📍'}</span>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-lg font-bold text-gray-900">{step.name}</p>
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{STEP_TYPE_LABELS[step.type]}</span>
+            </div>
+            {step.location && <p className="text-sm text-gray-500 mt-0.5">{step.location}</p>}
+            {(step.startDate || step.arrivalTime) && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                {step.startDate ? formatDate(step.startDate) : ''}
+                {step.arrivalTime ? ` · Arrivée ${step.arrivalTime}` : ''}
+                {step.endDate && step.endDate !== step.startDate ? ` → ${formatDate(step.endDate)}` : ''}
+                {step.departureTime ? ` · Départ ${step.departureTime}` : ''}
+              </p>
+            )}
+            {step.notes && <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{step.notes}</p>}
+          </div>
+        </div>
+        {canWrite && (
+          <button
+            onClick={() => onEdit(step)}
+            className="shrink-0 text-sm text-gray-400 hover:text-indigo-600 font-medium transition px-2 py-1 rounded hover:bg-indigo-50"
+          >
+            ✏️ Modifier
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Accommodations */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Hébergements</h3>
+            {canWrite && (
+              <button onClick={() => onAddAccom(step.id)} className="text-xs text-brand hover:opacity-80 font-semibold transition">
+                + Ajouter
+              </button>
+            )}
+          </div>
+          {step.accommodations?.length > 0 ? (
+            <div className="space-y-2">
+              {step.accommodations.map(a => (
+                <div key={a.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{ACCOMMODATION_TYPE_ICONS[a.type] || '🏨'}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{a.name}</p>
+                      {(a.checkIn || a.checkOut) && (
+                        <p className="text-xs text-gray-400">
+                          {a.checkIn ? formatDateTime(a.checkIn) : ''}
+                          {a.checkOut ? ` → ${formatDateTime(a.checkOut)}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    {a.status && (() => {
+                      const badge = ACCOMMODATION_STATUS_BADGES[a.status];
+                      return badge ? (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.className}`}>{badge.label}</span>
+                      ) : null;
+                    })()}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => onBookingEmail && onBookingEmail(a, step)}
+                      title="Générer un email de réservation"
+                      className="text-xs text-gray-400 hover:text-amber-600 shrink-0 font-medium transition"
+                    >📧</button>
+                    {canWrite && (
+                      <button onClick={() => onEditAccom(a)} className="text-xs text-gray-400 hover:text-indigo-600 shrink-0 font-medium transition">✏️</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 italic">Aucun hébergement</p>
+          )}
+        </div>
+
+        {/* Activities */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Activités</h3>
+            {canWrite && (
+              <button onClick={() => onAddActivity(step.id)} className="text-xs text-brand hover:opacity-80 font-semibold transition">
+                + Ajouter
+              </button>
+            )}
+          </div>
+          {step.activities?.length > 0 ? (
+            <div className="space-y-2">
+              {step.activities.map(act => (
+                <div key={act.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm shrink-0">{ACTIVITY_TYPE_ICONS[act.type] || '📍'}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{act.name}</p>
+                      {act.location && <p className="text-xs text-gray-400 truncate">{act.location}</p>}
+                      {(act.startTime || act.endTime) && (
+                        <p className="text-xs text-gray-400">
+                          {act.startTime ? formatDateTime(act.startTime) : ''}
+                          {act.endTime ? ` → ${formatDateTime(act.endTime)}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    {act.status && (() => {
+                      const badge = ACTIVITY_STATUS_BADGES[act.status];
+                      return badge ? (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.className}`}>{badge.label}</span>
+                      ) : null;
+                    })()}
+                  </div>
+                  {canWrite && (
+                    <button onClick={() => onEditActivity(act)} className="text-xs text-gray-400 hover:text-indigo-600 shrink-0 font-medium transition">✏️</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 italic">Aucune activité</p>
+          )}
+        </div>
+      </div>
+        </div>
+        )}
+
+        {activeTab === 'photos' && (
+          <PhotosPanel stepId={step.id} roadtripId={roadtripId} canWrite={canWrite} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── View mode toggle ────────────────────────────────────────────────────────
+const VIEW_MODES = [
+  { id: 'timeline', label: '📅 Timeline' },
+  { id: 'tableau', label: '📊 Tableau' },
+  { id: 'carte', label: '🗺️ Carte' },
+];
+
+// ─── Sortable step card (Timeline) ──────────────────────────────────────────
+function SortableStepCard({ step, idx, selectedStepId, onSelect, canWrite, coverPhotoUrl, onOpenPhotos }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+  const displayPhoto = coverPhotoUrl ?? step.photoUrl ?? null;
+  return (
+    <div ref={setNodeRef} style={style} className="flex flex-col shrink-0">
+      {/* Poignée de drag (drag uniquement par la poignée = pas de conflit avec le clic) */}
+      {canWrite && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex justify-center pb-0.5 cursor-grab active:cursor-grabbing text-gray-200 hover:text-gray-400 transition"
+          title="Glisser pour réordonner"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+            <path d="M10 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM10 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM11.5 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0ZM4.5 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM4.5 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM6 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0ZM15.5 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM15.5 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM17 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
+          </svg>
+        </div>
+      )}
+      <button
+        onClick={() => onSelect(step.id)}
+        className={`flex flex-col shrink-0 rounded-xl overflow-hidden transition-all ${
+          step.id === selectedStepId
+            ? 'ring-2 ring-brand ring-offset-2 shadow-md'
+            : 'ring-1 ring-gray-200 hover:ring-gray-300 hover:shadow-sm'
+        }`}
+        style={{ width: 130 }}
+      >
+        <div className="relative w-full bg-gray-200 group" style={{ height: 72 }}>
+          {displayPhoto ? (
+            <img src={displayPhoto} alt={step.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className={`w-full h-full flex items-center justify-center text-2xl ${step.id === selectedStepId ? 'bg-amber-100' : 'bg-gray-100'}`}>
+              {STEP_TYPE_ICONS[step.type] || '📍'}
+            </div>
+          )}
+          <div className={`absolute top-1.5 left-1.5 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shadow ${step.id === selectedStepId ? 'bg-brand text-white' : 'bg-white/90 text-gray-700'}`}>
+            {idx + 1}
+          </div>
+          <div className="absolute bottom-1 right-1.5">
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-black/40 text-white backdrop-blur-sm uppercase tracking-wide">
+              {STEP_TYPE_LABELS[step.type]}
+            </span>
+          </div>
+          {/* Bouton photos au survol */}
+          {canWrite && onOpenPhotos && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenPhotos(step); }}
+              title="Gérer les photos"
+              className="absolute bottom-1 left-1.5 opacity-0 group-hover:opacity-100 transition-all bg-black/50 hover:bg-black/70 rounded px-1 py-0.5"
+            >
+              <span className="text-white text-xs">📸</span>
+            </button>
+          )}
+        </div>
+        <div className={`px-2 py-1.5 ${step.id === selectedStepId ? 'bg-amber-50' : 'bg-white'}`}>
+          <p className={`text-[12px] font-semibold leading-tight truncate ${step.id === selectedStepId ? 'text-amber-800' : 'text-gray-800'}`}>
+            {step.name}
+          </p>
+          {step.startDate && (
+            <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+              {new Date(step.startDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+            </p>
+          )}
+        </div>
+      </button>
+    </div>
+  );
+}
+
+function SortableCarteItem({ step, idx, steps, routes, selectedStepId, onSelect, canWrite, onComputeRoute }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  const prevGeo = idx > 0 ? steps.slice(0, idx).reverse().find(s => s.latitude != null) : null;
+  const rk = prevGeo ? `${prevGeo.id}→${step.id}` : null;
+  const route = rk ? routes[rk] : null;
+  return (
+    <div ref={setNodeRef} style={style} className={`flex items-center gap-1 pr-1 transition ${step.id === selectedStepId ? 'bg-amber-50' : 'hover:bg-gray-50'}`}>
+      {canWrite && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="pl-2 py-2 cursor-grab active:cursor-grabbing text-gray-200 hover:text-gray-400 transition shrink-0"
+          title="Glisser pour réordonner"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+            <path d="M10 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM10 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM11.5 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0ZM4.5 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM4.5 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM6 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0ZM15.5 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM15.5 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM17 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
+          </svg>
+        </div>
+      )}
+      <button
+        onClick={() => onSelect(step.id)}
+        className="flex items-center gap-2.5 px-2 py-2 flex-1 text-left min-w-0"
+      >
+        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${step.id === selectedStepId ? 'bg-brand text-white' : 'bg-gray-200 text-gray-600'}`}>{idx + 1}</span>
+        <div className="min-w-0">
+          <p className={`text-xs font-semibold truncate ${step.id === selectedStepId ? 'text-amber-800' : 'text-gray-800'}`}>{step.name}</p>
+          {step.startDate && (
+            <p className="text-[10px] text-gray-400">{new Date(step.startDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
+          )}
+          {route ? (
+            <div>
+              <p className="text-[10px] text-indigo-400">🚗 {route.durationText} · {route.distanceText}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <a
+                  href={`https://www.google.com/maps/dir/${prevGeo.latitude},${prevGeo.longitude}/${step.latitude},${step.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="text-[9px] text-blue-400 hover:text-blue-600 transition"
+                  title="Google Maps"
+                >Maps</a>
+                <span className="text-[9px] text-gray-200">·</span>
+                <a
+                  href={`https://www.waze.com/fr/live-map/directions?from=ll.${prevGeo.latitude},${prevGeo.longitude}&to=ll.${step.latitude},${step.longitude}&navigate=yes`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="text-[9px] text-cyan-400 hover:text-cyan-600 transition"
+                  title="Waze"
+                >Waze</a>
+              </div>
+            </div>
+          ) : prevGeo && step.latitude != null ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onComputeRoute(prevGeo, step); }}
+              className="text-[10px] text-gray-300 hover:text-indigo-400 transition text-left"
+            >🚗 Calculer</button>
+          ) : null}
+        </div>
+      </button>
+    </div>
+  );
+}
+
+// ─── Main page ───────────────────────────────────────────────────────────────
+
+export default function RoadtripPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  const [roadtrip, setRoadtrip] = useState(null);
+  const [steps, setSteps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('timeline');
+  const [stepPhotosCache, setStepPhotosCache] = useState({}); // stepId -> Photo[]
+  const [photosModal, setPhotosModal] = useState(null); // { stepId, stepName } pour Timeline
+  const [bookingEmailModal, setBookingEmailModal] = useState(null); // { accom, step }
+
+  function handlePhotosChanged(stepId, photos) {
+    setStepPhotosCache(prev => ({ ...prev, [stepId]: photos }));
+  }
+
+  const [routes, setRoutes] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`routes_${id}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  const [routesLoading, setRoutesLoading] = useState(false);
+  const [routeAltPanel, setRouteAltPanel] = useState(null);
+  const [showCollaborators, setShowCollaborators] = useState(false);
+  const [suggestionOpen, setSuggestionOpen] = useState(false);
+  const [membersRefreshKey, setMembersRefreshKey] = useState(0);
+  const [selectedStepId, setSelectedStepId] = useState(null);
+  const [focusRoute, setFocusRoute] = useState(null); // { fromStep, toStep } | null
+
+  // Sélectionner une étape efface le focusRoute (itinéraire focalisé)
+  const handleSelectStep = useCallback((stepId) => {
+    setFocusRoute(null);
+    setSelectedStepId(stepId);
+  }, []);
+
+  // Étapes triées par date croissante (même ordre que le tableau)
+  const sortedSteps = useMemo(() => {
+    return [...steps].sort((a, b) => {
+      const dateA = a.startDate ? new Date(a.startDate).getTime() : Infinity;
+      const dateB = b.startDate ? new Date(b.startDate).getTime() : Infinity;
+      if (dateA !== dateB) return dateA - dateB;
+      return (a.arrivalTime ?? '').localeCompare(b.arrivalTime ?? '');
+    });
+  }, [steps]);
+
+  // Modals
+  const [stepModal, setStepModal] = useState(null);
+  const [accomModal, setAccomModal] = useState(null);
+  const [activityModal, setActivityModal] = useState(null);
+  const [cloning, setCloning] = useState(false);
+
+  const canWrite = roadtrip?.userRole === 'OWNER' || roadtrip?.userRole === 'EDITOR';
+  const isOwner = roadtrip?.userRole === 'OWNER';
+  const selectedStep = steps.find(s => s.id === selectedStepId) ?? null;
+
+  // Charger les photos de toutes les étapes (partagé entre Timeline et Tableau)
+  useEffect(() => {
+    if (!steps || steps.length === 0) return;
+    steps.forEach(async (step) => {
+      try {
+        const res = await api.get(`/photos?stepId=${step.id}`);
+        const p = Array.isArray(res.data) ? res.data : [];
+        setStepPhotosCache(prev => ({ ...prev, [step.id]: p }));
+      } catch { /* silencieux */ }
+    });
+  }, [steps.map(s => s.id).join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // DnD sensors — petite tolérance pour ne pas déclencher sur simple clic
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  // Persister les routes dans localStorage
+  useEffect(() => {
+    try { localStorage.setItem(`routes_${id}`, JSON.stringify(routes)); } catch {}
+  }, [routes, id]);
+
+  // Invalidation et recalcul des routes après reorder
+  async function handleReordered(newSteps) {
+    setRoutes({});
+    const geoSteps = newSteps.filter(s => s.latitude != null && s.longitude != null);
+    for (let i = 1; i < geoSteps.length; i++) {
+      const from = geoSteps[i - 1];
+      const to = geoSteps[i];
+      try {
+        const route = await computeRoute(
+          { lat: parseFloat(from.latitude), lng: parseFloat(from.longitude) },
+          { lat: parseFloat(to.latitude), lng: parseFloat(to.longitude) }
+        );
+        if (route) {
+          const key = `${from.id}→${to.id}`;
+          setRoutes(prev => ({ ...prev, [key]: route }));
+          // Persister en DB (non bloquant)
+          api.patch(`/steps/${to.id}`, {
+            routeDurationSeconds: route.durationSeconds,
+            routeDistanceMeters: route.distanceMeters,
+            routeEncodedPolyline: route.encodedPolyline,
+          }).catch(() => {});
+        }
+      } catch { /* silencieux */ }
+    }
+  }
+
+  const { reorder, saving: reorderSaving } = useStepReorder(steps, setSteps, id, handleReordered);
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      reorder(active.id, over.id);
+    }
+  }
+
+  // Initialiser routes depuis les données des steps (après chargement)
+  useEffect(() => {
+    if (steps.length === 0) return;
+    const geoSteps = steps.filter(s => s.latitude != null && s.longitude != null);
+    const routesFromDB = {};
+    for (let i = 1; i < geoSteps.length; i++) {
+      const from = geoSteps[i - 1];
+      const to = geoSteps[i];
+      if (to.routeDurationSeconds && to.routeDistanceMeters) {
+        const durationMin = Math.round(to.routeDurationSeconds / 60);
+        const distanceKm = (to.routeDistanceMeters / 1000).toFixed(0);
+        routesFromDB[`${from.id}→${to.id}`] = {
+          durationSeconds: to.routeDurationSeconds,
+          durationText: durationMin >= 60
+            ? `${Math.floor(durationMin / 60)}h${String(durationMin % 60).padStart(2, '0')}`
+            : `${durationMin} min`,
+          distanceMeters: to.routeDistanceMeters,
+          distanceText: `${distanceKm} km`,
+          encodedPolyline: to.routeEncodedPolyline ?? null,
+        };
+      }
+    }
+    if (Object.keys(routesFromDB).length > 0) {
+      setRoutes(prev => ({ ...routesFromDB, ...prev }));
+    }
+  }, [steps]);
+
+  // Sauvegarde rapide depuis le modal de PlanningTableView
+  async function handleQuickStepUpdate(updatedStep) {
+    try {
+      await api.patch(`/steps/${updatedStep.id}`, {
+        name: updatedStep.name,
+        startDate: updatedStep.startDate || null,
+        arrivalTime: updatedStep.arrivalTime || null,
+        endDate: updatedStep.endDate || null,
+        departureTime: updatedStep.departureTime || null,
+      });
+      setSteps(prev => prev.map(s => s.id === updatedStep.id ? { ...s, ...updatedStep } : s));
+    } catch {
+      fetchRoadtrip();
+    }
+  }
+
+  // Auto-select first step when steps load
+  useEffect(() => {
+    if (steps.length > 0 && !selectedStepId) {
+      setSelectedStepId(steps[0].id);
+    }
+  }, [steps]);
+
+  const fetchRoadtrip = useCallback(async () => {
+    try {
+      const [rtRes, stepsRes] = await Promise.all([
+        api.get(`/roadtrips/${id}`),
+        api.get(`/steps?roadtripId=${id}`),
+      ]);
+      setRoadtrip(rtRes.data);
+      setSteps(stepsRes.data);
+    } catch {
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, navigate]);
+
+  useEffect(() => { fetchRoadtrip(); }, [fetchRoadtrip]);
+
+  function openCreateStep(previousStep = null) {
+    // Si aucun previousStep fourni, utiliser la dernière étape triée
+    const lastStep = previousStep ?? (sortedSteps.length > 0 ? sortedSteps[sortedSteps.length - 1] : null);
+    const defaultStartDate = lastStep?.endDate ?? lastStep?.startDate ?? null;
+    const defaultArrivalTime = lastStep?.departureTime ?? null;
+    setStepModal({
+      mode: 'create',
+      defaultStartDate,
+      defaultArrivalTime,
+      roadtripStartDate: roadtrip?.startDate ?? null,
+      roadtripEndDate: roadtrip?.endDate ?? null,
+    });
+  }
+  function openEditStep(step) {
+    setStepModal({
+      mode: 'edit',
+      step,
+      roadtripStartDate: roadtrip?.startDate ?? null,
+      roadtripEndDate: roadtrip?.endDate ?? null,
+    });
+  }
+
+  function onStepSaved() {
+    setStepModal(null);
+    fetchRoadtrip();
+  }
+
+  function onAccomSaved() {
+    setAccomModal(null);
+    fetchRoadtrip();
+  }
+
+  function onActivitySaved() {
+    setActivityModal(null);
+    fetchRoadtrip();
+  }
+
+  async function handleClone() {
+    if (!window.confirm(`Cloner "${roadtrip?.title}" ? Une copie complète (étapes, hébergements, activités) sera créée.`)) return;
+    setCloning(true);
+    try {
+      const res = await api.post(`/roadtrips/${id}/clone`);
+      navigate(`/roadtrips/${res.data.id}`);
+    } catch {
+      alert('Impossible de cloner le roadtrip.');
+    } finally {
+      setCloning(false);
+    }
+  }
+
+  function openAccom(stepId, step) {
+    const s = step ?? steps.find(st => st.id === stepId);
+    setAccomModal({ stepId, accommodation: null, latitude: s?.latitude, longitude: s?.longitude, stepStartDate: s?.startDate, stepEndDate: s?.endDate });
+  }
+  function openActivity(stepId, step) {
+    const s = step ?? steps.find(st => st.id === stepId);
+    setActivityModal({ stepId, activity: null, latitude: s?.latitude, longitude: s?.longitude, stepStartDate: s?.startDate, stepEndDate: s?.endDate });
+  }
+
+  // Calcul d'un seul trajet entre deux étapes (à la demande)
+  async function computeRouteBetween(fromStep, toStep) {
+    if (!fromStep?.latitude || !toStep?.latitude) return;
+    const key = `${fromStep.id}→${toStep.id}`;
+    setRoutesLoading(true);
+    try {
+      const route = await computeRoute(
+        { lat: parseFloat(fromStep.latitude), lng: parseFloat(fromStep.longitude) },
+        { lat: parseFloat(toStep.latitude), lng: parseFloat(toStep.longitude) }
+      );
+      if (route) setRoutes(prev => ({ ...prev, [key]: route }));
+    } finally {
+      setRoutesLoading(false);
+    }
+  }
+
+  // Drag-and-drop marqueur sur la carte
+  async function handleStepDragged(stepId, newLat, newLng) {
+    setSteps(prev => prev.map(s => s.id === stepId ? { ...s, latitude: newLat, longitude: newLng } : s));
+    // Invalider les routes qui impliquaient cette étape
+    setRoutes(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(k => { if (k.includes(stepId)) delete next[k]; });
+      return next;
+    });
+    try {
+      const newLocation = await reverseGeocode(newLat, newLng);
+      await api.patch(`/steps/${stepId}`, {
+        latitude: newLat,
+        longitude: newLng,
+        ...(newLocation ? { location: newLocation } : {}),
+      });
+      const stepsRes = await api.get(`/steps?roadtripId=${id}`);
+      setSteps(stepsRes.data);
+    } catch {
+      fetchRoadtrip();
+    }
+  }
+
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center text-gray-400">Chargement…</div>;
+  }
+
+  const hasGeoSteps = steps.some(s => s.latitude != null && s.longitude != null);
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+
+      {/* ── Header ── */}
+      <header className="bg-white shadow-sm z-10 shrink-0">
+        <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
+          <Link to="/" className="text-gray-500 hover:text-gray-800 text-lg shrink-0">‹</Link>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-serif font-bold text-gray-900 truncate">{roadtrip?.title}</h1>
+            {(roadtrip?.startDate || roadtrip?.endDate) && (
+              <p className="text-xs text-gray-500">
+                {formatDate(roadtrip.startDate)}{roadtrip.endDate ? ` → ${formatDate(roadtrip.endDate)}` : ''}
+              </p>
+            )}
+          </div>
+
+          {/* Toggle de vue */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
+            {VIEW_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => setViewMode(mode.id)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${
+                  viewMode === mode.id
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {canWrite && (
+              <button
+                onClick={() => openCreateStep()}
+                className="bg-brand text-white text-sm font-semibold px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+              >
+                + Étape
+              </button>
+            )}
+            <button
+              onClick={() => setShowCollaborators(v => !v)}
+              className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+            >
+              👥 Membres
+            </button>
+            {(isOwner || canWrite) && (
+              <Link
+                to={`/roadtrips/${id}/edit`}
+                className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+              >
+                ✏️ Éditer
+              </Link>
+            )}
+            <button
+              onClick={handleClone}
+              disabled={cloning}
+              className="text-sm font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+              title="Cloner ce roadtrip"
+            >
+              {cloning ? '⏳' : '📋'} Cloner
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Map — cachée en mode timeline/carte (géré ci-dessous), plein écran en mode carte ── */}
+      <div
+        className={`relative ${viewMode === 'carte' ? 'flex-1 min-h-0' : viewMode === 'tableau' ? 'hidden' : 'shrink-0'}`}
+        style={viewMode === 'timeline' ? { height: '50vh', minHeight: 260 } : {}}
+      >
+        <MapView
+          steps={sortedSteps}
+          selectedStepId={selectedStepId}
+          onSelectStep={handleSelectStep}
+          routes={routes}
+          focusRoute={focusRoute}
+          onStepDragged={canWrite ? handleStepDragged : undefined}
+        />
+        {!hasGeoSteps && steps.length > 0 && viewMode !== 'tableau' && (
+          <div className="absolute inset-0 flex items-end justify-center pb-4 pointer-events-none">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow text-center">
+              <p className="text-xs text-gray-500">Ajoutez des coordonnées aux étapes pour les voir sur la carte</p>
+            </div>
+          </div>
+        )}
+        {viewMode === 'carte' && canWrite && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow text-xs text-gray-600">
+              💡 Glissez un marqueur pour déplacer une étape
+            </div>
+          </div>
+        )}
+        {routesLoading && viewMode !== 'tableau' && (
+          <div className="absolute bottom-3 left-3 z-10">
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow text-[11px] text-gray-500 flex items-center gap-1.5">
+              <span className="animate-spin inline-block">⟳</span> Calcul des trajets…
+            </div>
+          </div>
+        )}
+
+        {/* Panneau liste d'étapes en mode Carte */}
+        {viewMode === 'carte' && (
+          <div className="absolute top-3 right-3 z-10 w-60 max-h-[calc(100%-24px)] bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-gray-100 shrink-0">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                {steps.length} étape{steps.length > 1 ? 's' : ''}
+                {canWrite && <span className="ml-1 font-normal text-gray-300">· glisser pour réordonner</span>}
+              </p>
+            </div>
+            <div className="overflow-y-auto flex-1 py-1">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  {steps.map((step, idx) => (
+                    <SortableCarteItem
+                      key={step.id}
+                      step={step}
+                      idx={idx}
+                      steps={steps}
+                      routes={routes}
+                      selectedStepId={selectedStepId}
+                      onSelect={setSelectedStepId}
+                      canWrite={canWrite}
+                      onComputeRoute={computeRouteBetween}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {canWrite && (
+                <button
+                  onClick={() => openCreateStep()}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-indigo-500 hover:bg-indigo-50 transition font-semibold"
+                >
+                  + Ajouter une étape
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Mode TIMELINE ── */}
+      {viewMode === 'timeline' && (
+        <div className="flex-1 flex flex-col overflow-hidden bg-white border-t border-gray-100">
+          {/* Timeline horizontale avec DnD */}
+          {steps.length > 0 && (
+            <div className="shrink-0 border-b border-gray-100 overflow-x-auto bg-gray-50">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={sortedSteps.map(s => s.id)} strategy={horizontalListSortingStrategy}>
+                  <div className="flex items-end py-3 px-4 min-w-max gap-0">
+                    {sortedSteps.map((step, idx) => {
+                      const prevGeoStep = idx > 0 ? sortedSteps.slice(0, idx).reverse().find(s => s.latitude != null && s.longitude != null) : null;
+                      const routeKey = prevGeoStep ? `${prevGeoStep.id}→${step.id}` : null;
+                      const route = routeKey ? routes[routeKey] : null;
+                      return (
+                        <React.Fragment key={step.id}>
+                          {idx > 0 && (
+                            <div className="shrink-0 flex flex-col items-center self-end pb-6 mx-1 gap-0.5">
+                              {route ? (
+                                <>
+                                  <button
+                                    onClick={() => prevGeoStep && setRouteAltPanel({ fromStep: prevGeoStep, toStep: step })}
+                                    className="text-[9px] text-indigo-400 hover:text-indigo-600 transition font-medium whitespace-nowrap"
+                                    title="Voir les alternatives d'itinéraire"
+                                  >
+                                    🚗 {route.durationText} · {route.distanceText}
+                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <a
+                                      href={`https://www.google.com/maps/dir/${prevGeoStep.latitude},${prevGeoStep.longitude}/${step.latitude},${step.longitude}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[8px] text-blue-400 hover:text-blue-600 transition"
+                                      title="Google Maps"
+                                    >Maps</a>
+                                    <span className="text-[8px] text-gray-200">·</span>
+                                    <a
+                                      href={`https://www.waze.com/fr/live-map/directions?from=ll.${prevGeoStep.latitude},${prevGeoStep.longitude}&to=ll.${step.latitude},${step.longitude}&navigate=yes`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[8px] text-cyan-400 hover:text-cyan-600 transition"
+                                      title="Waze"
+                                    >Waze</a>
+                                  </div>
+                                </>
+                              ) : prevGeoStep && step.latitude != null ? (
+                                <button
+                                  onClick={() => computeRouteBetween(prevGeoStep, step)}
+                                  className="text-[9px] text-gray-300 hover:text-indigo-400 transition font-medium whitespace-nowrap"
+                                  title="Calculer le trajet"
+                                >
+                                  🚗 Calculer
+                                </button>
+                              ) : (
+                                <span className="text-[9px] text-gray-200">—</span>
+                              )}
+                              {canWrite && (
+                                <button
+                                  onClick={() => openCreateStep(step)}
+                                  title="Ajouter une étape ici"
+                                  className="w-7 h-7 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-300 transition-all hover:border-brand hover:text-brand hover:bg-amber-50 hover:scale-110"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                                    <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          <SortableStepCard
+                            step={step}
+                            idx={idx}
+                            selectedStepId={selectedStepId}
+                            onSelect={setSelectedStepId}
+                            canWrite={canWrite}
+                            coverPhotoUrl={stepPhotosCache[step.id]?.find(p => p.isCover)?.url ?? null}
+                            onOpenPhotos={canWrite ? (s) => setPhotosModal({ stepId: s.id, stepName: s.name }) : null}
+                          />
+                        </React.Fragment>
+                      );
+                    })}
+                    {/* Carte "Ajouter" en fin */}
+                    <div className="shrink-0 flex items-end self-end pb-6 mx-2 text-gray-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                        <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    {canWrite && (
+                      <button
+                        onClick={() => openCreateStep()}
+                        className="flex flex-col shrink-0 rounded-xl overflow-hidden transition-all ring-2 ring-dashed ring-gray-200 hover:ring-brand hover:shadow-sm group"
+                        style={{ width: 130 }}
+                      >
+                        <div className="w-full bg-gray-50 group-hover:bg-amber-50 transition flex items-center justify-center" style={{ height: 72 }}>
+                          <div className="w-9 h-9 rounded-full border-2 border-dashed border-gray-300 group-hover:border-brand group-hover:text-brand flex items-center justify-center text-gray-300 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="px-2 py-1.5 bg-white group-hover:bg-amber-50 transition">
+                          <p className="text-[12px] font-semibold leading-tight text-gray-300 group-hover:text-brand transition">Ajouter</p>
+                          <p className="text-[10px] text-gray-200 group-hover:text-amber-400 mt-0.5 transition">une étape</p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          )}
+
+          {/* Détail étape sélectionnée */}
+          <div className="flex-1 overflow-hidden">
+            {selectedStep ? (
+              <SelectedStepDetail
+                step={selectedStep}
+                canWrite={canWrite}
+                roadtripId={id}
+                onEdit={openEditStep}
+                onAddAccom={() => openAccom(selectedStep.id, selectedStep)}
+                onEditAccom={(a) => setAccomModal({ stepId: selectedStep.id, accommodation: a, latitude: selectedStep.latitude, longitude: selectedStep.longitude, stepStartDate: selectedStep.startDate, stepEndDate: selectedStep.endDate })}
+                onAddActivity={() => openActivity(selectedStep.id, selectedStep)}
+                onEditActivity={(act) => setActivityModal({ stepId: selectedStep.id, activity: act, latitude: selectedStep.latitude, longitude: selectedStep.longitude, stepStartDate: selectedStep.startDate, stepEndDate: selectedStep.endDate })}
+                onBookingEmail={(accom, step) => setBookingEmailModal({ accom, step })}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                <p className="text-gray-400 text-sm">Aucune étape pour le moment.</p>
+                {canWrite && (
+                  <button onClick={() => openCreateStep()} className="text-brand font-semibold text-sm mt-2 hover:underline">
+                    Ajouter la première étape →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Mode TABLEAU ── */}
+      {viewMode === 'tableau' && (
+        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+          {/* Carte en haut */}
+          <div className="h-72 shrink-0 border-b border-gray-100 relative">
+            <MapView
+              steps={sortedSteps}
+              selectedStepId={selectedStepId}
+              onSelectStep={handleSelectStep}
+              routes={routes}
+              focusRoute={focusRoute}
+              onStepDragged={undefined}
+            />
+            {routesLoading && (
+              <div className="absolute bottom-3 left-3 z-10">
+                <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow text-[11px] text-gray-500 flex items-center gap-1.5">
+                  <span className="animate-spin inline-block">⟳</span> Calcul…
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tableau en dessous */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <PlanningTableView
+              steps={steps}
+              routes={routes}
+              selectedStepId={selectedStepId}
+              canWrite={canWrite}
+              roadtripId={roadtrip?.id}
+              onSelectStep={handleSelectStep}
+              onRouteClick={(fromStep, toStep) => setRouteAltPanel({ fromStep, toStep })}
+              onComputeRoute={computeRouteBetween}
+              onRouteSelect={(fromStep, toStep) => setFocusRoute({ fromStep, toStep })}
+              onReorder={reorder}
+              onAddAccom={(stepId, step) => openAccom(stepId, step)}
+              onEditAccom={(a) => {
+                const s = steps.find(st => st.id === a.stepId);
+                setAccomModal({ stepId: a.stepId, accommodation: a, latitude: s?.latitude, longitude: s?.longitude, stepStartDate: s?.startDate, stepEndDate: s?.endDate });
+              }}
+              onAddActivity={(stepId, step) => openActivity(stepId, step)}
+              onEditActivity={(act) => {
+                const s = steps.find(st => st.id === act.stepId);
+                setActivityModal({ stepId: act.stepId, activity: act, latitude: s?.latitude, longitude: s?.longitude, stepStartDate: s?.startDate, stepEndDate: s?.endDate });
+              }}
+              onEditStep={openEditStep}
+              onQuickUpdateStep={handleQuickStepUpdate}
+              externalPhotosCache={stepPhotosCache}
+              onExternalPhotosChanged={handlePhotosChanged}
+              onBookingEmail={(accom, step) => setBookingEmailModal({ accom, step })}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal email de réservation ── */}
+      {bookingEmailModal && (
+        <BookingEmailModal
+          accom={bookingEmailModal.accom}
+          step={bookingEmailModal.step}
+          onClose={() => setBookingEmailModal(null)}
+        />
+      )}
+
+      {/* ── Modal photos (Timeline) ── */}
+      {photosModal && (
+        <StepPhotosModal
+          stepId={photosModal.stepId}
+          roadtripId={roadtrip?.id}
+          stepName={photosModal.stepName}
+          canWrite={canWrite}
+          onClose={() => setPhotosModal(null)}
+          onPhotosChanged={handlePhotosChanged}
+        />
+      )}
+
+      {/* ── Collaborators modal ── */}
+      {showCollaborators && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCollaborators(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900">Membres</h2>
+              <button onClick={() => setShowCollaborators(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+            </div>
+            <div className="overflow-y-auto max-h-[70vh]">
+              <CollaboratorsPanel key={membersRefreshKey} roadtripId={id} isOwner={isOwner} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Route alternatives panel ── */}
+      {routeAltPanel && (
+        <RouteAlternativesPanel
+          fromStep={routeAltPanel.fromStep}
+          toStep={routeAltPanel.toStep}
+          onSelectRoute={(selectedRoute) => {
+            const key = `${routeAltPanel.fromStep.id}→${routeAltPanel.toStep.id}`;
+            setRoutes(prev => ({ ...prev, [key]: selectedRoute }));
+          }}
+          onClose={() => setRouteAltPanel(null)}
+        />
+      )}
+
+      {/* ── Step modal ── */}
+      {stepModal && (
+        <StepModal
+          roadtripId={id}
+          step={stepModal.step}
+          mode={stepModal.mode}
+          onClose={() => setStepModal(null)}
+          onSaved={onStepSaved}
+          defaultStartDate={stepModal.defaultStartDate}
+          defaultArrivalTime={stepModal.defaultArrivalTime}
+          roadtripStartDate={stepModal.roadtripStartDate}
+          roadtripEndDate={stepModal.roadtripEndDate}
+        />
+      )}
+
+      {/* ── Accommodation modal ── */}
+      {accomModal && (
+        <AccommodationModal
+          stepId={accomModal.stepId}
+          accommodation={accomModal.accommodation}
+          latitude={accomModal.latitude}
+          longitude={accomModal.longitude}
+          stepStartDate={accomModal.stepStartDate}
+          stepEndDate={accomModal.stepEndDate}
+          onClose={() => setAccomModal(null)}
+          onSaved={onAccomSaved}
+        />
+      )}
+
+      {/* ── Activity modal ── */}
+      {activityModal && (
+        <ActivityModal
+          stepId={activityModal.stepId}
+          activity={activityModal.activity}
+          latitude={activityModal.latitude}
+          longitude={activityModal.longitude}
+          stepStartDate={activityModal.stepStartDate}
+          stepEndDate={activityModal.stepEndDate}
+          onClose={() => setActivityModal(null)}
+          onSaved={onActivitySaved}
+        />
+      )}
+
+      {/* ─── FAB Suggestion ──────────────────────────────────────────────── */}
+      <button
+        onClick={() => setSuggestionOpen(true)}
+        title="Envoyer une suggestion"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-white border border-gray-200 shadow-lg flex items-center justify-center text-xl hover:shadow-xl hover:scale-105 transition-all"
+      >
+        💡
+      </button>
+      {suggestionOpen && <SuggestionModal onClose={() => setSuggestionOpen(false)} />}
+    </div>
+  );
+}
