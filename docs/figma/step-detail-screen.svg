@@ -31,66 +31,69 @@
   <text x="208" y="226" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui" letter-spacing="0.3">DÉPART</text>
   <text x="208" y="242" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">01 août 11:00</text>
 
+  <!-- TRAJET depuis l'étape précédente -->
+  <rect x="16" y="262" width="358" height="28" rx="8" fill="rgba(34,197,94,0.06)" stroke="rgba(34,197,94,0.1)" stroke-width="1"/>
+  <text x="24" y="280" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">🚐 Depuis Dijon</text>
+  <text x="180" y="280" fill="#fff" font-size="11" font-weight="600" font-family="system-ui">85 km</text>
+  <circle cx="235" cy="277" r="2" fill="rgba(255,255,255,0.3)"/>
+  <text x="246" y="280" fill="#4ade80" font-size="11" font-weight="600" font-family="system-ui">1h15</text>
+  <rect x="310" y="266" width="52" height="18" rx="4" fill="rgba(34,197,94,0.1)"/>
+  <text x="336" y="279" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">A39</text>
+
   <!-- HÉBERGEMENTS -->
-  <text x="16" y="286" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">HÉBERGEMENTS</text>
+  <text x="16" y="318" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">HÉBERGEMENTS</text>
   <!-- Card 1 -->
-  <rect x="16" y="296" width="358" height="52" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-  <rect x="24" y="304" width="36" height="36" rx="8" fill="rgba(34,197,94,0.1)"/>
-  <text x="42" y="328" text-anchor="middle" font-size="16">🏕️</text>
-  <text x="70" y="318" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">Camping des Bords de Loue</text>
-  <text x="70" y="334" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Réservation 18483538 · 59€</text>
-  <rect x="296" y="306" width="66" height="20" rx="5" fill="rgba(34,197,94,0.1)"/>
-  <text x="329" y="320" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">✅ Résa OK</text>
-  <!-- Card 2 (optional, second accommodation) -->
-  <rect x="16" y="354" width="358" height="46" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-  <rect x="24" y="360" width="32" height="32" rx="8" fill="rgba(59,130,246,0.1)"/>
-  <text x="40" y="382" text-anchor="middle" font-size="14">🏠</text>
-  <text x="64" y="376" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Gîte Le Vieux Dole</text>
-  <text x="64" y="390" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Rue des Arènes</text>
-  <rect x="290" y="362" width="72" height="18" rx="5" fill="rgba(245,158,11,0.1)"/>
-  <text x="326" y="375" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="600" font-family="system-ui">Provisoire</text>
+  <rect x="16" y="328" width="358" height="52" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="24" y="336" width="36" height="36" rx="8" fill="rgba(34,197,94,0.1)"/>
+  <text x="42" y="360" text-anchor="middle" font-size="16">🏕️</text>
+  <text x="70" y="350" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">Camping des Bords de Loue</text>
+  <text x="70" y="366" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Réservation 18483538 · 59€</text>
+  <rect x="296" y="338" width="66" height="20" rx="5" fill="rgba(34,197,94,0.1)"/>
+  <text x="329" y="352" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">✅ Résa OK</text>
+  <!-- Card 2 -->
+  <rect x="16" y="386" width="358" height="46" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="24" y="392" width="32" height="32" rx="8" fill="rgba(59,130,246,0.1)"/>
+  <text x="40" y="414" text-anchor="middle" font-size="14">🏠</text>
+  <text x="64" y="408" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Gîte Le Vieux Dole</text>
+  <text x="64" y="422" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Rue des Arènes</text>
+  <rect x="290" y="394" width="72" height="18" rx="5" fill="rgba(245,158,11,0.1)"/>
+  <text x="326" y="407" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="600" font-family="system-ui">Provisoire</text>
 
   <!-- ACTIVITÉS -->
-  <text x="16" y="430" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">ACTIVITÉS</text>
+  <text x="16" y="462" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">ACTIVITÉS</text>
   <!-- Activity 1 -->
-  <rect x="16" y="440" width="358" height="38" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-  <rect x="22" y="445" width="28" height="28" rx="6" fill="rgba(59,130,246,0.1)"/>
-  <text x="36" y="465" text-anchor="middle" font-size="12">🥾</text>
-  <text x="58" y="458" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Balade en ville</text>
-  <text x="58" y="470" fill="rgba(255,255,255,0.4)" font-size="9" font-family="system-ui">Centre historique de Dole</text>
-  <rect x="296" y="444" width="66" height="18" rx="5" fill="rgba(245,158,11,0.1)"/>
-  <text x="329" y="457" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="600" font-family="system-ui">À planifier</text>
+  <rect x="16" y="472" width="358" height="38" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="22" y="477" width="28" height="28" rx="6" fill="rgba(59,130,246,0.1)"/>
+  <text x="36" y="497" text-anchor="middle" font-size="12">🥾</text>
+  <text x="58" y="490" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Balade en ville</text>
+  <text x="58" y="502" fill="rgba(255,255,255,0.4)" font-size="9" font-family="system-ui">Centre historique de Dole</text>
+  <rect x="296" y="476" width="66" height="18" rx="5" fill="rgba(245,158,11,0.1)"/>
+  <text x="329" y="489" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="600" font-family="system-ui">À planifier</text>
   <!-- Activity 2 -->
-  <rect x="16" y="482" width="358" height="38" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-  <rect x="22" y="487" width="28" height="28" rx="6" fill="rgba(245,158,11,0.1)"/>
-  <text x="36" y="507" text-anchor="middle" font-size="12">🍽️</text>
-  <text x="58" y="500" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Dîner Chez Julien</text>
-  <text x="58" y="512" fill="rgba(255,255,255,0.4)" font-size="9" font-family="system-ui">Rue du centre · réservation 19h</text>
-  <rect x="296" y="486" width="66" height="18" rx="5" fill="rgba(34,197,94,0.1)"/>
-  <text x="329" y="499" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">✅ Réservé</text>
+  <rect x="16" y="514" width="358" height="38" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="22" y="519" width="28" height="28" rx="6" fill="rgba(245,158,11,0.1)"/>
+  <text x="36" y="539" text-anchor="middle" font-size="12">🍽️</text>
+  <text x="58" y="532" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Dîner Chez Julien</text>
+  <text x="58" y="544" fill="rgba(255,255,255,0.4)" font-size="9" font-family="system-ui">Rue du centre · réservation 19h</text>
+  <rect x="296" y="518" width="66" height="18" rx="5" fill="rgba(34,197,94,0.1)"/>
+  <text x="329" y="531" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">✅ Réservé</text>
   <!-- Activity 3 -->
-  <rect x="16" y="524" width="358" height="38" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-  <rect x="22" y="529" width="28" height="28" rx="6" fill="rgba(139,92,246,0.1)"/>
-  <text x="36" y="549" text-anchor="middle" font-size="12">🎯</text>
-  <text x="58" y="542" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Visite Musée des Beaux-Arts</text>
-  <text x="58" y="554" fill="rgba(255,255,255,0.4)" font-size="9" font-family="system-ui">Entrée 8€</text>
-  <rect x="296" y="528" width="66" height="18" rx="5" fill="rgba(34,197,94,0.1)"/>
-  <text x="329" y="541" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">✅ Réservé</text>
+  <rect x="16" y="556" width="358" height="38" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="22" y="561" width="28" height="28" rx="6" fill="rgba(139,92,246,0.1)"/>
+  <text x="36" y="581" text-anchor="middle" font-size="12">🎯</text>
+  <text x="58" y="574" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">Visite Musée des Beaux-Arts</text>
+  <text x="58" y="586" fill="rgba(255,255,255,0.4)" font-size="9" font-family="system-ui">Entrée 8€</text>
+  <rect x="296" y="560" width="66" height="18" rx="5" fill="rgba(34,197,94,0.1)"/>
+  <text x="329" y="573" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">✅ Réservé</text>
 
   <!-- NOTES -->
-  <text x="16" y="592" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">NOTES</text>
-  <rect x="16" y="602" width="358" height="46" rx="8" fill="rgba(255,255,255,0.03)"/>
-  <text x="24" y="622" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui">Arrivée prévue vers 15h. Faire les courses à</text>
-  <text x="24" y="638" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui">l'Intermarche avant l'arrivée au camping.</text>
-
-  <!-- Actions -->
-  <rect x="16" y="670" width="172" height="40" rx="10" fill="rgba(255,255,255,0.06)"/>
-  <text x="102" y="695" text-anchor="middle" fill="#fff" font-size="12" font-weight="600" font-family="system-ui">🗺️ Voir sur la carte</text>
-  <rect x="200" y="670" width="174" height="40" rx="10" fill="#f59e0b"/>
-  <text x="287" y="695" text-anchor="middle" fill="#1a1a26" font-size="12" font-weight="700" font-family="system-ui">🔄 Étape suivante</text>
+  <text x="16" y="624" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">NOTES</text>
+  <rect x="16" y="634" width="358" height="46" rx="8" fill="rgba(255,255,255,0.03)"/>
+  <text x="24" y="654" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui">Arrivée prévue vers 15h. Faire les courses à</text>
+  <text x="24" y="670" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui">l'Intermarche avant l'arrivée au camping.</text>
 
   <!-- Footer annotation -->
   <rect x="0" y="790" width="390" height="54" fill="#1a1a26" opacity="0.95"/>
   <text x="195" y="812" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Écran 4/4 • Détail d'étape (modal)</text>
-  <text x="195" y="828" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui">Adresse · Dates · Hébergements · Activités · Notes</text>
+  <text x="195" y="828" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui">Adresse · Trajet · Dates · Hébergements · Activités · Notes</text>
 </svg>
