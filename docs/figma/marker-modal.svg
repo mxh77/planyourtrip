@@ -1,80 +1,77 @@
 <svg width="390" height="844" viewBox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
   <rect width="390" height="844" fill="#1a1a26"/>
 
-  <!-- Backdrop semi-transparent -->
-  <rect x="0" y="0" width="390" height="844" fill="rgba(0,0,0,0.6)"/>
+  <!-- Carte simulée -->
+  <rect x="0" y="0" width="390" height="600" fill="#2d4a3a"/>
+  <image href="data:image/svg+xml,%3Csvg width='390' height='600' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='390' height='600' fill='%232d4a3a'/%3E%3C/svg%3E" x="0" y="0" width="390" height="600"/>
 
-  <!-- Modal card (bottom sheet style) -->
-  <path d="M0 320 Q0 300 20 300 L370 300 Q390 300 390 320 L390 844 L0 844 Z" fill="#1e1e2e"/>
-  <rect x="0" y="300" width="390" height="544" fill="#1e1e2e"/>
-  <path d="M0 300 Q0 320 0 320 L390 320 Q390 300 390 300" fill="#1e1e2e"/>
+  <!-- Marqueur camping sur la carte -->
+  <circle cx="180" cy="280" r="18" fill="#22c55e" stroke="rgba(255,255,255,0.5)" stroke-width="2.5"/>
+  <text x="180" y="285" text-anchor="middle" font-size="16">🏕️</text>
 
-  <!-- Handle bar -->
-  <rect x="177" y="308" width="36" height="4" rx="4" fill="rgba(255,255,255,0.15)"/>
+  <!-- Ligne de connexion vers le menu -->
+  <line x1="180" y1="298" x2="180" y2="318" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+
+  <!-- Menu contextuel flottant (info window style) -->
+  <rect x="80" y="320" width="230" height="180" rx="14" fill="#1e1e2e" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <!-- Triangle en haut -->
+  <polygon points="180,314 172,326 188,326" fill="#1e1e2e" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+  <!-- Header du menu -->
+  <rect x="80" y="320" width="230" height="46" rx="14" fill="rgba(34,197,94,0.08)"/>
+  <rect x="80" y="334" width="230" height="32" fill="rgba(34,197,94,0.08)"/>
+  <rect x="80" y="320" width="230" height="14" rx="14" fill="rgba(34,197,94,0.08)"/>
+
+  <rect x="90" y="328" width="28" height="28" rx="8" fill="rgba(34,197,94,0.15)"/>
+  <text x="104" y="348" text-anchor="middle" font-size="14">🏕️</text>
+  <text x="126" y="346" fill="#fff" font-size="14" font-weight="700" font-family="system-ui">Camping des Bords de Loue</text>
 
   <!-- Close button -->
-  <rect x="340" y="316" width="36" height="36" rx="18" fill="rgba(255,255,255,0.06)"/>
-  <text x="358" y="340" text-anchor="middle" fill="#fff" font-size="18" font-weight="600">✕</text>
+  <rect x="274" y="326" width="24" height="24" rx="12" fill="rgba(255,255,255,0.06)"/>
+  <text x="286" y="343" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="12">✕</text>
 
-  <!-- Header with type icon and name -->
-  <!-- Camping version (green) -->
-  <rect x="20" y="324" width="48" height="48" rx="14" fill="rgba(34,197,94,0.15)"/>
-  <text x="44" y="356" text-anchor="middle" font-size="24">🏕️</text>
-  <text x="80" y="348" fill="#fff" font-size="17" font-weight="700" font-family="system-ui">Camping des Bords</text>
-  <text x="80" y="366" fill="#e2e8f0" font-size="13" font-family="system-ui">de Loue</text>
+  <!-- Actions list -->
+  <!-- Action 1 : Point de départ -->
+  <rect x="90" y="376" width="210" height="38" rx="8" fill="rgba(255,255,255,0.03)"/>
+  <text x="106" y="400" font-size="14">📍</text>
+  <text x="128" y="399" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">Point de départ de l'étape</text>
+  <text x="276" y="398" fill="rgba(255,255,255,0.25)" font-size="10">→</text>
 
-  <!-- Status badge -->
-  <rect x="280" y="330" width="84" height="22" rx="6" fill="rgba(34,197,94,0.12)"/>
-  <text x="322" y="345" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700" font-family="system-ui">✅ Réservé</text>
+  <!-- Action 2 : Ajouter une activité -->
+  <rect x="90" y="420" width="210" height="38" rx="8" fill="rgba(255,255,255,0.03)"/>
+  <text x="106" y="444" font-size="14">🥾</text>
+  <text x="128" y="443" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">Ajouter une activité</text>
+  <text x="276" y="442" fill="rgba(255,255,255,0.25)" font-size="10">→</text>
 
-  <!-- Divider -->
-  <rect x="20" y="388" width="350" height="1" fill="rgba(255,255,255,0.06)"/>
+  <!-- Action 3 : Modifier -->
+  <rect x="90" y="464" width="210" height="38" rx="8" fill="rgba(255,255,255,0.03)"/>
+  <text x="106" y="488" font-size="14">✏️</text>
+  <text x="128" y="487" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">Modifier les infos</text>
+  <text x="276" y="486" fill="rgba(255,255,255,0.25)" font-size="10">→</text>
 
-  <!-- Address -->
-  <rect x="20" y="402" width="350" height="32" rx="8" fill="rgba(255,255,255,0.03)"/>
-  <text x="36" y="422" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui">📍 Rue du Moulin · 39100 Dole, France</text>
+  <!-- Action 4 : Supprimer (rouge) -->
+  <rect x="90" y="508" width="210" height="38" rx="8" fill="rgba(239,68,68,0.06)"/>
+  <text x="106" y="532" font-size="14">🗑️</text>
+  <text x="128" y="531" fill="#ef4444" font-size="13" font-weight="600" font-family="system-ui">Supprimer le marqueur</text>
 
-  <!-- Date info -->
-  <rect x="20" y="442" width="170" height="36" rx="8" fill="rgba(255,255,255,0.03)"/>
-  <text x="30" y="456" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui" letter-spacing="0.3">ARRIVÉE</text>
-  <text x="30" y="470" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">31 juil. 15:00</text>
-  <rect x="200" y="442" width="170" height="36" rx="8" fill="rgba(255,255,255,0.03)"/>
-  <text x="210" y="456" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui" letter-spacing="0.3">DÉPART</text>
-  <text x="210" y="470" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">01 août 11:00</text>
+  <!-- Bottom sheet (contexte) -->
+  <rect x="0" y="600" width="390" height="244" fill="#1a1a26"/>
+  <path d="M0 620 Q0 600 20 600 L370 600 Q390 600 390 620 L390 844 L0 844 Z" fill="#1a1a26"/>
+  <rect x="177" y="608" width="36" height="4" rx="4" fill="rgba(255,255,255,0.15)"/>
 
-  <!-- Price -->
-  <rect x="20" y="486" width="350" height="32" rx="8" fill="rgba(255,255,255,0.03)"/>
-  <text x="36" y="506" fill="rgba(255,255,255,0.4)" font-size="12" font-family="system-ui">💰 Emplacement camping-car</text>
-  <text x="210" y="508" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">59 € / nuit</text>
-  <rect x="330" y="496" width="28" height="12" rx="4" fill="rgba(245,158,11,0.1)"/>
-  <text x="344" y="505" text-anchor="middle" fill="#fbbf24" font-size="6" font-weight="600" font-family="system-ui">2x</text>
+  <circle cx="36" cy="638" r="14" fill="#3b82f6"/>
+  <text x="36" y="643" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="system-ui">2</text>
+  <text x="62" y="640" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">Dole du Jura</text>
+  <text x="62" y="656" fill="rgba(255,255,255,0.45)" font-size="11" font-family="system-ui">1 nuit · 31 juil. → 01 août</text>
+  <text x="62" y="670" fill="#4ade80" font-size="10" font-family="system-ui">🚐 Depuis Dijon · 85 km · 1h15 (A39)</text>
+  <rect x="310" y="628" width="60" height="22" rx="6" fill="rgba(34,197,94,0.15)"/>
+  <text x="340" y="643" text-anchor="middle" fill="#4ade80" font-size="10" font-family="system-ui">🏕️ ✅</text>
 
-  <!-- Contact -->
-  <rect x="20" y="526" width="350" height="32" rx="8" fill="rgba(255,255,255,0.03)"/>
-  <text x="36" y="546" fill="rgba(255,255,255,0.4)" font-size="12" font-family="system-ui">📞 03 84 72 10 39</text>
-  <text x="200" y="546" fill="rgba(255,255,255,0.4)" font-size="12" font-family="system-ui">🌐 camping-bords-loue.fr</text>
+  <rect x="16" y="690" width="358" height="1" fill="rgba(255,255,255,0.06)"/>
+  <text x="24" y="714" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">⤴ Glissez vers le haut pour voir toutes les étapes</text>
 
-  <!-- Divider -->
-  <rect x="20" y="572" width="350" height="1" fill="rgba(255,255,255,0.06)"/>
-
-  <!-- Notes -->
-  <text x="20" y="596" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">NOTES</text>
-  <rect x="20" y="606" width="350" height="46" rx="8" fill="rgba(255,255,255,0.03)"/>
-  <text x="30" y="624" fill="rgba(255,255,255,0.5)" font-size="11" font-family="system-ui">Emplacement n° 47, borne électrique incluse.</text>
-  <text x="30" y="640" fill="rgba(255,255,255,0.5)" font-size="11" font-family="system-ui">Sanitaires propres. Arrivée avant 19h.</text>
-
-  <!-- Action buttons -->
-  <rect x="20" y="670" width="170" height="42" rx="10" fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.2)" stroke-width="1"/>
-  <text x="105" y="696" text-anchor="middle" fill="#93c5fd" font-size="13" font-weight="600" font-family="system-ui">🗺️ Naviguer</text>
-  <rect x="200" y="670" width="170" height="42" rx="10" fill="#22c55e"/>
-  <text x="285" y="696" text-anchor="middle" fill="#1a1a26" font-size="13" font-weight="700" font-family="system-ui">📋 Modifier</text>
-
-  <!-- Activity variant hint -->
-  <rect x="20" y="730" width="350" height="26" rx="6" fill="rgba(255,255,255,0.03)"/>
-  <text x="195" y="748" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-size="9" font-family="system-ui">Variante activité : icône et couleurs changent (🥾 bleu / 🍽️ violet / 🎯 orange)</text>
-
-  <!-- Footer annotation -->
-  <rect x="0" y="790" width="390" height="54" fill="#1e1e2e" opacity="0.95"/>
-  <text x="195" y="812" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Écran 5/5 • Marker Modal (camping)</text>
-  <text x="195" y="828" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-size="9" font-family="system-ui">Modal overlay · clic sur marqueur carte</text>
+  <!-- Footer -->
+  <rect x="0" y="790" width="390" height="54" fill="#1a1a26" opacity="0.95"/>
+  <text x="195" y="812" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Écran 5/5 • Marker Context Menu</text>
+  <text x="195" y="828" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-size="9" font-family="system-ui">Menu contextuel flottant · clic sur marqueur carte</text>
 </svg>
