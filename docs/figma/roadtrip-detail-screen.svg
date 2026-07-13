@@ -66,12 +66,13 @@
   <circle cx="36" cy="638" r="14" fill="#3b82f6"/>
   <text x="36" y="643" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="system-ui">2</text>
   <text x="62" y="640" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">Dole du Jura</text>
-  <text x="62" y="656" fill="rgba(255,255,255,0.45)" font-size="11" font-family="system-ui">1 nuit · 31 juil. → 01 août · 432 km</text>
+  <text x="62" y="656" fill="rgba(255,255,255,0.45)" font-size="11" font-family="system-ui">1 nuit · 31 juil. → 01 août</text>
+  <text x="62" y="670" fill="#4ade80" font-size="10" font-family="system-ui">🚐 Depuis Dijon · 85 km · 1h15 (A39)</text>
   <rect x="310" y="628" width="60" height="22" rx="6" fill="rgba(34,197,94,0.15)"/>
   <text x="340" y="643" text-anchor="middle" fill="#4ade80" font-size="10" font-family="system-ui">🏕️ ✅</text>
 
-  <rect x="16" y="676" width="358" height="1" fill="rgba(255,255,255,0.06)"/>
-  <text x="24" y="700" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">⤴ Glissez vers le haut pour voir toutes les étapes</text>
+  <rect x="16" y="690" width="358" height="1" fill="rgba(255,255,255,0.06)"/>
+  <text x="24" y="714" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">⤴ Glissez vers le haut pour voir toutes les étapes</text>
 
   <!-- Footer annotation -->
   <rect x="0" y="790" width="390" height="54" fill="#1a1a26" opacity="0.95"/>
