@@ -1,0 +1,118 @@
+{
+  "issue_number": 20,
+  "generated_at": "2026-05-06T07:15:08.533822+00:00",
+  "criteria": [
+    {
+      "id": "AC-01",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Le composant de grid utilise `repeat(3, 1fr)` sur les écrans ≥1024px.",
+      "expected": "Le composant de grid utilise `repeat(3, 1fr)` sur les écrans ≥1024px.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-02",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Les breakpoints `768px` et `1024px` sont correctement implémentés.",
+      "expected": "Les breakpoints `768px` et `1024px` sont correctement implémentés.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-03",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Aucune card n'a de largeur fixe.",
+      "expected": "Aucune card n'a de largeur fixe.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-04",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Les images s'adaptent sans distorsion.",
+      "expected": "Les images s'adaptent sans distorsion.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-05",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "La page d'accueil s'affiche correctement avec 1, 2, 3, 4, 5... roadtrips.",
+      "expected": "La page d'accueil s'affiche correctement avec 1, 2, 3, 4, 5... roadtrips.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-06",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Aucune régression sur les autres pages (recherche, favoris,…) – hors périmètre.",
+      "expected": "Aucune régression sur les autres pages (recherche, favoris,…) – hors périmètre.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-07",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "La modification est uniquement CSS (aucun changement JS/HTML).",
+      "expected": "La modification est uniquement CSS (aucun changement JS/HTML).",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-08",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Revue de design validée par l'équipe produit (si besoin).",
+      "expected": "Revue de design validée par l'équipe produit (si besoin).",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-09",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "Tests **responsives** manuels (mobile 375px, tablette 768px, desktop 1024px, grand écran 1440px).",
+      "expected": "Tests **responsives** manuels (mobile 375px, tablette 768px, desktop 1024px, grand écran 1440px).",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-10",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "Vérifier que les cards ne se chevauchent pas et que le `gap` est homogène.",
+      "expected": "Vérifier que les cards ne se chevauchent pas et que le `gap` est homogène.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-11",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "Tester avec un nombre d'éléments inférieur à 3 (ex",
+      "expected": "1 seul roadtrip – centrage ? À définir).",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-12",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "Tester avec un nombre d'éléments non multiple de 3 (ex",
+      "expected": "5 éléments – les 2 dernières colonnes doivent rester alignées à gauche).",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-13",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests visuels**",
+      "expected": "comparer les captures avant/après (sur desktop) pour valider l'aspect esthétique.",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-14",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests d'accessibilité**",
+      "expected": "pas de régression sur l'ordre de tabulation (vérifier avec `Tab`).",
+      "bug_category": "missing_feature"
+    }
+  ]
+}

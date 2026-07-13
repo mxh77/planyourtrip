@@ -1,0 +1,134 @@
+{
+  "issue_number": 18,
+  "generated_at": "2026-05-03T16:54:48.702013+00:00",
+  "criteria": [
+    {
+      "id": "AC-01",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Maquettes mobiles approuvées par le PO et Maxime",
+      "expected": "Maquettes mobiles approuvées par le PO et Maxime",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-02",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Tous les écrans du périmètre sont responsifs (vérifié sur 3 devices différents)",
+      "expected": "Tous les écrans du périmètre sont responsifs (vérifié sur 3 devices différents)",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-03",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Navigation mobile fonctionnelle (bottom bar + sous-menus)",
+      "expected": "Navigation mobile fonctionnelle (bottom bar + sous-menus)",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-04",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Aucune régression sur les écrans desktop (tests visuels passent)",
+      "expected": "Aucune régression sur les écrans desktop (tests visuels passent)",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-05",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Lighthouse mobile >80 pour Performance, Accessibility, Best Practices",
+      "expected": "Lighthouse mobile >80 pour Performance, Accessibility, Best Practices",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-06",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Temps de chargement initial <3s sur 4G",
+      "expected": "Temps de chargement initial <3s sur 4G",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-07",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Feature flag activé en staging pendant 1 semaine → remontée de bugs",
+      "expected": "Feature flag activé en staging pendant 1 semaine → remontée de bugs",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-08",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Documentation des composants mobiles dans Storybook",
+      "expected": "Documentation des composants mobiles dans Storybook",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-09",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Tests E2E mobiles verts dans la CI",
+      "expected": "Tests E2E mobiles verts dans la CI",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-10",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Review finale avec Maxime avant mise en production",
+      "expected": "Review finale avec Maxime avant mise en production",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-11",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests unitaires**",
+      "expected": "hooks `useMobile`, composants mobiles (rendu, interactions).",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-12",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests fonctionnels** (E2E)",
+      "expected": "parcours complets sur émulateur mobile (log in, navigation, ouverture d’un ticket, déconnexion).",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-13",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests visuels** (Percy / Chromatic)",
+      "expected": "comparaison des écrans mobiles et desktop avant/après.",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-14",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests de performance**",
+      "expected": "Lighthouse mobile (score>80 first contentful paint, accessibility, best practices).",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-15",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests d’accessibilité**",
+      "expected": "respect des contrastes, tailles de touch target min 44px, navigation au clavier.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-16",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "**Tests utilisateurs réels**",
+      "expected": "sessions de 30 min avec 3 développeurs mobiles (feedback qualitatif).",
+      "bug_category": "visual_bug"
+    }
+  ]
+}

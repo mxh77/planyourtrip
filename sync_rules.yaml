@@ -1,0 +1,25 @@
+config:
+  edition: 2
+
+bucket_definitions:
+  user_roadtrips:
+    parameters:
+      - SELECT id as roadtrip_id FROM roadtrips WHERE "userId" = token_parameters.user_id
+    data:
+      - SELECT * FROM roadtrips WHERE id = bucket.roadtrip_id
+      - SELECT * FROM steps WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM accommodations WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM activities WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM photos WHERE "roadtripId" = bucket.roadtrip_id
+
+  shared_roadtrips:
+    parameters:
+      - SELECT "roadtripId" as roadtrip_id FROM roadtrip_members
+        WHERE "userId" = token_parameters.user_id AND status = 'ACCEPTED'
+    data:
+      - SELECT * FROM roadtrips WHERE id = bucket.roadtrip_id
+      - SELECT * FROM steps WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM accommodations WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM activities WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM photos WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM roadtrip_members WHERE "roadtripId" = bucket.roadtrip_id

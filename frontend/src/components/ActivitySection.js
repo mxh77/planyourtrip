@@ -1,0 +1,761 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TouchableOpacity, TextInput, Modal,
+  ScrollView, Alert, StyleSheet, Pressable, KeyboardAvoidingView, Platform,
+  Image, ActivityIndicator, Linking,
+} from 'react-native';
+import { useQuery } from '@powersync/react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, RADIUS, SPACING } from '../theme';
+import LocationPicker from './LocationPicker';
+import DateTimePickerModal from './DateTimePickerModal';
+import {
+  localCreateActivity,
+  localUpdateActivity,
+  localDeleteActivity,
+} from '../powersync/localWrite';
+import { validateActivityDates } from '../utils/dateValidation';
+
+const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
+const SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText';
+const A_FIELD_MASK = 'places.id,places.displayName,places.rating,places.photos,places.formattedAddress,places.location';
+const ACT_DEF_RADIUS = 1000;
+const LODGING_TYPES_A = ['hotel', 'motel', 'campground', 'rv_park', 'bed_and_breakfast', 'hostel'];
+const ACTIVITY_NEARBY = ['restaurant', 'cafe', 'museum', 'park', 'cultural_center', 'supermarket', 'grocery_store', 'hiking_area', 'transit_station'];
+const LEGACY_ACT = { tourist_attraction: 'cultural_center', shopping_mall: 'department_store', shopping_center: 'department_store' };
+
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function fmtDistance(km) {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${km.toFixed(1)} km`;
+}
+
+async function fetchNearbyActivities(lat, lng, types, radius) {
+  if (!types || types.length === 0 || !API_KEY) return [];
+  const resp = await fetch(NEARBY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': API_KEY, 'X-Goog-FieldMask': A_FIELD_MASK },
+    body: JSON.stringify({ includedTypes: types, maxResultCount: 8, locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } }, languageCode: 'fr' }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
+  return data.places ?? [];
+}
+
+async function searchActivitiesByText(query, lat, lng, radius) {
+  if (!query.trim() || !API_KEY) return [];
+  const body = {
+    textQuery: query,
+    languageCode: 'fr',
+    maxResultCount: 20,
+  };
+  if (lat && lng) {
+    body.locationBias = { circle: { center: { latitude: lat, longitude: lng }, radius: radius ?? 50000 } };
+  }
+  const resp = await fetch(SEARCH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': API_KEY, 'X-Goog-FieldMask': A_FIELD_MASK },
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
+  const places = data.places ?? [];
+  if (lat && lng) {
+    const maxKm = (radius ?? 50000) / 1000;
+    return places.filter(p =>
+      p.location?.latitude == null || calcDistance(lat, lng, p.location.latitude, p.location.longitude) <= maxKm
+    );
+  }
+  return places;
+}
+
+const ACTIVITY_TYPES = [
+  { key: 'ACTIVITY', label: 'Activité', icon: '🎯' },
+  { key: 'RESTAURANT', label: 'Restaurant', icon: '🍽️' },
+  { key: 'TRANSPORT', label: 'Transport', icon: '🚌' },
+  { key: 'SUPERMARKET', label: 'Supermarché', icon: '🛒' },
+  { key: 'HIKING', label: 'Randonnée', icon: '🥾' },
+  { key: 'OTHER', label: 'Autre', icon: '📌' },
+];
+
+const EMPTY_FORM = {
+  type: 'ACTIVITY',
+  name: '',
+  location: '',
+  latitude: null,
+  longitude: null,
+  startTime: '',
+  endTime: '',
+  notes: '',
+};
+
+export default function ActivitySection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate }) {
+  const { data: activities } = useQuery(
+    stepId
+      ? 'SELECT * FROM activities WHERE stepId = ? ORDER BY "order" ASC'
+      : 'SELECT * FROM activities WHERE 1=0',
+    stepId ? [stepId] : []
+  );
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState('manual');
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [timePickerTarget, setTimePickerTarget] = useState(null); // 'start' | 'end'
+
+  const hasCoords = !!(latitude && longitude);
+
+  useEffect(() => {
+    if (tab !== 'nearby' || !modalVisible || !hasCoords) return;
+    setNearbyLoading(true);
+    setNearbyError(null);
+    // Intersection des types settings avec le domaine activités, fallback sur tous les types activité
+    const fromSettings = allowedTypes && allowedTypes.length > 0
+      ? allowedTypes.map(t => LEGACY_ACT[t] ?? t).filter(t => !LODGING_TYPES_A.includes(t))
+      : [];
+    const types = fromSettings.length > 0 ? fromSettings : ACTIVITY_NEARBY;
+    const effectiveRadius = radius ?? ACT_DEF_RADIUS;
+    fetchNearbyActivities(latitude, longitude, types, effectiveRadius)
+      .then(p => setNearbyPlaces(p))
+      .catch(e => setNearbyError(e.message ?? 'Erreur réseau'))
+      .finally(() => setNearbyLoading(false));
+  }, [tab, modalVisible]);
+
+  useEffect(() => {
+    if (tab !== 'search' || !modalVisible) return;
+    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    const timer = setTimeout(() => {
+      setSearchLoading(true);
+      setSearchError(null);
+      searchActivitiesByText(searchQuery, latitude, longitude, radius ?? ACT_DEF_RADIUS)
+        .then(r => setSearchResults(r))
+        .catch(e => setSearchError(e.message ?? 'Erreur réseau'))
+        .finally(() => setSearchLoading(false));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery, tab, modalVisible]);
+
+  const openCreate = () => {
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+    setTab('manual');
+    setNearbyPlaces([]);
+    setSearchQuery('');
+    setSearchResults([]);
+    setModalVisible(true);
+  };
+
+  const openEdit = (a) => {
+    setForm({
+      type: a.type ?? 'ACTIVITY',
+      name: a.name ?? '',
+      location: a.location ?? '',
+      latitude: a.latitude ?? null,
+      longitude: a.longitude ?? null,
+      startTime: a.startTime ?? '',
+      endTime: a.endTime ?? '',
+      notes: a.notes ?? '',
+    });
+    setEditingId(a.id);
+    setTab('manual');
+    setModalVisible(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) {
+      Alert.alert('Champ requis', 'Le nom est obligatoire.');
+      return;
+    }
+    const dateErrors = validateActivityDates({
+      startTime: form.startTime.trim() || undefined,
+      endTime: form.endTime.trim() || undefined,
+      stepStart: stepStartDate,
+      stepEnd: stepEndDate,
+    });
+    if (dateErrors.length > 0) {
+      Alert.alert('Dates incohérentes', dateErrors.join('\n'));
+      return;
+    }
+    setSaving(true);
+    try {
+      const data = {
+        type: form.type,
+        name: form.name.trim(),
+        location: form.location.trim() || null,
+        latitude: form.latitude ?? null,
+        longitude: form.longitude ?? null,
+        startTime: form.startTime.trim() || null,
+        endTime: form.endTime.trim() || null,
+        notes: form.notes.trim() || null,
+      };
+      if (editingId) {
+        await localUpdateActivity(editingId, data);
+      } else {
+        await localCreateActivity(
+          { ...data, stepId, roadtripId, order: (activities?.length ?? 0) },
+          userId
+        );
+      }
+      setModalVisible(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = (activity) => {
+    Alert.alert(`Supprimer « ${activity.name} » ?`, null, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: () => localDeleteActivity(activity.id),
+      },
+    ]);
+  };
+
+  return (
+    <View style={styles.section}>
+      {/* Section header */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionLabel}>🎯 Activités</Text>
+        <TouchableOpacity onPress={openCreate} style={styles.addIconBtn}>
+          <MaterialIcons name="add" size={18} color={COLORS.accent} />
+        </TouchableOpacity>
+      </View>
+
+      {activities && activities.length > 0 ? (
+        <View style={styles.list}>
+          {activities.map((activity) => {
+            const typeConfig =
+              ACTIVITY_TYPES.find((t) => t.key === activity.type) ?? ACTIVITY_TYPES[3];
+            const hasTime = activity.startTime || activity.endTime;
+            return (
+              <TouchableOpacity key={activity.id} style={styles.row} onPress={() => openEdit(activity)} activeOpacity={0.75}>
+                <View style={styles.rowIconWrap}>
+                  <Text style={styles.rowIcon}>{typeConfig.icon}</Text>
+                </View>
+                <View style={styles.rowBody}>
+                  <Text style={styles.rowTitle} numberOfLines={1}>
+                    {activity.name}
+                  </Text>
+                  {hasTime ? (
+                    <Text style={styles.rowSub}>
+                      {activity.startTime ?? ''}
+                      {activity.startTime && activity.endTime ? ' → ' : ''}
+                      {activity.endTime ?? ''}
+                    </Text>
+                  ) : null}
+                  {activity.location && activity.location !== activity.name ? (
+                    <Text style={styles.rowSub} numberOfLines={1}>
+                      📍 {activity.location}
+                    </Text>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleDelete(activity)}
+                  style={styles.actionBtn}
+                >
+                  <MaterialIcons name="delete-outline" size={16} color={COLORS.error} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.emptyBtn} onPress={openCreate}>
+          <MaterialIcons name="add" size={16} color={COLORS.accent} />
+          <Text style={styles.emptyBtnText}>Ajouter une activité</Text>
+        </TouchableOpacity>
+      )}
+
+      <DateTimePickerModal
+        visible={timePickerVisible}
+        date={new Date()}
+        time={timePickerTarget === 'start' ? (form.startTime || null) : (form.endTime || null)}
+        label={timePickerTarget === 'start' ? 'Heure de début' : 'Heure de fin'}
+        minDate={null}
+        onConfirm={({ time }) => {
+          if (timePickerTarget === 'start') {
+            setForm((f) => ({ ...f, startTime: time ?? '' }));
+          } else {
+            setForm((f) => ({ ...f, endTime: time ?? '' }));
+          }
+          setTimePickerVisible(false);
+        }}
+        onCancel={() => setTimePickerVisible(false)}
+      />
+
+      {/* ─── Modal formulaire ─────────────────────────────────────────── */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => { setTimePickerVisible(false); setModalVisible(false); }}
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <Pressable style={styles.overlay} onPress={() => { setTimePickerVisible(false); setModalVisible(false); }}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.handle} />
+            <Text style={styles.sheetTitle}>
+              {editingId ? 'Modifier' : 'Ajouter'} une activité
+            </Text>
+
+            {hasCoords && !editingId && (
+              <View style={styles.tabBar}>
+                <TouchableOpacity
+                  style={[styles.tabBtn, tab === 'manual' && styles.tabBtnActive]}
+                  onPress={() => setTab('manual')}
+                >
+                  <Text style={[styles.tabBtnText, tab === 'manual' && styles.tabBtnTextActive]}>✏️ Manuel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tabBtn, tab === 'nearby' && styles.tabBtnActive]}
+                  onPress={() => setTab('nearby')}
+                >
+                  <Text style={[styles.tabBtnText, tab === 'nearby' && styles.tabBtnTextActive]}>📍 À proximité</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tabBtn, tab === 'search' && styles.tabBtnActive]}
+                  onPress={() => setTab('search')}
+                >
+                  <Text style={[styles.tabBtnText, tab === 'search' && styles.tabBtnTextActive]}>🔍 Chercher</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {tab === 'search' ? (
+              <View style={{ marginTop: SPACING.sm }}>
+                <View style={styles.searchInputRow}>
+                  <MaterialIcons name="search" size={18} color={COLORS.textDim} style={{ marginRight: SPACING.xs }} />
+                  <TextInput
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Musée, restaurant, parc…"
+                    placeholderTextColor={COLORS.textDim}
+                    autoFocus
+                    returnKeyType="search"
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => { setSearchQuery(''); setSearchResults([]); }}>
+                      <MaterialIcons name="close" size={16} color={COLORS.textDim} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 320 }}>
+                  {searchLoading ? (
+                    <ActivityIndicator color={COLORS.accent} style={{ marginVertical: SPACING.lg }} />
+                  ) : searchError ? (
+                    <Text style={styles.nearbyMsg}>{searchError}</Text>
+                  ) : searchQuery.trim() && searchResults.length === 0 ? (
+                    <Text style={styles.nearbyMsg}>Aucun résultat pour « {searchQuery} ».</Text>
+                  ) : !searchQuery.trim() ? (
+                    <Text style={styles.nearbyMsg}>Saisissez le nom d’un lieu pour le rechercher.</Text>
+                  ) : (
+                    [...searchResults]
+                      .sort((a, b) => {
+                        if (!latitude || !longitude) return 0;
+                        const da = a.location?.latitude != null ? calcDistance(latitude, longitude, a.location.latitude, a.location.longitude) : Infinity;
+                        const db = b.location?.latitude != null ? calcDistance(latitude, longitude, b.location.latitude, b.location.longitude) : Infinity;
+                        return da - db;
+                      })
+                      .map((place) => {
+                        const pName = place.photos?.[0]?.name;
+                        const pUri = pName ? `https://places.googleapis.com/v1/${pName}/media?maxWidthPx=200&key=${API_KEY}` : null;
+                        return (
+                          <TouchableOpacity
+                            key={place.id}
+                            style={styles.nearbyCard}
+                            onPress={() => {
+                              setForm((f) => ({
+                                ...f,
+                                name: place.displayName?.text ?? '',
+                                location: place.formattedAddress ?? '',
+                                latitude: place.location?.latitude ?? null,
+                                longitude: place.location?.longitude ?? null,
+                              }));
+                              setTab('manual');
+                            }}
+                            activeOpacity={0.75}
+                          >
+                            {pUri ? (
+                              <Image source={{ uri: pUri }} style={styles.nearbyCardPhoto} resizeMode="cover" />
+                            ) : (
+                              <View style={[styles.nearbyCardPhoto, styles.nearbyCardNoPhoto]}>
+                                <Text style={{ fontSize: 22 }}>📍</Text>
+                              </View>
+                            )}
+                            <View style={styles.nearbyCardBody}>
+                              <Text style={styles.nearbyCardName} numberOfLines={1}>{place.displayName?.text ?? '—'}</Text>
+                              {!!place.formattedAddress && <Text style={styles.nearbyCardAddr} numberOfLines={2}>{place.formattedAddress}</Text>}
+                              <View style={styles.nearbyCardMeta}>
+                                {place.rating != null && <Text style={styles.nearbyCardRating}>⭐ {place.rating}</Text>}
+                                {latitude && longitude && place.location?.latitude != null && (
+                                  <Text style={styles.nearbyCardDist}>📍 {fmtDistance(calcDistance(latitude, longitude, place.location.latitude, place.location.longitude))}</Text>
+                                )}
+                              </View>
+                            </View>
+                            <TouchableOpacity
+                              onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query_place_id=${place.id}&query=${encodeURIComponent(place.displayName?.text ?? '')}`)}
+                              style={styles.nearbyCardMapsBtn}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <MaterialIcons name="open-in-new" size={18} color={COLORS.accent} />
+                            </TouchableOpacity>
+                          </TouchableOpacity>
+                        );
+                      })
+                  )}
+                </ScrollView>
+              </View>
+            ) : tab === 'nearby' ? (
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380, marginTop: SPACING.sm }}>
+                {nearbyLoading ? (
+                  <ActivityIndicator color={COLORS.accent} style={{ marginVertical: SPACING.lg }} />
+                ) : nearbyError ? (
+                  <Text style={styles.nearbyMsg}>{nearbyError}</Text>
+                ) : nearbyPlaces.length === 0 ? (
+                  <Text style={styles.nearbyMsg}>Aucun lieu trouvé à proximité.</Text>
+                ) : (
+                  [...nearbyPlaces]
+                    .sort((a, b) => {
+                      if (!latitude || !longitude) return 0;
+                      const da = a.location?.latitude != null ? calcDistance(latitude, longitude, a.location.latitude, a.location.longitude) : Infinity;
+                      const db = b.location?.latitude != null ? calcDistance(latitude, longitude, b.location.latitude, b.location.longitude) : Infinity;
+                      return da - db;
+                    })
+                    .map((place) => {
+                    const pName = place.photos?.[0]?.name;
+                    const pUri = pName ? `https://places.googleapis.com/v1/${pName}/media?maxWidthPx=200&key=${API_KEY}` : null;
+                    return (
+                      <TouchableOpacity
+                        key={place.id}
+                        style={styles.nearbyCard}
+                        onPress={() => {
+                          setForm((f) => ({
+                            ...f,
+                            name: place.displayName?.text ?? '',
+                            location: place.formattedAddress ?? '',
+                            latitude: place.location?.latitude ?? null,
+                            longitude: place.location?.longitude ?? null,
+                          }));
+                          setTab('manual');
+                        }}
+                        activeOpacity={0.75}
+                      >
+                        {pUri ? (
+                          <Image source={{ uri: pUri }} style={styles.nearbyCardPhoto} resizeMode="cover" />
+                        ) : (
+                          <View style={[styles.nearbyCardPhoto, styles.nearbyCardNoPhoto]}>
+                            <Text style={{ fontSize: 22 }}>📍</Text>
+                          </View>
+                        )}
+                        <View style={styles.nearbyCardBody}>
+                          <Text style={styles.nearbyCardName} numberOfLines={1}>{place.displayName?.text ?? '—'}</Text>
+                          {!!place.formattedAddress && <Text style={styles.nearbyCardAddr} numberOfLines={2}>{place.formattedAddress}</Text>}
+                          <View style={styles.nearbyCardMeta}>
+                            {place.rating != null && <Text style={styles.nearbyCardRating}>⭐ {place.rating}</Text>}
+                            {latitude && longitude && place.location?.latitude != null && (
+                              <Text style={styles.nearbyCardDist}>📍 {fmtDistance(calcDistance(latitude, longitude, place.location.latitude, place.location.longitude))}</Text>
+                            )}
+                          </View>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query_place_id=${place.id}&query=${encodeURIComponent(place.displayName?.text ?? '')}`)}
+                          style={styles.nearbyCardMapsBtn}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <MaterialIcons name="open-in-new" size={18} color={COLORS.accent} />
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </ScrollView>
+            ) : (
+            <>
+            {/* Nom — hors ScrollView */}
+            <Text style={styles.label}>Nom *</Text>
+            <TextInput
+              style={styles.input}
+              value={form.name}
+              onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+              placeholder="Visite du Louvre…"
+              placeholderTextColor={COLORS.textDim}
+            />
+
+            {/* Lieu — hors ScrollView pour éviter FlatList imbriquée */}
+            <LocationPicker
+              label="Lieu"
+              initialValue={form.location}
+              onSelect={({ location, latitude, longitude }) => setForm((f) => ({ ...f, location, latitude: latitude ?? null, longitude: longitude ?? null }))}
+            />
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
+
+              {/* Type */}
+              <Text style={styles.label}>Type</Text>
+              <View style={styles.chipRow}>
+                {ACTIVITY_TYPES.map((t) => (
+                  <TouchableOpacity
+                    key={t.key}
+                    style={[styles.chip, form.type === t.key && styles.chipActive]}
+                    onPress={() => setForm((f) => ({ ...f, type: t.key }))}
+                  >
+                    <Text style={styles.chipIcon}>{t.icon}</Text>
+                    <Text
+                      style={[styles.chipLabel, form.type === t.key && styles.chipLabelActive]}
+                    >
+                      {t.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Horaires */}
+              <View style={styles.timeRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Début</Text>
+                  <TouchableOpacity
+                    style={styles.dateBtn}
+                    onPress={() => { setTimePickerTarget('start'); setTimePickerVisible(true); }}
+                  >
+                    <Text style={form.startTime ? styles.dateBtnText : styles.dateBtnPlaceholder}>
+                      {form.startTime || '09:00'}
+                    </Text>
+                    <MaterialIcons name="schedule" size={16} color={COLORS.textDim} />
+                  </TouchableOpacity>
+                </View>
+                <View style={{ width: SPACING.sm }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Fin</Text>
+                  <TouchableOpacity
+                    style={styles.dateBtn}
+                    onPress={() => { setTimePickerTarget('end'); setTimePickerVisible(true); }}
+                  >
+                    <Text style={form.endTime ? styles.dateBtnText : styles.dateBtnPlaceholder}>
+                      {form.endTime || '12:00'}
+                    </Text>
+                    <MaterialIcons name="schedule" size={16} color={COLORS.textDim} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Notes */}
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[styles.input, styles.inputMulti]}
+                value={form.notes}
+                onChangeText={(v) => setForm((f) => ({ ...f, notes: v }))}
+                placeholder="Infos pratiques, réservation…"
+                placeholderTextColor={COLORS.textDim}
+                multiline
+              />
+
+              <TouchableOpacity
+                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                <Text style={styles.saveBtnText}>
+                  {saving ? 'Enregistrement…' : 'Enregistrer'}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+            </>
+            )}
+          </Pressable>
+        </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  section: { marginBottom: SPACING.lg },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+  },
+  sectionLabel: {
+    color: COLORS.textDim,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  addIconBtn: { padding: SPACING.xs },
+  list: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: SPACING.sm,
+  },
+  rowIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.accentDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowIcon: { fontSize: 16 },
+  rowBody: { flex: 1, gap: 1 },
+  rowTitle: { color: COLORS.text, fontSize: 14, fontWeight: '600' },
+  rowSub: { color: COLORS.textMuted, fontSize: 12 },
+  actionBtn: { padding: SPACING.xs },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: COLORS.accent,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+  },
+  emptyBtnText: { color: COLORS.accent, fontSize: 14, fontWeight: '600' },
+  // Modal
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    borderTopWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xl,
+    maxHeight: '85%',
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginBottom: SPACING.md,
+  },
+  sheetTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: SPACING.md,
+  },
+  label: {
+    color: COLORS.textDim,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: SPACING.xs,
+    marginTop: SPACING.sm,
+  },
+  input: {
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    color: COLORS.text,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  inputMulti: { height: 72, textAlignVertical: 'top' },
+  dateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  dateBtnText: { color: COLORS.text, fontSize: 15, flex: 1 },
+  dateBtnPlaceholder: { color: COLORS.textDim, fontSize: 15, flex: 1 },
+  timeRow: { flexDirection: 'row' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginBottom: SPACING.xs },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: SPACING.xs + 2,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.bg,
+  },
+  chipActive: { borderColor: COLORS.accent, backgroundColor: COLORS.accentDim },
+  chipIcon: { fontSize: 14 },
+  chipLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
+  chipLabelActive: { color: COLORS.accent },
+  saveBtn: {
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    alignItems: 'center',
+    marginTop: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnText: { color: COLORS.bg, fontSize: 15, fontWeight: '700' },
+  // Tabs
+  tabBar: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
+  tabBtn: { flex: 1, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+  tabBtnActive: { backgroundColor: COLORS.accentDim, borderColor: COLORS.accent },
+  tabBtnText: { color: COLORS.textDim, fontSize: 13, fontWeight: '600' },
+  tabBtnTextActive: { color: COLORS.accent },
+  // Nearby cards
+  nearbyMsg: { color: COLORS.textMuted, fontSize: 13, textAlign: 'center', marginTop: SPACING.lg },
+  nearbyCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.sm + 2, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  nearbyCardPhoto: { width: 64, height: 64, borderRadius: RADIUS.sm },
+  nearbyCardNoPhoto: { backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center' },
+  nearbyCardBody: { flex: 1, gap: 2 },
+  nearbyCardName: { color: COLORS.text, fontSize: 13, fontWeight: '600' },
+  nearbyCardAddr: { color: COLORS.textMuted, fontSize: 11 },
+  nearbyCardMeta: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', marginTop: 1 },
+  nearbyCardRating: { color: COLORS.textDim, fontSize: 11 },
+  nearbyCardDist: { color: COLORS.textDim, fontSize: 11 },
+  nearbyCardMapsBtn: { padding: SPACING.xs, alignSelf: 'center' },
+  searchInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs, marginBottom: SPACING.sm },
+  searchInput: { flex: 1, color: COLORS.text, fontSize: 14, paddingVertical: 2 },
+});

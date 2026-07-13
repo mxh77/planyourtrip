@@ -1,0 +1,125 @@
+name: Delivery Agent
+run-name: "Delivery Agent - PR #${{ github.event.inputs.pr_number }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Numéro de la Pull Request à déployer en preview"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+jobs:
+  deploy-preview:
+    runs-on: [self-hosted]
+
+    steps:
+      - name: Récupérer les infos de la PR
+        id: pr_info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_DATA=$(curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ inputs.pr_number }}")
+          BRANCH=$(echo "$PR_DATA" | jq -r '.head.ref')
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Branche PR : $BRANCH"
+
+      - name: Nettoyer le workspace du runner
+        run: |
+          git reset --hard HEAD || true
+          git clean -fd || true
+
+      - name: Checkout de la branche PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr_info.outputs.branch }}
+
+      - name: Setup clé SSH CT111
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CT111_SSH_KEY }}" > ~/.ssh/ct111_key
+          chmod 600 ~/.ssh/ct111_key
+
+      - name: Déployer la PR en preview sur CT111
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CT111_HOST: ${{ secrets.CT111_HOST }}
+        run: |
+          ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
+            set -e
+            cd /opt/MonPetitRoadtrip-preview
+            git reset --hard HEAD || true
+            git clean -fd || true
+            git remote set-url origin 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}'
+            git fetch origin
+            git checkout -B '${{ steps.pr_info.outputs.branch }}' 'origin/${{ steps.pr_info.outputs.branch }}'
+            git reset --hard 'origin/${{ steps.pr_info.outputs.branch }}'
+            git remote set-url origin 'https://github.com/${{ github.repository }}'
+            echo '\u2714 Code PR checké out'
+
+            # Backend (port 5111)
+            cd backend
+            npm ci
+            npx prisma generate
+            pm2 restart monpetitroadtrip-preview --update-env || pm2 start src/index.js --name monpetitroadtrip-preview --cwd /opt/MonPetitRoadtrip-preview/backend
+            echo '\u2714 Backend preview redémarré sur port 5111'
+
+            # Frontend (port 6111)
+            cd ../frontend/web
+            if [ ! -f .env ]; then
+              echo 'VITE_GOOGLE_PLACES_API_KEY=${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}' > .env
+              echo 'VITE_GOOGLE_MAP_ID=${{ secrets.VITE_GOOGLE_MAP_ID }}' >> .env
+              echo '⚠ .env frontend preview recréé depuis les secrets GitHub'
+            fi
+            npm ci
+            VITE_API_URL=http://192.168.1.111:6111/api VITE_PREVIEW_PR_NUMBER='${{ inputs.pr_number }}' npm run build
+            echo '\u2714 Frontend preview buildé'
+
+            nginx -t && systemctl reload nginx
+            echo '\u2714 Nginx rechargé'
+          "
+
+      - name: Commenter la PR avec le lien preview
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fsSL \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ inputs.pr_number }}/comments" \
+            -d '{
+              "body": "## 🚀 Preview déployée\n\n✅ La PR #${{ inputs.pr_number }} est disponible sur :\n\n🔗 **http://192.168.1.111:6111**\n\n- Backend API : port `5111` (interne)\n\n> Le preview est écrasé à chaque nouveau déploiement."
+            }'
+
+      - name: Déclencher les code reviews si le déploiement a échoué
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "⚠️ Déploiement en échec — déclenchement des code reviews sur la PR #${{ inputs.pr_number }}"
+          curl -fsSL \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/code-reviews.yml/dispatches" \
+            -d "{\"ref\":\"master\",\"inputs\":{\"pr_number\":\"${{ inputs.pr_number }}\"}}"
+
+          curl -fsSL \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ inputs.pr_number }}/comments" \
+            -d '{"body":"## ❌ Déploiement Preview échoué\n\nLe déploiement de la PR #${{ inputs.pr_number }} a échoué.\n\n🔍 **Les agents de code review ont été déclenchés automatiquement** pour analyser les fichiers et identifier les problèmes potentiels."}'

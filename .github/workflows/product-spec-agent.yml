@@ -1,0 +1,88 @@
+name: Product Spec Agent
+run-name: "Product Spec Agent - Issue #${{ github.event.inputs.issue_number || github.event.issue.number }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Numéro de l'issue GitHub"
+        required: false
+        type: string
+      ai_model:
+        description: "Modèle IA à utiliser"
+        required: false
+        type: string
+        default: deepseek-v4-flash
+      auto_chain:
+        description: "Déclencher automatiquement le feature-dev-agent après la spec"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: write
+
+jobs:
+  call-agent:
+    if: github.event_name == 'workflow_dispatch'
+    uses: mxh77/dev-agents-core/.github/workflows/product-spec-agent.yml@main
+    with:
+      project_name: monpetitroadtrip
+      base_branch: master
+      trigger_label: product-spec-agent
+      ai_model: ${{ inputs.ai_model || 'deepseek-v4-flash' }}
+      issue_number: ${{ inputs.issue_number || github.event.issue.number || '' }}
+      auto_chain: ${{ inputs.auto_chain || false }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEV_AGENTS_CORE_TOKEN: ${{ secrets.DEV_AGENTS_CORE_TOKEN }}
+
+  generate-acceptance-criteria:
+    name: Générer les critères d'acceptation
+    needs: call-agent
+    if: always() && (needs.call-agent.result == 'success')
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Identifier et checkout la branche du spec
+        env:
+          ISSUE_NUMBER: ${{ github.event.inputs.issue_number || github.event.issue.number }}
+        run: |
+          git fetch --all
+          BRANCH="branch_issue_${ISSUE_NUMBER}"
+          if ! git branch -r | grep -q "origin/${BRANCH}"; then
+            echo "❌ Branche ${BRANCH} introuvable pour issue ${ISSUE_NUMBER}"
+            exit 1
+          fi
+          echo "✅ Branche trouvée : $BRANCH"
+          git checkout "$BRANCH"
+          git pull origin "$BRANCH"
+          echo "SPEC_BRANCH=$BRANCH" >> $GITHUB_ENV
+
+      - name: Générer acceptance_criteria.json
+        env:
+          ISSUE_NUMBER: ${{ github.event.inputs.issue_number || github.event.issue.number }}
+        run: python3 .github/agents/generate_ac.py "$ISSUE_NUMBER"
+
+      - name: Commiter les critères d'acceptation
+        env:
+          ISSUE_NUMBER: ${{ github.event.inputs.issue_number || github.event.issue.number }}
+        run: |
+          git config user.name "product-spec-agent"
+          git config user.email "product-spec-agent@monpetitroadtrip.app"
+          git add .ai/issues/
+          if git diff --staged --quiet; then
+            echo "Aucun critère à commiter."
+          else
+            git commit -m "feat(spec): génération des critères d'acceptation pour l'issue #${ISSUE_NUMBER}"
+            git push origin "$SPEC_BRANCH"
+          fi

@@ -1,0 +1,96 @@
+name: Deploy Production
+run-name: "Deploy Production — master"
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: "Message de déploiement (pour les logs)"
+        required: false
+        type: string
+        default: "deploy: production via DevHub"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted]
+    steps:
+      - name: Setup clé SSH CT111
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CT111_SSH_KEY }}" > ~/.ssh/ct111_key
+          chmod 600 ~/.ssh/ct111_key
+
+      - name: Pull master on server
+        env:
+          CT111_HOST: ${{ secrets.CT111_HOST }}
+        run: |
+          ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
+            git -C /opt/MonPetitRoadtrip remote set-url origin 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mxh77/MonPetitRoadtrip.git'
+            git -C /opt/MonPetitRoadtrip fetch origin
+            git -C /opt/MonPetitRoadtrip reset --hard origin/master
+            echo '✓ Code mis à jour sur origin/master'
+            git -C /opt/MonPetitRoadtrip log --oneline -1
+          "
+
+      - name: Install backend dependencies
+        env:
+          CT111_HOST: ${{ secrets.CT111_HOST }}
+        run: |
+          ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
+            cd /opt/MonPetitRoadtrip/backend
+            npm ci
+            npx prisma generate
+            echo '✓ Dépendances backend installées'
+          "
+
+      - name: Restart backend (PM2)
+        env:
+          CT111_HOST: ${{ secrets.CT111_HOST }}
+        run: |
+          ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
+            pm2 restart monpetitroadtrip-api --update-env
+            echo '✓ PM2 redémarré'
+          "
+
+      - name: Build frontend
+        env:
+          CT111_HOST: ${{ secrets.CT111_HOST }}
+          VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
+          VITE_GOOGLE_MAP_ID: ${{ secrets.VITE_GOOGLE_MAP_ID }}
+        run: |
+          ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
+            cd /opt/MonPetitRoadtrip/frontend/web
+            # S'assurer que le .env est présent (non versionné, créé manuellement au premier déploiement)
+            if [ ! -f .env ]; then
+              echo 'VITE_GOOGLE_PLACES_API_KEY=${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}' > .env
+              echo 'VITE_GOOGLE_MAP_ID=${{ secrets.VITE_GOOGLE_MAP_ID }}' >> .env
+              echo '⚠ .env frontend recréé depuis les secrets GitHub'
+            fi
+            npm ci
+            npm run build
+            cp -r dist/* /var/www/monpetitroadtrip/ 2>/dev/null || true
+            echo '✓ Frontend buildé et déployé'
+          "
+
+      - name: Reload nginx
+        env:
+          CT111_HOST: ${{ secrets.CT111_HOST }}
+        run: |
+          ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
+            nginx -t && systemctl reload nginx
+            echo '✓ Nginx rechargé'
+          "
+
+      - name: Summary
+        env:
+          CT111_HOST: ${{ secrets.CT111_HOST }}
+        run: |
+          ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
+            echo '✅ Déploiement production terminé'
+            echo 'Message : ${{ inputs.commit_message }}'
+            echo 'Commit  : '\$(git -C /opt/MonPetitRoadtrip rev-parse --short HEAD)
+            pm2 list | grep monpetitroadtrip
+          "

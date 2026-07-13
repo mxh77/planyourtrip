@@ -1,0 +1,466 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         String     @id @default(cuid())
+  email      String     @unique
+  name       String?
+  avatarUrl  String?
+  password   String?
+  provider   String     @default("email")
+  providerId String?
+  isAdmin    Boolean    @default(false)
+  pushToken  String?
+  emailVerifiedAt          DateTime?
+  emailVerificationToken   String?   @unique
+  emailVerificationExpires DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  roadtrips           Roadtrip[]
+  steps               Step[]
+  accommodations      Accommodation[]
+  activities          Activity[]
+  photos              Photo[]
+  refreshTokens       RefreshToken[]
+  memberships         RoadtripMember[]
+  betaFeedbacks       BetaFeedback[]
+  suggestions         Suggestion[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model Roadtrip {
+  id            String         @id @default(cuid())
+  title         String
+  startDate     DateTime?
+  endDate       DateTime?
+  coverPhotoUrl String?
+  status        RoadtripStatus @default(DRAFT)
+  settings      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps         Step[]
+  members       RoadtripMember[]
+
+  @@map("roadtrips")
+}
+
+enum RoadtripStatus {
+  DRAFT
+  PLANNED
+  ONGOING
+  COMPLETED
+}
+
+model Step {
+  id            String         @id @default(cuid())
+  name          String
+  location      String?
+  latitude      Float?
+  longitude     Float?
+  startDate     DateTime?
+  endDate       DateTime?
+  arrivalTime   String?
+  departureTime String?
+  notes         String?
+  photoUrl      String?
+  order                 Int            @default(0)
+  routeDurationSeconds  Int?
+  routeDistanceMeters   Int?
+  routeEncodedPolyline  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  roadtripId    String
+  userId        String
+  roadtrip      Roadtrip       @relation(fields: [roadtripId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accommodations Accommodation[]
+  activities    Activity[]
+
+  @@map("steps")
+}
+
+model Accommodation {
+  id            String        @id @default(cuid())
+  type          AccomType     @default(HOTEL)
+  name          String
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  checkIn       DateTime?
+  checkOut      DateTime?
+  bookingRef    String?
+  bookingUrl    String?
+  pricePerNight Float?
+  currency      String        @default("EUR")
+  notes         String?
+  status        BookingStatus @default(PLANNED)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  stepId        String
+  userId        String
+  roadtripId    String?
+  step          Step          @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accommodations")
+}
+
+enum AccomType {
+  HOTEL
+  CAMPING
+  PARKING
+  OTHER
+}
+
+model Activity {
+  id         String        @id @default(cuid())
+  type       ActivityType  @default(OTHER)
+  name       String
+  location   String?
+  latitude   Float?
+  longitude  Float?
+  startTime  DateTime?
+  endTime    DateTime?
+  bookingRef String?
+  bookingUrl String?
+  cost       Float?
+  currency   String        @default("EUR")
+  notes      String?
+  status     BookingStatus @default(PLANNED)
+  order      Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  stepId     String
+  userId     String
+  roadtripId String?
+  step       Step          @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+enum ActivityType {
+  TRANSPORT
+  ACTIVITY
+  RESTAURANT
+  SUPERMARKET
+  HIKING
+  OTHER
+}
+
+enum BookingStatus {
+  PLANNED
+  BOOKED
+  DONE
+  CANCELLED
+}
+
+model Photo {
+  id              String         @id @default(cuid())
+  url             String
+  cloudinaryId    String?
+  name            String?
+  caption         String?
+  isCover         Boolean        @default(false)
+  takenAt         DateTime?
+  createdAt       DateTime       @default(now())
+  userId          String
+  roadtripId      String?
+  stepId          String?
+  accommodationId String?
+  activityId      String?
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("photos")
+}
+
+model RoadtripMember {
+  id         String             @id @default(cuid())
+  role       RoadtripMemberRole @default(VIEWER)
+  status     InviteStatus       @default(PENDING)
+  invitedAt  DateTime           @default(now())
+  joinedAt   DateTime?
+  roadtripId String
+  userId     String?
+  email      String
+  roadtrip   Roadtrip           @relation(fields: [roadtripId], references: [id], onDelete: Cascade)
+  user       User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([roadtripId, email])
+  @@map("roadtrip_members")
+}
+
+enum RoadtripMemberRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum FeedbackType {
+  BUG
+  SUGGESTION
+  QUESTION
+  AUTRE
+
+  @@map("feedback_type")
+}
+
+model BetaFeedback {
+  id          String       @id @default(cuid())
+  text        String
+  audioUrl    String?
+  photoUrls   String[]
+  type        FeedbackType @default(AUTRE)
+  isHandled   Boolean      @default(false)
+  handledAt   DateTime?
+  createdAt   DateTime     @default(now())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("beta_feedbacks")
+}
+
+enum SuggestionCategory {
+  bug
+  evolution
+  question
+  other
+}
+
+enum SuggestionStatus {
+  pending
+  done
+}
+
+model Suggestion {
+  id                String             @id @default(cuid())
+  userId            String
+  content           String
+  category          SuggestionCategory @default(other)
+  status            SuggestionStatus   @default(pending)
+  files             Json               @default("[]")
+  githubIssueNumber Int?
+  githubIssueUrl    String?
+  createdAt         DateTime           @default(now())
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("suggestions")
+}
+
+enum WorkflowState {
+  IDLE
+  SPEC_RUNNING
+  SPEC_DONE
+  DEV_RUNNING
+  DEV_DONE
+  REVIEW_PENDING
+  REVIEW_RUNNING
+  REVIEW_OK
+  FIX_RUNNING
+  PREVIEW_RUNNING
+  PREVIEW_OK
+  QA_RUNNING
+  QA_OK
+  MERGE_READY
+  MERGED
+  DEPLOY_RUNNING
+  DEPLOYED
+  STUCK
+  PAUSED
+}
+
+model DevHubWorkflow {
+  id                Int           @id @default(autoincrement())
+  issueNumber       Int           @unique
+  state             WorkflowState @default(IDLE)
+  autoMode          Boolean       @default(false)
+  retryCount        Int           @default(0)
+  totalTransitions  Int           @default(0)
+  lockedUntil       DateTime?
+  lastTransitionAt  DateTime      @default(now())
+  stuckReason       String?
+  prNumber          Int?
+  metadata          Json          @default("{}")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("devhub_workflows")
+}
+
+model GithubRun {
+  id           BigInt    @id                    // GitHub run id (numérique)
+  name         String?                          // ex: "Feature Dev Agent"
+  displayTitle String?                          // ex: "Feature Dev Agent — #20 Fix auth"
+  path         String?                          // ex: ".github/workflows/feature-dev-agent.yml"
+  headBranch   String?                          // ex: "feature-dev/issue-20-fix-auth"
+  status       String                           // queued | in_progress | completed
+  conclusion   String?                          // success | failure | cancelled | skipped | null
+  htmlUrl      String?
+  createdAt    DateTime
+  updatedAt    DateTime
+  runStartedAt DateTime?
+  event        String?                          // push | pull_request | workflow_dispatch
+  rawJson      Json                             // payload complet GitHub (pour éviter les allers-retours)
+  syncedAt     DateTime  @default(now())        // quand on a inséré/mis à jour la ligne
+  runType      String?                          // spec | dev | review | fix | preview | qa | prod
+  issueNumber  Int?                             // issue liée (déduit du headBranch ou du display_title)
+  headSha      String?                          // SHA de HEAD à la fin du run
+  commits      GithubRunCommit[]
+
+  @@map("github_runs")
+}
+
+model GithubRunCommit {
+  id      Int       @id @default(autoincrement())
+  runId   BigInt
+  run     GithubRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sha     String
+  message String?
+  author  String?
+  committedAt DateTime?
+
+  @@unique([runId, sha])
+  @@map("github_run_commits")
+}
+
+model Itinerary {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  waypoints   Waypoint[]
+  messages    ChatMessage[]
+  preferences String?   // JSON
+  totalDistance Float?
+  totalDuration Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("itineraries")
+}
+
+model Waypoint {
+  id            String    @id @default(cuid())
+  itineraryId   String
+  itinerary     Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  name          String
+  address       String?
+  lat           Float
+  lng           Float
+  order         Int
+  nights        Int       @default(1)
+  checkin       String?
+  checkout      String?
+  departureTime String?
+  arrivalTime   String?
+  notes         String?
+  selectedCamping String?
+  campings      String?
+  trails        String?
+  trailResults  String?
+  pois          String?
+  p4n           String?
+  weather       String?
+  distanceFromPrev Float?
+  durationFromPrev Int?
+  routePolyline    String?
+  activeOverlays   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("waypoints")
+}
+
+model ChatMessage {
+  id          String    @id @default(cuid())
+  itineraryId String?
+  itinerary   Itinerary? @relation(fields: [itineraryId], references: [id], onDelete: SetNull)
+  role        String
+  content     String
+  toolCalls   String?
+  createdAt   DateTime  @default(now())
+
+  @@map("chat_messages")
+}
+
+model SavedPlace {
+  id          String    @id @default(cuid())
+  placeId     String    @unique
+  name        String
+  address     String?
+  lat         Float
+  lng         Float
+  type        String
+  rating      Float?
+  data        String
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@map("saved_places")
+}
+
+model UserPreferences {
+  id          String    @id @default("default")
+  groupSize   Int       @default(2)
+  budget      String?
+  vehicleType String?
+  interests   String?
+  language    String    @default("fr")
+  mapFilter   String?
+  updatedAt   DateTime  @updatedAt
+
+  @@map("user_preferences")
+}
+
+model TodoItem {
+  id        String    @id @default(cuid())
+  text      String
+  done      Boolean   @default(false)
+  category  String?
+  priority  Int       @default(0)
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("todo_items")
+}

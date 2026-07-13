@@ -1,0 +1,58 @@
+name: Code Review Backend (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      ai_model:
+        required: false
+        type: string
+        default: deepseek-v4-flash
+      files_filter:
+        description: "Comma-separated list of files to restrict the review to (empty = all files)"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      OPENAI_API_KEY:
+        required: false
+      ANTHROPIC_API_KEY:
+        required: false
+      DEEPSEEK_API_KEY:
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review-backend:
+    runs-on: [self-hosted]
+    steps:
+      - name: Nettoyer répertoires parasites
+        run: rm -rf dev-agents-core || true
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create event file
+        run: |
+          echo '{"inputs":{"pr_number":"${{ inputs.pr_number }}"}}' > /tmp/review-backend-event.json
+
+      - name: Run review
+        env:
+          GITHUB_EVENT_PATH: /tmp/review-backend-event.json
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          AI_MODEL: ${{ inputs.ai_model }}
+          FILES_FILTER: ${{ inputs.files_filter }}
+        run: python3 .github/agents/code_review_backend.py

@@ -1,0 +1,38 @@
+{
+  "name": "mon-petit-roadtrip-api",
+  "version": "1.0.0",
+  "description": "Backend API for Mon Petit Roadtrip",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "axios": "^1.18.1",
+    "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mammoth": "^1.12.0",
+    "morgan": "^1.11.0",
+    "multer": "^2.2.0",
+    "nodemailer": "^8.0.2",
+    "openai": "^6.46.0",
+    "pdf-parse": "^2.4.5",
+    "socket.io": "^4.8.3",
+    "uuid": "^14.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^5.22.0"
+  }
+}

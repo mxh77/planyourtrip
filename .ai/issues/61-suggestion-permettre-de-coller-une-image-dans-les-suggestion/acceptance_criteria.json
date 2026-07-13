@@ -1,0 +1,94 @@
+{
+  "issue_number": 61,
+  "generated_at": "2026-05-10T05:01:01.541959+00:00",
+  "criteria": [
+    {
+      "id": "AC-01",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "L’utilisateur peut coller une image (Ctrl+V) dans la zone de suggestion.",
+      "expected": "L’utilisateur peut coller une image (Ctrl+V) dans la zone de suggestion.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-02",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Une miniature de l’image collée apparaît immédiatement, avec une option de suppression.",
+      "expected": "Une miniature de l’image collée apparaît immédiatement, avec une option de suppression.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-03",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Le collage n’interfère pas avec le texte saisi (sauf si l’image est collée seule).",
+      "expected": "Le collage n’interfère pas avec le texte saisi (sauf si l’image est collée seule).",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-04",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Les formats acceptés (PNG, JPEG, GIF, WebP, SVG) sont validés.",
+      "expected": "Les formats acceptés (PNG, JPEG, GIF, WebP, SVG) sont validés.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-05",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "La taille maximale (5 Mo) est vérifiée côté client.",
+      "expected": "La taille maximale (5 Mo) est vérifiée côté client.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-06",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Les images collées sont envoyées avec le formulaire lors de la soumission.",
+      "expected": "Les images collées sont envoyées avec le formulaire lors de la soumission.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-07",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "En cas d’erreur (format/taille), un message explicite est affiché.",
+      "expected": "En cas d’erreur (format/taille), un message explicite est affiché.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-08",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Fonctionne sur Chrome, Firefox, Safari (dernières versions) et Edge.",
+      "expected": "Fonctionne sur Chrome, Firefox, Safari (dernières versions) et Edge.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-09",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Le comportement du bouton “Ajouter” existant reste inchangé.",
+      "expected": "Le comportement du bouton “Ajouter” existant reste inchangé.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-10",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Aucun crash ni plantage lors de collage rapide multiple.",
+      "expected": "Aucun crash ni plantage lors de collage rapide multiple.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-11",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Documentation mise à jour (aide en ligne, tooltip éventuel “Vous pouvez également coller une image depuis votre presse-papier”).",
+      "expected": "Documentation mise à jour (aide en ligne, tooltip éventuel “Vous pouvez également coller une image depuis votre presse-papier”).",
+      "bug_category": "visual_bug"
+    }
+  ]
+}

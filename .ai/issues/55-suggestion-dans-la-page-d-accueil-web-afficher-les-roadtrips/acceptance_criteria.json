@@ -1,0 +1,102 @@
+{
+  "issue_number": 55,
+  "generated_at": "2026-05-09T08:23:45.221303+00:00",
+  "criteria": [
+    {
+      "id": "AC-01",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Le code a été modifié dans le composant / template de la page d’accueil uniquement.",
+      "expected": "Le code a été modifié dans le composant / template de la page d’accueil uniquement.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-02",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "La grille affiche bien 2 colonnes sur desktop (≥ breakpoint choisi).",
+      "expected": "La grille affiche bien 2 colonnes sur desktop (≥ breakpoint choisi).",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-03",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Les breakpoints responsive (mobile, tablette) restent inchangés et fonctionnent.",
+      "expected": "Les breakpoints responsive (mobile, tablette) restent inchangés et fonctionnent.",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-04",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Les images des cartes s’adaptent sans distorsion.",
+      "expected": "Les images des cartes s’adaptent sans distorsion.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-05",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Le texte des cartes n’est pas coupé ou débordant.",
+      "expected": "Le texte des cartes n’est pas coupé ou débordant.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-06",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Aucun composant partagé n’a été impacté.",
+      "expected": "Aucun composant partagé n’a été impacté.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-07",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Les tests visuels (captures d’écran) sont mis à jour si nécessaire.",
+      "expected": "Les tests visuels (captures d’écran) sont mis à jour si nécessaire.",
+      "bug_category": "visual_bug"
+    },
+    {
+      "id": "AC-08",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Revue de code effectuée par un pair.",
+      "expected": "Revue de code effectuée par un pair.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-09",
+      "category": "validation",
+      "priority": "haute",
+      "criterion": "Validation UX/Design avant mise en production (si applicable).",
+      "expected": "Validation UX/Design avant mise en production (si applicable).",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-10",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "Navigateur desktop (1920×1080, 1366×768)",
+      "expected": "les roadtrips doivent s’afficher sur 2 colonnes, bien espacés.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-11",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "Tablette (768-992px)",
+      "expected": "2 colonnes si le breakpoint le permet, ou 1 colonne si déjà défini autrement.",
+      "bug_category": "functional_bug"
+    },
+    {
+      "id": "AC-12",
+      "category": "fonctionnel",
+      "priority": "haute",
+      "criterion": "Mobile (320-480px) : 1 colonne.",
+      "expected": "Mobile (320-480px) : 1 colonne.",
+      "bug_category": "visual_bug"
+    }
+  ]
+}

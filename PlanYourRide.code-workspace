@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../monpetitroadtrip_mobile"
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "disabled"
+	}
+}

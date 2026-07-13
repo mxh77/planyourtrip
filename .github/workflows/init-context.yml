@@ -1,0 +1,64 @@
+name: Init Context
+run-name: "Init Context — Mise à jour du contexte codebase"
+
+on:
+  workflow_dispatch:
+    inputs:
+      ai_model:
+        description: "Modèle IA à utiliser"
+        required: false
+        type: string
+        default: deepseek-v4-flash
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  init-context:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: [self-hosted]
+
+    steps:
+      - name: Nettoyer répertoires parasites
+        run: rm -rf dev-agents-core || true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout dev-agents-core
+        uses: actions/checkout@v4
+        with:
+          repository: mxh77/dev-agents-core
+          path: dev-agents-core
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run init context agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          AI_MODEL: ${{ github.event.inputs.ai_model || 'deepseek-v4-flash' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 dev-agents-core/tools/init_context_agent.py
+
+      - name: Commit context
+        run: |
+          git config user.name "init-context-agent"
+          git config user.email "init-context-agent@monpetitroadtrip.app"
+          git add .ai/
+          if git diff --staged --quiet; then
+            echo "Aucun contexte à mettre à jour."
+          else
+            git commit -m "chore(context): mise à jour automatique du contexte codebase"
+            git push origin master
+          fi

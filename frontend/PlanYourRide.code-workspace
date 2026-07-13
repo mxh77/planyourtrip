@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../Users/maxim/Desktop/Max/GIT/Cavalcade"
+		},
+		{
+			"path": "../../Users/maxim/Desktop/Max/GIT/dev-agents-core"
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "disabled",
+		"chat.tools.terminal.autoApprove": {
+			"/^cd \"C:/MonPetitRoadtrip\" && bash analyze_run\\.sh 6 full 2>&1$/": {
+				"approve": true,
+				"matchCommandLine": true
+			}
+		}
+	}
+}

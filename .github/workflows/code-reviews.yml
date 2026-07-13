@@ -1,0 +1,94 @@
+name: Code Reviews (Backend + Frontend)
+run-name: "Code Reviews — PR #${{ github.event.pull_request.number || github.event.inputs.pr_number }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Numéro de la PR à reviewer"
+        required: true
+        type: string
+      review_model:
+        description: "Modèle IA pour la review"
+        required: false
+        type: choice
+        default: deepseek-v4-flash
+        options:
+          - deepseek-v4-flash
+          - gpt-4.1
+          - claude-sonnet-4-6
+      fix_model:
+        description: "Modèle IA pour le fix (si bloquants)"
+        required: false
+        type: choice
+        default: deepseek-v4-flash
+        options:
+          - deepseek-v4-flash
+          - claude-sonnet-4-6
+          - gpt-4.1
+      files_filter:
+        description: "Fichiers à reviewer (séparés par virgule, vide = tous)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-branch:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted]
+    outputs:
+      should-review: ${{ steps.check.outputs.should-review }}
+      pr-number: ${{ steps.check.outputs.pr-number }}
+    steps:
+      - name: Resolve PR number and check eligibility
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.inputs.pr_number }}"
+          echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "should-review=true" >> $GITHUB_OUTPUT
+          echo "Review déclenchée pour PR #$PR_NUMBER"
+
+  review-backend:
+    needs: check-branch
+    if: needs.check-branch.outputs.should-review == 'true'
+    uses: ./.github/workflows/code-review-backend.yml
+    with:
+      pr_number: ${{ needs.check-branch.outputs.pr-number }}
+      ai_model: ${{ github.event.inputs.review_model || 'deepseek-v4-flash' }}
+      files_filter: ${{ github.event.inputs.files_filter || '' }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+
+  review-frontend:
+    needs: check-branch
+    if: needs.check-branch.outputs.should-review == 'true'
+    uses: ./.github/workflows/code-review-frontend.yml
+    with:
+      pr_number: ${{ needs.check-branch.outputs.pr-number }}
+      ai_model: ${{ github.event.inputs.review_model || 'deepseek-v4-flash' }}
+      files_filter: ${{ github.event.inputs.files_filter || '' }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+
+  review-functional:
+    needs: check-branch
+    if: needs.check-branch.outputs.should-review == 'true'
+    uses: ./.github/workflows/functional-review.yml
+    with:
+      pr_number: ${{ needs.check-branch.outputs.pr-number }}
+      ai_model: ${{ github.event.inputs.review_model || 'deepseek-v4-flash' }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
