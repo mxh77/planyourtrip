@@ -1,0 +1,72 @@
+<svg width="390" height="844" viewBox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
+  <rect width="390" height="844" fill="#090909"/>
+  <text x="20" y="24" fill="rgba(255,255,255,0.7)" font-size="11" font-family="system-ui" font-weight="600">9:41</text>
+  <text x="350" y="24" fill="rgba(255,255,255,0.7)" font-size="11" font-family="system-ui" font-weight="600" text-anchor="end">🔋 100%</text>
+  <!-- Header -->
+  <text x="24" y="60" fill="#fff" font-size="24" font-family="Georgia, serif" font-weight="700">PlanYour</text>
+  <text x="104" y="60" fill="#E8A435" font-size="24" font-family="Georgia, serif" font-style="italic" font-weight="700">Ride</text>
+  <text x="350" y="60" text-anchor="end" font-size="18">👤</text>
+  <!-- Subtitle -->
+  <text x="24" y="96" fill="rgba(255,255,255,0.4)" font-size="13" font-family="system-ui">Mes roadtrips</text>
+  <!-- Featured card -->
+  <rect x="24" y="116" width="342" height="140" rx="14" fill="#1B4332"/>
+  <text x="40" y="148" fill="rgba(255,255,255,0.5)" font-size="10" font-family="system-ui" font-weight="600">PLANIFIÉ</text>
+  <text x="330" y="148" text-anchor="end" fill="#E8A435" font-size="18" font-family="system-ui" font-weight="700">24</text>
+  <text x="330" y="160" text-anchor="end" fill="rgba(255,255,255,0.4)" font-size="9" font-family="system-ui">jours</text>
+  <text x="40" y="180" fill="#fff" font-size="22" font-family="Georgia" font-weight="700">Europe 2026</text>
+  <text x="40" y="202" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui">20 étapes · 3 625 km</text>
+  <!-- Progress bar -->
+  <rect x="40" y="220" width="280" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
+  <rect x="40" y="220" width="168" height="4" rx="2" fill="#E8A435"/>
+  <!-- Stats cards -->
+  <!-- In progress -->
+  <rect x="24" y="272" width="109" height="60" rx="10" fill="#111" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="78" y="296" text-anchor="middle" fill="#4ade80" font-size="20" font-family="system-ui" font-weight="700">1</text>
+  <text x="78" y="316" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">En cours</text>
+  <!-- Planned -->
+  <rect x="140" y="272" width="109" height="60" rx="10" fill="#111" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="194" y="296" text-anchor="middle" fill="#E8A435" font-size="20" font-family="system-ui" font-weight="700">3</text>
+  <text x="194" y="316" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Planifiés</text>
+  <!-- Completed -->
+  <rect x="257" y="272" width="109" height="60" rx="10" fill="#111" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="311" y="296" text-anchor="middle" fill="#4EA8DE" font-size="20" font-family="system-ui" font-weight="700">2</text>
+  <text x="311" y="316" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Terminés</text>
+  <!-- Invitation -->
+  <rect x="24" y="344" width="342" height="52" rx="12" fill="rgba(232,164,53,0.08)" stroke="rgba(232,164,53,0.15)" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="40" y="368" fill="#E8A435" font-size="14" font-family="system-ui" font-weight="600">Invitation</text>
+  <text x="40" y="384" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">Roadtrip été · par Marie</text>
+  <rect x="280" y="356" width="70" height="28" rx="6" fill="#E8A435"/>
+  <text x="315" y="375" text-anchor="middle" fill="#fff" font-size="12" font-family="system-ui" font-weight="600">Accepter</text>
+  <!-- Roadtrip list -->
+  <text x="24" y="420" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui" font-weight="600" letter-spacing="1">MES ROADTRIPS</text>
+  <!-- Card 1 -->
+  <rect x="24" y="436" width="165" height="120" rx="12" fill="#111" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="32" y="444" width="50" height="20" rx="6" fill="rgba(232,164,53,0.1)"/>
+  <text x="57" y="458" text-anchor="middle" fill="#E8A435" font-size="10" font-family="system-ui" font-weight="600">Planifié</text>
+  <text x="32" y="482" fill="#fff" font-size="15" font-family="system-ui" font-weight="600">Italie 2026</text>
+  <text x="32" y="500" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">3 étapes · 558 km</text>
+  <text x="32" y="516" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui">01 août → 04 août</text>
+  <text x="170" y="458" text-anchor="end" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">👤 Organisateur</text>
+  <!-- Card 2 -->
+  <rect x="200" y="436" width="165" height="120" rx="12" fill="#111" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="208" y="444" width="50" height="20" rx="6" fill="rgba(53,196,106,0.1)"/>
+  <text x="233" y="458" text-anchor="middle" fill="#4ade80" font-size="10" font-family="system-ui" font-weight="600">En cours</text>
+  <text x="208" y="482" fill="#fff" font-size="15" font-family="system-ui" font-weight="600">Normandie</text>
+  <text x="208" y="500" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">5 étapes · 320 km</text>
+  <text x="208" y="516" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui">15 juil. → 18 juil.</text>
+  <text x="346" y="458" text-anchor="end" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">📖 Lecteur</text>
+  <!-- Card 3 -->
+  <rect x="24" y="568" width="165" height="120" rx="12" fill="#111" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="32" y="576" width="50" height="20" rx="6" fill="rgba(78,168,222,0.1)"/>
+  <text x="57" y="590" text-anchor="middle" fill="#4EA8DE" font-size="10" font-family="system-ui" font-weight="600">Terminé</text>
+  <text x="32" y="614" fill="#fff" font-size="15" font-family="system-ui" font-weight="600">Bretagne</text>
+  <text x="32" y="632" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">8 étapes · 1 200 km</text>
+  <text x="32" y="648" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui">Juin 2026</text>
+  <!-- FAB suggestion -->
+  <circle cx="340" cy="740" r="24" fill="#fff" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <text x="340" y="747" text-anchor="middle" font-size="20">💡</text>
+  <!-- Footer annotation -->
+  <rect x="0" y="790" width="390" height="54" fill="#1a1a26" opacity="0.95"/>
+  <text x="195" y="812" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Écran 2/3 • Liste des roadtrips</text>
+  <text x="195" y="828" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui">Featured card + grille 2 colonnes + invitation</text>
+</svg>

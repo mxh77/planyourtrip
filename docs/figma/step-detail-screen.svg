@@ -1,0 +1,69 @@
+<svg width="390" height="844" viewBox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
+  <rect width="390" height="844" fill="#1a1a26"/>
+  <!-- Header -->
+  <rect x="0" y="0" width="390" height="52" fill="#1a1a26" opacity="0.95"/>
+  <line x1="0" y1="52" x2="390" y2="52" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="16" y="10" width="36" height="32" rx="16" fill="rgba(255,255,255,0.06)"/>
+  <text x="34" y="32" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">✕</text>
+  <text x="195" y="32" text-anchor="middle" fill="#fff" font-size="17" font-weight="700" font-family="system-ui">Dole du Jura</text>
+  <rect x="338" y="10" width="36" height="32" rx="16" fill="rgba(255,255,255,0.06)"/>
+  <text x="356" y="32" text-anchor="middle" fill="#fff" font-size="16">✎</text>
+
+  <!-- Mini-map -->
+  <rect x="16" y="68" width="358" height="110" rx="12" fill="url(#mapBg)"/>
+  <circle cx="140" cy="123" r="10" fill="#3b82f6" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <text x="140" y="127" text-anchor="middle" fill="#fff" font-size="8" font-weight="700">2</text>
+  <circle cx="90" cy="95" r="7" fill="#22c55e" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+  <circle cx="200" cy="140" r="7" fill="#a855f7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+
+  <!-- Info grid -->
+  <text x="16" y="200" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">INFORMATIONS</text>
+  <rect x="16" y="210" width="172" height="56" rx="10" fill="rgba(255,255,255,0.03)"/>
+  <text x="24" y="226" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" letter-spacing="0.3">DATES</text>
+  <text x="24" y="248" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">31 juil. → 01 août</text>
+  <rect x="200" y="210" width="174" height="56" rx="10" fill="rgba(255,255,255,0.03)"/>
+  <text x="208" y="226" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" letter-spacing="0.3">NUITS</text>
+  <text x="208" y="248" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">1</text>
+  <rect x="16" y="274" width="172" height="56" rx="10" fill="rgba(255,255,255,0.03)"/>
+  <text x="24" y="290" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" letter-spacing="0.3">TRAJET</text>
+  <text x="24" y="312" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">4h18</text>
+  <rect x="200" y="274" width="174" height="56" rx="10" fill="rgba(255,255,255,0.03)"/>
+  <text x="208" y="290" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" letter-spacing="0.3">DISTANCE</text>
+  <text x="208" y="312" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">432 km</text>
+
+  <!-- Accommodation -->
+  <text x="16" y="360" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">HÉBERGEMENT</text>
+  <rect x="16" y="370" width="358" height="56" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="24" y="378" width="40" height="40" rx="10" fill="rgba(34,197,94,0.1)"/>
+  <text x="44" y="405" text-anchor="middle" font-size="18">🏕️</text>
+  <text x="76" y="394" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">Camping des Bords de Loue</text>
+  <text x="76" y="412" fill="rgba(255,255,255,0.4)" font-size="11" font-family="system-ui">Réservation 18483538 · 59€</text>
+  <rect x="290" y="378" width="68" height="22" rx="6" fill="rgba(34,197,94,0.1)"/>
+  <text x="324" y="393" text-anchor="middle" fill="#4ade80" font-size="9" font-weight="600" font-family="system-ui">✅ Résa OK</text>
+
+  <!-- Activities -->
+  <text x="16" y="456" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">ACTIVITÉS</text>
+  <rect x="16" y="466" width="358" height="52" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+  <rect x="24" y="474" width="36" height="36" rx="9" fill="rgba(59,130,246,0.1)"/>
+  <text x="42" y="498" text-anchor="middle" font-size="16">🥾</text>
+  <text x="72" y="490" fill="#fff" font-size="14" font-weight="600" font-family="system-ui">Balade en ville</text>
+  <text x="72" y="506" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Centre historique de Dole</text>
+  <rect x="290" y="476" width="68" height="20" rx="6" fill="rgba(245,158,11,0.1)"/>
+  <text x="324" y="490" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="600" font-family="system-ui">À planifier</text>
+
+  <!-- Notes -->
+  <text x="16" y="546" fill="rgba(255,255,255,0.3)" font-size="10" font-family="system-ui" font-weight="700" letter-spacing="0.5">NOTES</text>
+  <rect x="16" y="556" width="358" height="56" rx="10" fill="rgba(255,255,255,0.03)"/>
+  <text x="28" y="580" fill="rgba(255,255,255,0.5)" font-size="13" font-family="system-ui">Arrivée prévue vers 15h. Faire les courses avant.</text>
+
+  <!-- Actions -->
+  <rect x="16" y="640" width="172" height="44" rx="10" fill="rgba(255,255,255,0.06)"/>
+  <text x="102" y="667" text-anchor="middle" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">🗺️ Voir sur la carte</text>
+  <rect x="200" y="640" width="174" height="44" rx="10" fill="#f59e0b"/>
+  <text x="287" y="667" text-anchor="middle" fill="#1a1a26" font-size="13" font-weight="700" font-family="system-ui">🔄 Étape suivante</text>
+
+  <!-- Footer annotation -->
+  <rect x="0" y="790" width="390" height="54" fill="#1a1a26" opacity="0.95"/>
+  <text x="195" y="812" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Écran 4/4 • Détail d'étape (modal)</text>
+  <text x="195" y="828" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui">Mini-carte + infos + hébergement + activités + notes</text>
+</svg>

@@ -1,0 +1,34 @@
+<svg width="390" height="844" viewBox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
+  <rect width="390" height="844" fill="#090909"/>
+  <!-- Status bar -->
+  <text x="20" y="24" fill="rgba(255,255,255,0.7)" font-size="11" font-family="system-ui" font-weight="600">9:41</text>
+  <text x="350" y="24" fill="rgba(255,255,255,0.7)" font-size="11" font-family="system-ui" font-weight="600" text-anchor="end">🔋 100%</text>
+  <!-- Logo -->
+  <text x="195" y="160" text-anchor="middle" fill="#fff" font-size="50" font-family="Georgia, serif" font-weight="700">PlanYour</text>
+  <text x="195" y="200" text-anchor="middle" fill="#E8A435" font-size="50" font-family="Georgia, serif" font-style="italic" font-weight="700">Ride</text>
+  <!-- Tabs -->
+  <rect x="24" y="240" width="342" height="38" rx="8" fill="rgba(255,255,255,0.04)"/>
+  <rect x="27" y="243" width="168" height="32" rx="6" fill="#E8A435"/>
+  <text x="111" y="264" text-anchor="middle" fill="#fff" font-size="14" font-family="system-ui" font-weight="600">Connexion</text>
+  <text x="279" y="264" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="14" font-family="system-ui" font-weight="600">Inscription</text>
+  <!-- Email field -->
+  <text x="24" y="310" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui" font-weight="600" letter-spacing="0.3">EMAIL</text>
+  <rect x="24" y="320" width="342" height="44" rx="8" fill="#111" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <text x="40" y="348" fill="rgba(255,255,255,0.3)" font-size="15" font-family="system-ui">vous@exemple.com</text>
+  <!-- Password field -->
+  <text x="24" y="390" fill="rgba(255,255,255,0.5)" font-size="12" font-family="system-ui" font-weight="600" letter-spacing="0.3">MOT DE PASSE</text>
+  <rect x="24" y="400" width="342" height="44" rx="8" fill="#111" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <text x="40" y="428" fill="rgba(255,255,255,0.3)" font-size="15" font-family="system-ui">••••••••</text>
+  <text x="340" y="428" text-anchor="end" fill="rgba(255,255,255,0.5)" font-size="18">👁</text>
+  <!-- Forgot password -->
+  <text x="342" y="465" text-anchor="end" fill="#E8A435" font-size="13" font-family="system-ui" font-weight="500">Mot de passe oublié ?</text>
+  <!-- Submit button -->
+  <rect x="24" y="490" width="342" height="48" rx="8" fill="#E8A435"/>
+  <text x="195" y="520" text-anchor="middle" fill="#fff" font-size="16" font-family="system-ui" font-weight="700">Se connecter</text>
+  <!-- Footer -->
+  <text x="195" y="570" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="13" font-family="system-ui">Pas encore de compte ? <tspan fill="#E8A435" font-weight="600">S'inscrire</tspan></text>
+  <!-- Design specs annotation -->
+  <rect x="0" y="780" width="390" height="64" fill="#1a1a26" opacity="0.95"/>
+  <text x="195" y="806" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="system-ui">Écran 1/3 • Authentification</text>
+  <text x="195" y="826" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="9" font-family="system-ui">Theme: bg=#090909 surface=#111 accent=#E8A435</text>
+</svg>
