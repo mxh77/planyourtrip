@@ -47,7 +47,7 @@
   <rect x="152" y="52" width="86" height="28" rx="14" fill="rgba(20,20,30,0.7)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
   <text x="195" y="71" text-anchor="middle" fill="#fff" font-size="13" font-weight="600" font-family="system-ui">Europe</text>
   <rect x="342" y="48" width="36" height="36" rx="18" fill="rgba(20,20,30,0.7)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-  <text x="360" y="72" text-anchor="middle" font-size="16">☰</text>
+  <text x="360" y="72" text-anchor="middle" fill="#fff" font-size="16">☰</text>
 
   <!-- ===== Search row: input + zone button on same line ===== -->
   <rect x="12" y="96" width="278" height="38" rx="12" fill="rgba(20,20,30,0.85)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
