@@ -15,7 +15,7 @@ const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const SHEET_COLLAPSED = 80;
-const SHEET_FULL = SCREEN_H - 120;
+const SHEET_FULL = SCREEN_H - 200;
 
 const ORDER_COLORS = [
   '#f59e0b', '#3b82f6', '#22c55e', '#a855f7', '#ef4444',
@@ -33,7 +33,59 @@ const ACTIVITY_ICONS = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d, opts = { day: 'numeric', month: 'short' }) {
   if (!d) return '';
-  return new Date(d).toLocaleDateString('fr-FR', opts);
+  const date = typeof d === 'string' ? new Date(d) : d;
+  // Check if options include time
+  const hasTime = opts.hour || opts.minute;
+  const formatOpts = {
+    day: opts.day || 'numeric',
+    month: opts.month || 'short',
+    ...(opts.hour && { hour: opts.hour }),
+    ...(opts.minute && { minute: opts.minute }),
+    ...(opts.year && { year: opts.year }),
+  };
+  return hasTime 
+    ? date.toLocaleString('fr-FR', formatOpts)
+    : date.toLocaleDateString('fr-FR', formatOpts);
+}
+
+// Décoder polyline (format Google Directions)
+function decodePolyline(encoded) {
+  const poly = [];
+  let index = 0, lat = 0, lng = 0;
+  
+  while (index < encoded.length) {
+    let result = 0;
+    let shift = 0;
+    let byte;
+    
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    
+    const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+    
+    result = 0;
+    shift = 0;
+    
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    
+    const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+    
+    poly.push({
+      latitude: lat / 1e5,
+      longitude: lng / 1e5,
+    });
+  }
+  
+  return poly;
 }
 
 function durationDays(start, end) {
@@ -60,12 +112,12 @@ function computeRegion(steps) {
 // ─── Données mock pour prototype ─────────────────────────────────────────────
 const MOCK_STEPS = [
   { id: '1', name: 'Maison', location: 'Clévilliers, France', latitude: 48.53, longitude: 1.38, startDate: '2026-07-31', type: 'DEPARTURE' },
-  { id: '2', name: 'Dole du Jura', location: '39100 Dole, France', latitude: 47.09, longitude: 5.49, startDate: '2026-07-31', endDate: '2026-08-01', type: 'STAGE', accommodation: { name: 'Camping des Bords de Loue', type: 'CAMPING', bookingRef: '18483538', price: '59€', status: 'BOOKED' }, activities: [{ name: 'Balade en ville', description: 'Centre historique' }] },
-  { id: '3', name: 'Lauterbrunnen', location: 'Lauterbrunnen, Suisse', latitude: 46.59, longitude: 7.91, startDate: '2026-08-01', endDate: '2026-08-02', type: 'STAGE', accommodation: { name: 'Camping Gletscherdorf', type: 'CAMPING', bookingRef: 'XIMV-YICW', price: '121.80 CHF', status: 'BOOKED' }, activities: [{ name: 'Via Ferrata', description: 'Murrenbach' }] },
-  { id: '4', name: 'Gorges de l\'Aar', location: 'Schattenhalb, Suisse', latitude: 46.71, longitude: 8.19, startDate: '2026-08-02', type: 'STOP' },
-  { id: '5', name: 'Lucerne', location: 'Lucerne, Suisse', latitude: 47.05, longitude: 8.30, startDate: '2026-08-02', endDate: '2026-08-04', type: 'STAGE', accommodation: { name: 'TCS Camping Sempach', type: 'CAMPING', bookingRef: '50153', price: '227.60 CHF', status: 'BOOKED' }, activities: [{ name: 'Randonnée Rigi' }] },
-  { id: '6', name: 'Verzasca', location: 'Verzasca, Suisse', latitude: 46.19, longitude: 8.83, startDate: '2026-08-04', type: 'STOP' },
-  { id: '7', name: 'Côme', location: 'Côme, Italie', latitude: 45.81, longitude: 9.08, startDate: '2026-08-04', endDate: '2026-08-05', type: 'STAGE', accommodation: { name: 'Camping Monte Generoso', type: 'CAMPING', status: 'BOOKED' } },
+  { id: '2', name: 'Dole du Jura', location: '39100 Dole, France', latitude: 47.09, longitude: 5.49, startDate: '2026-07-31T15:00', endDate: '2026-08-01T11:00', type: 'STAGE', distanceFromPrev: 85, durationFromPrev: 75, prevStepName: 'Dijon', route: 'A39', accommodation: { name: 'Camping des Bords de Loue', type: 'CAMPING', bookingRef: '18483538', price: '59€', status: 'BOOKED' }, activities: [{ name: 'Balade en ville', description: 'Centre historique', status: 'PENDING' }, { name: 'Dîner Chez Julien', description: 'Rue du centre · réservation 19h', status: 'BOOKED' }, { name: 'Visite Musée des Beaux-Arts', description: 'Entrée 8€', status: 'BOOKED' }], notes: 'Arrivée prévue vers 15h. Faire les courses à l\'Intermarche avant l\'arrivée au camping.' },
+  { id: '3', name: 'Lauterbrunnen', location: 'Lauterbrunnen, Suisse', latitude: 46.59, longitude: 7.91, startDate: '2026-08-01', endDate: '2026-08-02', type: 'STAGE', distanceFromPrev: 220, durationFromPrev: 240, prevStepName: 'Dole du Jura', route: 'A39/E25', accommodation: { name: 'Camping Gletscherdorf', type: 'CAMPING', bookingRef: 'XIMV-YICW', price: '121.80 CHF', status: 'BOOKED' }, activities: [{ name: 'Via Ferrata', description: 'Murrenbach', status: 'PENDING' }] },
+  { id: '4', name: 'Gorges de l\'Aar', location: 'Schattenhalb, Suisse', latitude: 46.71, longitude: 8.19, startDate: '2026-08-02', type: 'STOP', distanceFromPrev: 30, durationFromPrev: 45, prevStepName: 'Lauterbrunnen' },
+  { id: '5', name: 'Lucerne', location: 'Lucerne, Suisse', latitude: 47.05, longitude: 8.30, startDate: '2026-08-02', endDate: '2026-08-04', type: 'STAGE', distanceFromPrev: 50, durationFromPrev: 60, prevStepName: 'Gorges de l\'Aar', route: 'A2', accommodation: { name: 'TCS Camping Sempach', type: 'CAMPING', bookingRef: '50153', price: '227.60 CHF', status: 'BOOKED' }, activities: [{ name: 'Randonnée Rigi', description: '', status: 'PENDING' }] },
+  { id: '6', name: 'Verzasca', location: 'Verzasca, Suisse', latitude: 46.19, longitude: 8.83, startDate: '2026-08-04', type: 'STOP', distanceFromPrev: 85, durationFromPrev: 90, prevStepName: 'Lucerne' },
+  { id: '7', name: 'Côme', location: 'Côme, Italie', latitude: 45.81, longitude: 9.08, startDate: '2026-08-04', endDate: '2026-08-05', type: 'STAGE', distanceFromPrev: 35, durationFromPrev: 45, prevStepName: 'Verzasca', accommodation: { name: 'Camping Monte Generoso', type: 'CAMPING', status: 'BOOKED' } },
 ];
 
 // ─── StepCard (compact pour la liste) ────────────────────────────────────────
@@ -98,6 +150,14 @@ function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
             )}
           </View>
           <Text style={styles.stepLocation} numberOfLines={1}>{step.location}</Text>
+          
+          {/* Trajet depuis l'étape précédente */}
+          {step.distanceFromPrev && (
+            <Text style={styles.stepTrajet}>
+              🚐 {step.distanceFromPrev} km{step.durationFromPrev ? ` • ${step.durationFromPrev >= 60 ? `${Math.floor(step.durationFromPrev / 60)}h${String(Math.round(step.durationFromPrev % 60)).padStart(2, '0')}` : `${Math.round(step.durationFromPrev)}min`}` : ''}
+            </Text>
+          )}
+          
           <View style={styles.stepMeta}>
             {step.startDate && (
               <Text style={styles.stepMetaText}>
@@ -196,6 +256,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [roadtrip, setRoadtrip] = useState({ title: 'Europe', distance: 3610 });
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [routes, setRoutes] = useState([]);  // Itinéraires entre étapes
 
   // Animation de la bottom sheet
   const sheetAnim = useRef(new Animated.Value(SHEET_COLLAPSED)).current;
@@ -223,7 +284,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       onPanResponderRelease: (_, gs) => {
         const isExpanded = sheetExpandedRef.current;
         // Swipe vers le haut (dy < -40) → ouvrir ; vers le bas (dy > 40) → fermer
-        const shouldExpand = isExpanded ? gs.dy < 40 : gs.dy < -40;
+        const shouldExpand = gs.dy < -40;
         const toValue = shouldExpand ? SHEET_FULL : SHEET_COLLAPSED;
         Animated.spring(sheetAnim, {
           toValue,
@@ -236,6 +297,110 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       },
     })
   ).current;
+
+  // Charger les itinéraires au montage
+  useEffect(() => {
+    const fetchDirections = async () => {
+      console.log('[Directions] Starting... API Key:', GOOGLE_API_KEY ? '✓' : '✗', 'Steps:', steps.length);
+      
+      if (!GOOGLE_API_KEY || steps.length < 2) {
+        console.log('[Directions] Early exit: API_KEY=', !!GOOGLE_API_KEY, 'steps.length=', steps.length);
+        return;
+      }
+      
+      const newRoutes = [];
+      try {
+        for (let i = 0; i < steps.length - 1; i++) {
+          const current = steps[i];
+          const next = steps[i + 1];
+          console.log(`[Directions] ${i}: ${current.name} → ${next.name}`);
+          
+          if (!current.latitude || !current.longitude || !next.latitude || !next.longitude) {
+            console.log('[Directions] Skipping: missing coordinates');
+            continue;
+          }
+          
+          let coordinates = null;
+          
+          // Essayer la Routes API
+          try {
+            const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+            const body = {
+              origin: {
+                location: {
+                  latLng: {
+                    latitude: parseFloat(current.latitude),
+                    longitude: parseFloat(current.longitude),
+                  },
+                },
+              },
+              destination: {
+                location: {
+                  latLng: {
+                    latitude: parseFloat(next.latitude),
+                    longitude: parseFloat(next.longitude),
+                  },
+                },
+              },
+              travelMode: 'DRIVE',
+            };
+            
+            console.log('[Directions] Fetching Routes API...');
+            
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                'X-Goog-Api-Key': GOOGLE_API_KEY,
+                'X-Goog-FieldMask': 'routes.polyline.encodedPolyline',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(body),
+            });
+            
+            const data = await response.json();
+            console.log('[Directions] Routes API Response:', data.error ? data.error.status : 'OK', data.routes?.length || 0, 'routes');
+            
+            if (data.routes && data.routes[0]) {
+              const encodedPolyline = data.routes[0].polyline?.encodedPolyline;
+              if (encodedPolyline) {
+                coordinates = decodePolyline(encodedPolyline);
+                console.log('[Directions] ✓ Routes API success:', coordinates.length, 'points');
+              }
+            } else if (data.error) {
+              console.log('[Directions] Routes API error:', data.error.status, '- using fallback');
+            }
+          } catch (err) {
+            console.log('[Directions] Routes API fetch error - using fallback:', err.message);
+          }
+          
+          // Fallback : ligne droite entre les deux étapes
+          if (!coordinates) {
+            console.log('[Directions] Using fallback (straight line)');
+            coordinates = [
+              {
+                latitude: parseFloat(current.latitude),
+                longitude: parseFloat(current.longitude),
+              },
+              {
+                latitude: parseFloat(next.latitude),
+                longitude: parseFloat(next.longitude),
+              },
+            ];
+          }
+          
+          newRoutes.push({
+            coordinates,
+            color: ORDER_COLORS[i % ORDER_COLORS.length],
+          });
+        }
+        console.log('[Directions] Final routes:', newRoutes.length);
+        setRoutes(newRoutes);
+      } catch (err) {
+        console.error('[Directions] Unexpected error:', err);
+      }
+    };
+    fetchDirections();
+  }, [steps, GOOGLE_API_KEY]);
 
   // Injecter titre + hamburger dans la barre de navigation native
   React.useLayoutEffect(() => {
@@ -429,6 +594,19 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           provider={PROVIDER_GOOGLE}
           customMapStyle={DARK_MAP_STYLE}
         >
+          {/* Afficher les itinéraires */}
+          {routes.map((route, idx) => (
+            <Polyline
+              key={`route-${idx}`}
+              coordinates={route.coordinates}
+              strokeColor={route.color}
+              strokeWidth={4}
+              lineCap="round"
+              lineJoin="round"
+            />
+          ))}
+          
+          {/* Afficher les marqueurs */}
           {steps.map((s, i) => (
             s.latitude && s.longitude && (
               <Marker
@@ -489,16 +667,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           ) : (
             /* Mode plein écran : liste des étapes */
             <View style={styles.sheetFull} pointerEvents="auto">
-              {/* Onglets + en-tête */}
+              {/* En-tête */}
               <View style={styles.sheetFullHeader}>
-                <View style={styles.sheetSegments}>
-                  <TouchableOpacity style={styles.segmentActive}>
-                    <Text style={styles.segmentTextActive}>Étapes</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.segmentInactive}>
-                    <Text style={styles.segmentTextInactive}>Journal</Text>
-                  </TouchableOpacity>
-                </View>
                 <Text style={styles.sheetStepCount}>
                   {steps.length} étapes · {roadtrip.distance} km
                 </Text>
@@ -589,7 +759,7 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.detailBody} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
+      <ScrollView style={styles.detailBody} contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
         {/* Mini-carte */}
         <View style={styles.detailMap}>
           <MapView
@@ -608,48 +778,63 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
             {step.latitude && step.longitude && (
               <Marker coordinate={{ latitude: step.latitude, longitude: step.longitude }}>
                 <View style={[styles.marker, { backgroundColor: color }]}>
-                  <Text style={styles.markerText}>{index + 1}</Text>
+                  <Text style={styles.markerText}>{ACTIVITY_ICONS[step.type] || '📌'}</Text>
                 </View>
               </Marker>
             )}
           </MapView>
         </View>
 
-        {/* Info grid */}
+        {/* Adresse */}
         <View style={styles.detailSection}>
-          <Text style={styles.sectionLabel}>INFORMATIONS</Text>
-          <View style={styles.infoGrid}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Dates</Text>
-              <Text style={styles.infoValue}>
-                {step.startDate ? formatDate(step.startDate) : ''}{step.endDate ? ` → ${formatDate(step.endDate)}` : ''}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Nuits</Text>
-              <Text style={styles.infoValue}>{nights || '-'}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Trajet</Text>
-              <Text style={styles.infoValue}>
-                {step.durationFromPrev
-                  ? step.durationFromPrev >= 60
-                    ? `${Math.floor(step.durationFromPrev / 60)}h${String(Math.round(step.durationFromPrev % 60)).padStart(2, '0')}`
-                    : `${Math.round(step.durationFromPrev)} min`
-                  : '-'}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Distance</Text>
-              <Text style={styles.infoValue}>{step.distanceFromPrev ? `${Math.round(step.distanceFromPrev)} km` : '-'}</Text>
-            </View>
+          <View style={styles.addressBox}>
+            <Text style={styles.addressIcon}>📍</Text>
+            <Text style={styles.addressText}>{step.location || 'Adresse non disponible'}</Text>
           </View>
         </View>
 
-        {/* Hébergement */}
+        {/* Dates (ARRIVÉE / DÉPART) */}
+        <View style={styles.datesRow}>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateLabel}>ARRIVÉE</Text>
+            <Text style={styles.dateValue}>{step.startDate ? formatDate(step.startDate, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'}</Text>
+          </View>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateLabel}>DÉPART</Text>
+            <Text style={styles.dateValue}>{step.endDate ? formatDate(step.endDate, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'}</Text>
+          </View>
+        </View>
+
+        {/* Trajet depuis l'étape précédente */}
+        {(step.distanceFromPrev || step.durationFromPrev) && (
+          <View style={styles.trajetBox}>
+            <Text style={styles.trajetIcon}>🚐</Text>
+            <View style={styles.trajetInfo}>
+              <Text style={styles.trajetFrom}>Depuis {step.prevStepName || 'étape précédente'}</Text>
+              <View style={styles.trajetStats}>
+                <Text style={styles.trajetDistance}>{Math.round(step.distanceFromPrev || 0)} km</Text>
+                <View style={styles.trajetDot} />
+                <Text style={styles.trajetDuration}>
+                  {step.durationFromPrev
+                    ? step.durationFromPrev >= 60
+                      ? `${Math.floor(step.durationFromPrev / 60)}h${String(Math.round(step.durationFromPrev % 60)).padStart(2, '0')}`
+                      : `${Math.round(step.durationFromPrev)} min`
+                    : '-'}
+                </Text>
+              </View>
+            </View>
+            {step.route && (
+              <View style={styles.routeBadge}>
+                <Text style={styles.routeBadgeText}>{step.route}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Hébergements */}
         {step.accommodation && (
           <View style={styles.detailSection}>
-            <Text style={styles.sectionLabel}>HÉBERGEMENT</Text>
+            <Text style={styles.sectionLabel}>HÉBERGEMENTS</Text>
             <View style={styles.detailCard}>
               <View style={styles.cardIconBg}>
                 <Text style={styles.cardIcon}>{ACCOM_ICONS[step.accommodation.type] || '🏕️'}</Text>
@@ -674,16 +859,18 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
           <View style={styles.detailSection}>
             <Text style={styles.sectionLabel}>ACTIVITÉS</Text>
             {step.activities.map((a, i) => (
-              <View key={i} style={[styles.detailCard, { marginBottom: 8 }]}>
+              <View key={i} style={[styles.detailCard, i < step.activities.length - 1 && { marginBottom: 8 }]}>
                 <View style={[styles.cardIconBg, { backgroundColor: 'rgba(59,130,246,0.1)' }]}>
-                  <Text style={styles.cardIcon}>🥾</Text>
+                  <Text style={styles.cardIcon}>{ACTIVITY_ICONS[a.type] || '🎯'}</Text>
                 </View>
                 <View style={styles.cardInfo}>
                   <Text style={styles.cardName}>{a.name}</Text>
                   {a.description && <Text style={styles.cardSub}>{a.description}</Text>}
                 </View>
-                <View style={styles.cardStatusWarn}>
-                  <Text style={styles.cardStatusWarnText}>À planifier</Text>
+                <View style={a.status === 'BOOKED' ? styles.cardStatusOk : styles.cardStatusWarn}>
+                  <Text style={a.status === 'BOOKED' ? styles.cardStatusOkText : styles.cardStatusWarnText}>
+                    {a.status === 'BOOKED' ? '✅ Réservé' : '⏳ À planifier'}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -691,22 +878,14 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
         )}
 
         {/* Notes */}
-        <View style={styles.detailSection}>
-          <Text style={styles.sectionLabel}>NOTES</Text>
-          <View style={styles.notesBox}>
-            <Text style={styles.notesText}>Aucune note pour cette étape.</Text>
+        {step.notes && (
+          <View style={styles.detailSection}>
+            <Text style={styles.sectionLabel}>NOTES</Text>
+            <View style={styles.notesBox}>
+              <Text style={styles.notesText}>{step.notes}</Text>
+            </View>
           </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.detailActions}>
-          <TouchableOpacity style={styles.actionSecondary}>
-            <Text style={styles.actionSecondaryText}>🗺️ Voir sur la carte</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onNext} style={styles.actionPrimary}>
-            <Text style={styles.actionPrimaryText}>🔄 Étape suivante</Text>
-          </TouchableOpacity>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -956,17 +1135,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
   },
-  sheetSegments: {
-    flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 8, padding: 2, gap: 1,
-  },
-  segmentActive: {
-    paddingHorizontal: 16, paddingVertical: 5, borderRadius: 6,
-    backgroundColor: 'rgba(245,158,11,0.15)',
-  },
-  segmentTextActive: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
-  segmentInactive: { paddingHorizontal: 16, paddingVertical: 5, borderRadius: 6 },
-  segmentTextInactive: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '600' },
   sheetStepCount: { fontSize: 11, color: 'rgba(255,255,255,0.3)' },
   stepList: { flex: 1, marginTop: 4 },
 
@@ -994,6 +1162,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5, paddingVertical: 1,
   },
   stepLocation: { fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 },
+  stepTrajet: { fontSize: 11, color: '#4ade80', marginTop: 3, fontWeight: '500' },
   stepMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, marginTop: 2 },
   stepMetaText: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 3 },
@@ -1040,7 +1209,78 @@ const styles = StyleSheet.create({
   },
   detailEditText: { color: '#fff', fontSize: 16 },
   detailBody: { flex: 1, padding: SPACING.md },
-  detailMap: { height: 130, borderRadius: 12, overflow: 'hidden', marginBottom: SPACING.md },
+  detailMap: { height: 100, borderRadius: 12, overflow: 'hidden', marginBottom: SPACING.md },
+  
+  // Adresse
+  addressBox: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  addressIcon: { fontSize: 18, marginTop: 2 },
+  addressText: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 18 },
+  
+  // Dates
+  datesRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: SPACING.md,
+  },
+  dateBox: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 10,
+    padding: 12,
+  },
+  dateLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.3)',
+    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  dateValue: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  
+  // Trajet
+  trajetBox: {
+    backgroundColor: 'rgba(34,197,94,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(34,197,94,0.1)',
+    marginBottom: SPACING.md,
+  },
+  trajetIcon: { fontSize: 18 },
+  trajetInfo: { flex: 1 },
+  trajetFrom: { fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 },
+  trajetStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  trajetDistance: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  trajetDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  trajetDuration: { fontSize: 13, fontWeight: '600', color: '#4ade80' },
+  routeBadge: {
+    backgroundColor: 'rgba(34,197,94,0.1)',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  routeBadgeText: { fontSize: 10, fontWeight: '600', color: '#4ade80' },
+  
   detailSection: { marginBottom: SPACING.md + 4 },
   sectionLabel: {
     fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
@@ -1062,6 +1302,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12,
     padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)',
+    marginBottom: 8,
   },
   cardIconBg: {
     width: 40, height: 40, borderRadius: 10,
