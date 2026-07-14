@@ -10,6 +10,9 @@ import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
+// ─── Récupération de la clé API Google ─────────────────────────────────────
+const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const SHEET_COLLAPSED = 80;
 const SHEET_FULL = SCREEN_H - 120;
@@ -191,11 +194,15 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [activeOverlays, setActiveOverlays] = useState({});
   const [showSearchArea, setShowSearchArea] = useState(false);
   const [roadtrip, setRoadtrip] = useState({ title: 'Europe', distance: 3610 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
 
   // Animation de la bottom sheet
   const sheetAnim = useRef(new Animated.Value(SHEET_COLLAPSED)).current;
   const mapRef = useRef(null);
   const sheetExpandedRef = useRef(false);
+  const searchInputRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   // Sync ref avec state pour PanResponder
   useEffect(() => {
@@ -232,6 +239,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Injecter titre + hamburger dans la barre de navigation native
   React.useLayoutEffect(() => {
+    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+    console.log('[Places] API Key:', apiKey ? `CHARGÉE (${apiKey.slice(0, 8)}...)` : 'NON TROUVÉE — vérifie .env → EXPO_PUBLIC_GOOGLE_PLACES_API_KEY');
     navigation.setOptions({
       headerShown: true,
       headerTitle: roadtrip.title,
@@ -267,6 +276,55 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     setActiveOverlays(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  // Recherche Google Places avec throttle
+  const searchPlaces = useCallback(async (query) => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        console.log('[Places] Searching for:', query);
+        const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': GOOGLE_API_KEY,
+          },
+          body: JSON.stringify({
+            input: query,
+            languageCode: 'fr',
+          }),
+        });
+        const data = await response.json();
+        console.log('[Places] Response:', data);
+        const predictions = data.suggestions || [];
+        
+        // Parser la structure : suggestions[] contient placePrediction{}
+        const formatted = predictions.map(p => {
+          const pp = p.placePrediction || {};
+          const structured = pp.structuredFormat || {};
+          const mainText = structured.mainText?.text || '';
+          const secondaryText = structured.secondaryText?.text || '';
+          
+          console.log('[Places] Extracted:', { mainText, secondaryText, placeId: pp.placeId });
+          
+          return {
+            mainText,
+            secondaryText,
+            placeId: pp.placeId,
+            place: pp.place,
+            // location sera fetch séparément si besoin
+          };
+        }).slice(0, 8);
+        
+        console.log('[Places] Formatted suggestions:', formatted);
+        setSuggestions(formatted);
+      } catch (err) {
+        console.error('[Places Search] Error:', err);
+        setSuggestions([]);
+      }
+    }, 300);
+  }, []);
+
   const region = computeRegion(steps);
   const selectedStep = steps[selectedIndex];
   const color = ORDER_COLORS[selectedIndex % ORDER_COLORS.length];
@@ -281,12 +339,27 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         <View style={styles.searchArea}>
           <View style={styles.searchBar}>
             <TextInput
-              style={styles.searchInput}
+              ref={searchInputRef}
               placeholder="Rechercher un lieu…"
               placeholderTextColor="rgba(255,255,255,0.4)"
-              editable={false}
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                if (text.length > 2) {
+                  searchPlaces(text);
+                } else {
+                  setSuggestions([]);
+                }
+              }}
+              style={styles.textInput}
             />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => { setSearchQuery(''); setSuggestions([]); }}>
+                <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
+
           <TouchableOpacity
             onPress={() => setShowSearchArea(!showSearchArea)}
             style={[styles.zoneBtn, showSearchArea && styles.zoneBtnActive]}
@@ -294,6 +367,57 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             <Text style={[styles.zoneBtnText, showSearchArea && styles.zoneBtnTextActive]}>🔍 Zone</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Dropdown suggestions - OUTSIDE searchArea, absolutely positioned */}
+        {suggestions.length > 0 && (
+          <View style={styles.suggestionsDropdown}>
+            <ScrollView scrollEnabled={suggestions.length > 5} style={{ maxHeight: 280 }}>
+              {suggestions.map((place, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={async () => {
+                    // Fetch details pour avoir lat/lng
+                    try {
+                      const detailsResponse = await fetch(
+                        `https://places.googleapis.com/v1/${place.place}`,
+                        {
+                          headers: {
+                            'X-Goog-Api-Key': GOOGLE_API_KEY,
+                            'X-Goog-FieldMask': 'location,displayName,formattedAddress',
+                          },
+                        }
+                      );
+                      const details = await detailsResponse.json();
+                      console.log('[Places] Full details response:', details);
+                      
+                      const lat = details.location?.latitude;
+                      const lng = details.location?.longitude;
+                      console.log('[Places] Got location:', { lat, lng });
+                      
+                      if (lat != null && lng != null && mapRef.current) {
+                        mapRef.current.animateToRegion({
+                          latitude: lat,
+                          longitude: lng,
+                          latitudeDelta: 0.05,
+                          longitudeDelta: 0.05,
+                        }, 500);
+                      }
+                    } catch (err) {
+                      console.error('[Places] Error fetching details:', err);
+                    }
+                    
+                    setSearchQuery('');
+                    setSuggestions([]);
+                  }}
+                  style={styles.suggestionRow}
+                >
+                  <Text style={styles.suggestionMainText} numberOfLines={1}>{place.mainText}</Text>
+                  <Text style={styles.suggestionSubText} numberOfLines={1}>{place.secondaryText}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </View>
 
       {/* ─── MAP (flex: 1 to fill remaining space) ───────────────────────── */}
@@ -595,7 +719,9 @@ const styles = StyleSheet.create({
   // Header container (not absolute)
   headerContainer: {
     backgroundColor: 'rgba(26,26,38,0.98)',
-    paddingTop: 0, // insets.top sera appliqué dynamiquement
+    paddingTop: 0,
+    zIndex: 100,
+    position: 'relative',
   },
   headerRow: {
     flexDirection: 'row',
@@ -631,19 +757,32 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingBottom: SPACING.sm,
     backgroundColor: 'rgba(26,26,38,0.98)',
+    zIndex: 100,
+    position: 'relative',
+    overflow: 'visible',
   },
   searchBar: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
     paddingHorizontal: 14,
-    paddingVertical: 8,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    zIndex: 50,
+    overflow: 'visible',
+    pointerEvents: 'box-none',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  searchInput: { flex: 1, color: '#fff', fontSize: 13, padding: 0 },
+  textInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    paddingVertical: 0,
+    margin: 0,
+    height: 38,
+  },
   zoneBtn: {
     backgroundColor: 'rgba(59,130,246,0.4)',
     borderRadius: 12,
@@ -655,6 +794,60 @@ const styles = StyleSheet.create({
   zoneBtnActive: { backgroundColor: 'rgba(59,130,246,0.6)' },
   zoneBtnText: { color: '#93c5fd', fontSize: 12, fontWeight: '600' },
   zoneBtnTextActive: { color: '#fff' },
+
+  // Suggestions dropdown — absolutely positioned at headerContainer level
+  suggestionsDropdown: {
+    position: 'absolute',
+    top: 56, // height of searchArea (paddingVertical 8 + paddingBottom 8 + 40px for input)
+    left: 12,
+    right: 12,
+    zIndex: 9999,
+    backgroundColor: '#1a1a26',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+  },
+  suggestionRow: {
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
+  },
+  suggestionMainText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  suggestionSubText: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 11,
+    marginTop: 2,
+  },
+
+  // Suggestions dropdown (old name, kept for compat)
+  suggestionsList: {
+    position: 'absolute',
+    top: '100%',
+    left: 12,
+    right: 12,
+    zIndex: 999,
+    backgroundColor: '#1a1a26',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    maxHeight: 250,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  suggestionTitle: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  suggestionSub: { color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 2 },
 
   // Map container (flex: 1 to fill remaining space)
   mapContainer: {

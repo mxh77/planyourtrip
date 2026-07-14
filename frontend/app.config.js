@@ -42,6 +42,9 @@ module.exports = ({ config }) => {
     web: {
       favicon: './assets/favicon.png',
     },
+    extra: {
+      googlePlacesApiKey: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
+    },
     plugins: [
       'expo-font',
       '@journeyapps/react-native-quick-sqlite',
