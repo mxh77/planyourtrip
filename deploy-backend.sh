@@ -9,7 +9,7 @@ YELLOW='\033[1;33m'
 RESET='\033[0m'
 
 SERVER="ct111"
-REMOTE_DIR="/opt/MonPetitRoadtrip/backend"
+REMOTE_DIR="/opt/PlanYourTrip/backend"
 LOCAL_DIR="$(cd "$(dirname "$0")/backend" && pwd)"
 
 echo -e "\n${YELLOW}════════════════════════════════════════${RESET}"
@@ -27,7 +27,7 @@ fi
 
 # ─── Git pull sur le serveur ─────────────────────────────────────────────────
 echo -e "${YELLOW}[1/3]${RESET} Git pull sur $SERVER..."
-ssh "$SERVER" "cd /opt/MonPetitRoadtrip && git reset --hard HEAD && git clean -fd && git pull"
+ssh "$SERVER" "cd /opt/PlanYourTrip && git reset --hard HEAD && git clean -fd && git pull"
 echo -e "${GREEN}✓ Code mis à jour${RESET}"
 
 # ─── npm install si package.json a changé ────────────────────────────────────
@@ -37,7 +37,7 @@ echo -e "${GREEN}✓ Dépendances et schéma Prisma mis à jour${RESET}"
 
 # ─── Redémarre PM2 ───────────────────────────────────────────────────────────
 echo -e "${YELLOW}[3/3]${RESET} Redémarrage PM2..."
-ssh "$SERVER" "cd $REMOTE_DIR && pm2 restart monpetitroadtrip-api --update-env"
+ssh "$SERVER" "cd $REMOTE_DIR && pm2 restart planyourtrip-api --update-env"
 echo -e "${GREEN}✓ Backend redémarré${RESET}"
 
 # ─── Vérification health ─────────────────────────────────────────────────────
@@ -50,4 +50,4 @@ else
   exit 1
 fi
 
-echo -e "\n${YELLOW}Logs en live :${RESET} ssh ct111 \"tail -f ~/.pm2/logs/monpetitroadtrip-api-out.log\"\n"
+echo -e "\n${YELLOW}Logs en live :${RESET} ssh ct111 \"tail -f ~/.pm2/logs/planyourtrip-api-out.log\"\n"

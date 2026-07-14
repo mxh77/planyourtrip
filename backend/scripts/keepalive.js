@@ -4,10 +4,10 @@
  * la suspension automatique du free tier PowerSync Cloud.
  *
  * Installation sur CT 111 :
- *   node /opt/MonPetitRoadtrip/backend/scripts/keepalive.js
+ *   node /opt/PlanYourTrip/backend/scripts/keepalive.js
  *
  * Cron (crontab -e sur CT 111) :
- *   0 * * * * node /opt/MonPetitRoadtrip/backend/scripts/keepalive.js >> /var/log/mpr-keepalive.log 2>&1
+ *   0 * * * * node /opt/PlanYourTrip/backend/scripts/keepalive.js >> /var/log/mpr-keepalive.log 2>&1
  */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const https = require('https');

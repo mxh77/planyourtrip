@@ -3,7 +3,7 @@ name: deployment
 description: Utiliser ce prompt pour pusher les dernières modifications sur GitHub. Analyse les changements, génère un message de commit et appelle le script deploy.sh.
 ---
 
-Analyse les fichiers modifiés depuis le dernier commit en exécutant `git diff --staged`, `git status` et `git diff HEAD` dans le terminal, depuis la racine du projet `c:\MonPetitRoadtrip`.
+Analyse les fichiers modifiés depuis le dernier commit en exécutant `git diff --staged`, `git status` et `git diff HEAD` dans le terminal, depuis la racine du projet `c:\PlanYourTrip`.
 
 Sur la base des modifications détectées, génère un message de commit **multi-lignes, détaillé et entièrement en français**, au format suivant :
 
@@ -24,7 +24,7 @@ Règles :
 - Tout en français
 - Si plusieurs types sont concernés, utilise le préfixe dominant
 
-Puis exécute dans le terminal depuis `c:\MonPetitRoadtrip`. En bash, une chaîne entre guillemets peut s'étaler sur plusieurs lignes — utilise simplement :
+Puis exécute dans le terminal depuis `c:\PlanYourTrip`. En bash, une chaîne entre guillemets peut s'étaler sur plusieurs lignes — utilise simplement :
 
 ```bash
 ./deploy.sh "feat: titre résumant l'intention globale

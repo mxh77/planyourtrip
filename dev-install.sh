@@ -21,7 +21,7 @@ FRONTEND_DIR="$ROOT_DIR/frontend"
 
 APK_PATHS=(
   "$FRONTEND_DIR/android/app/build/outputs/apk/debug/app-debug.apk"
-  "$ROOT_DIR/monpetitroadtrip.debug.apk"
+  "$ROOT_DIR/planyourtrip.debug.apk"
 )
 
 APK=""

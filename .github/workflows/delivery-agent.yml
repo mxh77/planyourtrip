@@ -56,7 +56,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
             set -e
-            cd /opt/MonPetitRoadtrip-preview
+            cd /opt/PlanYourTrip-preview
             git reset --hard HEAD || true
             git clean -fd || true
             git remote set-url origin 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}'
@@ -70,7 +70,7 @@ jobs:
             cd backend
             npm ci
             npx prisma generate
-            pm2 restart monpetitroadtrip-preview --update-env || pm2 start src/index.js --name monpetitroadtrip-preview --cwd /opt/MonPetitRoadtrip-preview/backend
+            pm2 restart planyourtrip-preview --update-env || pm2 start src/index.js --name planyourtrip-preview --cwd /opt/PlanYourTrip-preview/backend
             echo '\u2714 Backend preview redémarré sur port 5111'
 
             # Frontend (port 6111)

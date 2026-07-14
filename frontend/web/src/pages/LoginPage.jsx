@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-sm">
         <h1 className="text-2xl font-serif font-bold text-center mb-6 text-gray-900">
-          PlanYourRide
+          PlanYourTrip
         </h1>
 
         {/* Toggle */}

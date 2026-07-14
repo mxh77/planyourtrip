@@ -1,15 +1,15 @@
 #!/bin/bash
 # reset-data.sh — Supprime toutes les données dans Supabase et vide le SQLite local
 # Usage : ./reset-data.sh [dev|prod]
-#   dev  (défaut) : vide l'app de dev (com.mxh7777.monpetitroadtrip.dev)
-#   prod           : vide l'app de prod (com.mxh7777.monpetitroadtrip)
+#   dev  (éfaut) : vide l'app de dev (com.mxh7777.planyourtrip.dev)
+#   prod           : vide l'app de prod (com.mxh7777.planyourtrip)
 
 VARIANT=${1:-dev}
 
 if [ "$VARIANT" = "prod" ]; then
-  PACKAGE="com.mxh7777.monpetitroadtrip"
+  PACKAGE="com.mxh7777.planyourtrip"
 else
-  PACKAGE="com.mxh7777.monpetitroadtrip.dev"
+  PACKAGE="com.mxh7777.planyourtrip.dev"
 fi
 
 echo "=== Reset données ($VARIANT) ==="

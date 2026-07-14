@@ -32,7 +32,7 @@ feat: intégration DateTimePicker, suggestions à proximité et multi-hébergeme
   - .github/copilot-instructions.md
   - docs/contexts/2026-03-19_132553_chore-enrichir-le-script-save-context-sh-et-corrig.md
   - docs/contexts/INDEX.md
-  - frontend/MonPetitRoadtrip.code-workspace
+  - frontend/PlanYourTrip.code-workspace
 
 ## 🌐 Routes API ajoutées / modifiées
 **accommodations**:

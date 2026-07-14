@@ -19,7 +19,7 @@ const prisma = new PrismaClient();
 const _tickInProgress = new Set();
 
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'mxh77';
-const GITHUB_REPO  = process.env.GITHUB_REPO  || 'MonPetitRoadtrip';
+const GITHUB_REPO  = process.env.GITHUB_REPO  || 'PlanYourTrip';
 const GITHUB_PAT   = process.env.GITHUB_PAT   || '';
 
 // ─── Limites garde-fous ────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ function githubFetch(path, { method = 'GET', body } = {}) {
       headers: {
         Authorization: `Bearer ${GITHUB_PAT}`,
         Accept: 'application/vnd.github+json',
-        'User-Agent': 'MonPetitRoadtrip-Orchestrator',
+        'User-Agent': 'PlanYourTrip-Orchestrator',
         'X-GitHub-Api-Version': '2022-11-28',
         ...(bodyStr ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
       },

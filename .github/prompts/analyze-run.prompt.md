@@ -5,7 +5,7 @@ description: Analyse complète d'un run GitHub Actions en un seul appel — logs
 
 # Analyser un run GitHub Actions
 
-Analyse le run GitHub Actions indiqué par l'utilisateur pour le repo `mxh77/MonPetitRoadtrip`.
+Analyse le run GitHub Actions indiqué par l'utilisateur pour le repo `mxh77/PlanYourTrip`.
 
 ## Étapes à exécuter (tout en une fois)
 
@@ -14,9 +14,9 @@ Analyse le run GitHub Actions indiqué par l'utilisateur pour le repo `mxh77/Mon
 2. **Récupérer les informations du run** via un seul appel terminal :
 
 ```bash
-cd "C:/MonPetitRoadtrip"
+cd "C:/PlanYourTrip"
 TOKEN=$(grep GITHUB_PAT backend/.env | cut -d= -f2)
-REPO="mxh77/MonPetitRoadtrip"
+REPO="mxh77/PlanYourTrip"
 
 # Récupère runs + jobs + logs en une passe
 python3 - <<'EOF'
@@ -24,7 +24,7 @@ import urllib.request, urllib.error, json, sys, re, os
 
 TOKEN = open("backend/.env").read()
 TOKEN = next(l.split("=",1)[1].strip() for l in TOKEN.splitlines() if l.startswith("GITHUB_PAT"))
-REPO = "mxh77/MonPetitRoadtrip"
+REPO = "mxh77/PlanYourTrip"
 BASE = f"https://api.github.com/repos/{REPO}"
 HEADERS = {"Authorization": f"Bearer {TOKEN}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 

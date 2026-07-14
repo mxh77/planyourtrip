@@ -54,7 +54,7 @@ jobs:
       - name: Commit context
         run: |
           git config user.name "init-context-agent"
-          git config user.email "init-context-agent@monpetitroadtrip.app"
+          git config user.email "init-context-agent@planyourtrip.app"
           git add .ai/
           if git diff --staged --quiet; then
             echo "Aucun contexte à mettre à jour."

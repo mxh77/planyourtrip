@@ -11,7 +11,7 @@ Le projet Mon Petit Roadtrip est fonctionnel en production avec toutes les featu
 ## 🗂️ Structure du projet
 
 ```
-MonPetitRoadtrip/          ← workspace principal (backend + frontend mono-repo)
+PlanYourTrip/          ← workspace principal (backend + frontend mono-repo)
 ├── backend/               ← Node.js + Express + Prisma
 │   ├── src/
 │   │   ├── index.js
@@ -43,7 +43,7 @@ MonPetitRoadtrip/          ← workspace principal (backend + frontend mono-repo
 ├── release-build.sh       ← build APK release signé
 └── sync_rules.yaml        ← règles de sync PowerSync
 
-monpetitroadtrip_mobile/   ← workspace expérimental (branche de tests perf/UI)
+planyourtrip_mobile/   ← workspace expérimental (branche de tests perf/UI)
 ```
 
 ---
@@ -221,7 +221,7 @@ FONTS.body = undefined  // police système
 ## 🌐 Infrastructure
 
 ### Serveur CT 111 (LXC Proxmox, 192.168.1.111)
-- Backend : Node.js via PM2 (`monpetitroadtrip-api`), port 3000
+- Backend : Node.js via PM2 (`planyourtrip-api`), port 3000
 - Frontend web : Nginx, sert `frontend/web/dist/`, proxy `/api/` → localhost:3000
 - SSH alias : `ssh ct111`
 

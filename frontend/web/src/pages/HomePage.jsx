@@ -110,7 +110,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-serif font-bold text-gray-900">PlanYourRide</h1>
+          <h1 className="text-xl font-serif font-bold text-gray-900">PlanYourTrip</h1>
           <div className="flex items-center gap-3">
             {email && (
               <span className="text-sm text-gray-500 hidden sm:block">

@@ -20,7 +20,7 @@ ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 
 APK_PATHS=(
-  "$ROOT_DIR/monpetitroadtrip.apk"
+  "$ROOT_DIR/planyourtrip.apk"
   "$FRONTEND_DIR/android/app/build/outputs/apk/release/app-release.apk"
 )
 
@@ -52,4 +52,4 @@ echo -e "${GREEN}✓ $DEVICES appareil(s) connecté(s)${RESET}\n"
 
 adb install -r "$APK"
 
-echo -e "\n${GREEN}✓ MonPetitRoadtrip (release) installé !${RESET}\n"
+echo -e "\n${GREEN}✓ PlanYourTrip (release) installé !${RESET}\n"

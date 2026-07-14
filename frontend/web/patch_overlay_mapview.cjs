@@ -1,5 +1,5 @@
 const fs = require('fs');
-const path = '/opt/planyourride/frontend/web/src/components/MapView.jsx';
+const path = '/opt/planyourtrip/frontend/web/src/components/MapView.jsx';
 let src = fs.readFileSync(path, 'utf-8');
 
 // 1. Add overlayData prop to destructuring

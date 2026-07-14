@@ -1,6 +1,6 @@
 REGLE FONDAMENTALE : 
 - PARLE TOUJOURS  EN FRANCAIS
-- Le répertoire `Cavalcade/` est présent dans le workspace **uniquement comme référence d'inspiration**. Il est **STRICTEMENT INTERDIT** de modifier, créer ou supprimer le moindre fichier dans ce répertoire. Toutes les modifications sont réservées au projet `MonPetitRoadtrip/`.
+- Le répertoire `Cavalcade/` est présent dans le workspace **uniquement comme référence d'inspiration**. Il est **STRICTEMENT INTERDIT** de modifier, créer ou supprimer le moindre fichier dans ce répertoire. Toutes les modifications sont réservées au projet `PlanYourTrip/`.
 
 # Mon Petit Roadtrip — Instructions Copilot
 
@@ -13,7 +13,7 @@ REGLE FONDAMENTALE :
 
 ## Structure du projet
 ```
-MonPetitRoadtrip/
+PlanYourTrip/
 ├── frontend/          # Expo React Native
 │   ├── src/
 │   │   ├── screens/
@@ -319,7 +319,7 @@ chore: corriger le déploiement backend — remote SSH et migration Prisma
   - docs/contexts/INDEX.md
   - frontend/.env.example
   - frontend/.vscode/settings.json
-  - frontend/MonPetitRoadtrip.code-workspace
+  - frontend/PlanYourTrip.code-workspace
   - frontend/web/package-lock.json
   - frontend/web/package.json
   - frontend/web/src/App.jsx

@@ -31,7 +31,7 @@ feat: ajout lat/lng sur activités et hébergements, types SUPERMARKET/HIKING/PA
   - .github/copilot-instructions.md
   - docs/contexts/2026-03-21_071938_master.md
   - docs/contexts/INDEX.md
-  - frontend/MonPetitRoadtrip.code-workspace
+  - frontend/PlanYourTrip.code-workspace
   - frontend/web/src/components/AccommodationModal.jsx
   - frontend/web/src/components/ActivityModal.jsx
   - frontend/web/src/pages/RoadtripPage.jsx

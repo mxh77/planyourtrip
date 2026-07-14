@@ -1,6 +1,6 @@
 # Tue tous les processus qui verrouillent le dossier android/
 Write-Host "→ Arret daemon Gradle..."
-$gradlew = "C:\MonPetitRoadtrip\frontend\android\gradlew.bat"
+$gradlew = "C:\PlanYourTrip\frontend\android\gradlew.bat"
 if (Test-Path $gradlew) {
     & $gradlew --stop 2>$null
 }
@@ -13,7 +13,7 @@ Write-Host "→ Kill java / adb / gradle..."
 Start-Sleep -Seconds 3
 
 Write-Host "→ Suppression du dossier android..."
-$path = "C:\MonPetitRoadtrip\frontend\android"
+$path = "C:\PlanYourTrip\frontend\android"
 if (Test-Path $path) {
     Remove-Item -Recurse -Force -Path $path -ErrorAction Stop
     Write-Host "✓ Dossier android supprime"

@@ -28,11 +28,11 @@ jobs:
           CT111_HOST: ${{ secrets.CT111_HOST }}
         run: |
           ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
-            git -C /opt/MonPetitRoadtrip remote set-url origin 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mxh77/MonPetitRoadtrip.git'
-            git -C /opt/MonPetitRoadtrip fetch origin
-            git -C /opt/MonPetitRoadtrip reset --hard origin/master
+            git -C /opt/PlanYourTrip remote set-url origin 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mxh77/PlanYourTrip.git'
+            git -C /opt/PlanYourTrip fetch origin
+            git -C /opt/PlanYourTrip reset --hard origin/master
             echo '✓ Code mis à jour sur origin/master'
-            git -C /opt/MonPetitRoadtrip log --oneline -1
+            git -C /opt/PlanYourTrip log --oneline -1
           "
 
       - name: Install backend dependencies
@@ -40,7 +40,7 @@ jobs:
           CT111_HOST: ${{ secrets.CT111_HOST }}
         run: |
           ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
-            cd /opt/MonPetitRoadtrip/backend
+            cd /opt/PlanYourTrip/backend
             npm ci
             npx prisma generate
             echo '✓ Dépendances backend installées'
@@ -51,7 +51,7 @@ jobs:
           CT111_HOST: ${{ secrets.CT111_HOST }}
         run: |
           ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
-            pm2 restart monpetitroadtrip-api --update-env
+            pm2 restart planyourtrip-api --update-env
             echo '✓ PM2 redémarré'
           "
 
@@ -62,7 +62,7 @@ jobs:
           VITE_GOOGLE_MAP_ID: ${{ secrets.VITE_GOOGLE_MAP_ID }}
         run: |
           ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
-            cd /opt/MonPetitRoadtrip/frontend/web
+            cd /opt/PlanYourTrip/frontend/web
             # S'assurer que le .env est présent (non versionné, créé manuellement au premier déploiement)
             if [ ! -f .env ]; then
               echo 'VITE_GOOGLE_PLACES_API_KEY=${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}' > .env
@@ -71,7 +71,7 @@ jobs:
             fi
             npm ci
             npm run build
-            cp -r dist/* /var/www/monpetitroadtrip/ 2>/dev/null || true
+            cp -r dist/* /var/www/planyourtrip/ 2>/dev/null || true
             echo '✓ Frontend buildé et déployé'
           "
 
@@ -91,6 +91,6 @@ jobs:
           ssh -i ~/.ssh/ct111_key -o StrictHostKeyChecking=no "root@$CT111_HOST" "
             echo '✅ Déploiement production terminé'
             echo 'Message : ${{ inputs.commit_message }}'
-            echo 'Commit  : '\$(git -C /opt/MonPetitRoadtrip rev-parse --short HEAD)
-            pm2 list | grep monpetitroadtrip
+            echo 'Commit  : '$(git -C /opt/PlanYourTrip rev-parse --short HEAD)
+            pm2 list | grep planyourtrip
           "

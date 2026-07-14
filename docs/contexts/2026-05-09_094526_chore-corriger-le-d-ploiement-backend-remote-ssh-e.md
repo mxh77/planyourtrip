@@ -136,7 +136,7 @@ chore: corriger le déploiement backend — remote SSH et migration Prisma
   - docs/contexts/INDEX.md
   - frontend/.env.example
   - frontend/.vscode/settings.json
-  - frontend/MonPetitRoadtrip.code-workspace
+  - frontend/PlanYourTrip.code-workspace
   - frontend/web/package-lock.json
   - frontend/web/package.json
   - frontend/web/src/App.jsx

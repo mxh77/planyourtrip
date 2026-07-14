@@ -23,7 +23,7 @@ function getTransporter() {
   return transporter;
 }
 
-const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@monpetit-roadtrip.app';
+const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@planyourtrip.app';
 const APP_NAME = 'Mon Petit Roadtrip';
 
 /**

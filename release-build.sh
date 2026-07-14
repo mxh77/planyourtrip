@@ -3,7 +3,7 @@
 # Build release Android (APK signé)
 # Prérequis :
 #   - frontend/keystore.properties rempli avec le mot de passe keystore
-#   - monpetitroadtrip.keystore présent à la racine du projet
+#   - planyourtrip.keystore présent à la racine du projet
 
 set -e
 
@@ -22,7 +22,7 @@ ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 
 echo -e "\n${YELLOW}════════════════════════════════════════${RESET}"
-echo -e "${YELLOW}  Mon Petit Roadtrip — Android Release  ${RESET}"
+echo -e "${YELLOW}     PlanYourTrip — Android Release     ${RESET}"
 echo -e "${YELLOW}════════════════════════════════════════${RESET}\n"
 
 # ─── Android SDK ─────────────────────────────────────────────────────────────
@@ -64,10 +64,10 @@ if [ -f "$ENV_FILE" ]; then
   set +a
 fi
 
-# Skipper le prebuild si le projet natif est déjà en mode release (com.mxh7777.monpetitroadtrip)
+# Skipper le prebuild si le projet natif est déjà en mode release (com.mxh7777.planyourtrip)
 MANIFEST="$FRONTEND_DIR/android/app/src/main/AndroidManifest.xml"
-if grep -q 'package="com.mxh7777.monpetitroadtrip"' "$MANIFEST" 2>/dev/null && \
-   ! grep -q 'com.mxh7777.monpetitroadtrip.dev' "$MANIFEST" 2>/dev/null; then
+if grep -q 'package="com.mxh7777.planyourtrip"' "$MANIFEST" 2>/dev/null && \
+   ! grep -q 'com.mxh7777.planyourtrip.dev' "$MANIFEST" 2>/dev/null; then
   echo -e "${GREEN}✓ Projet natif release déjà présent — prebuild skippé${RESET}"
 else
   if [ -d "android" ]; then
@@ -109,20 +109,22 @@ else
       exit 1
     fi
   fi
+  cd "$FRONTEND_DIR"
   npx expo prebuild --platform android --no-install
+  cd "$ROOT_DIR"
   echo -e "${GREEN}✓ Prebuild terminé${RESET}"
 fi
 
 # ─── Copie keystore + config Gradle ──────────────────────────────────────────
 echo -e "\n${YELLOW}[2/4]${RESET} Configuration signing..."
-cp "$ROOT_DIR/monpetitroadtrip.keystore" "$FRONTEND_DIR/android/app/"
+cp "$ROOT_DIR/planyourtrip.keystore" "$FRONTEND_DIR/android/app/"
 
 # gradle.properties — JDK + signing
 GRADLE_PROPS="$FRONTEND_DIR/android/gradle.properties"
 cat >> "$GRADLE_PROPS" << EOF
 
 org.gradle.java.home=C:\\\\PROGRA~1\\\\Java\\\\jdk-20
-MYAPP_STORE_FILE=monpetitroadtrip.keystore
+MYAPP_STORE_FILE=planyourtrip.keystore
 MYAPP_STORE_PASSWORD=$STORE_PASSWORD
 MYAPP_KEY_ALIAS=$KEY_ALIAS
 MYAPP_KEY_PASSWORD=$KEY_PASSWORD
@@ -147,15 +149,21 @@ echo -e "\n${YELLOW}[3/4]${RESET} Build APK release...\n"
 cd "$FRONTEND_DIR/android"
 # --build-cache : réutilise les artefacts Gradle entre builds
 # reactNativeArchitectures=arm64-v8a : une seule ABI pour le téléphone de test (~2× plus rapide)
-./gradlew assembleRelease --build-cache -PreactNativeArchitectures=arm64-v8a
+# Réduire le chemin .cxx pour éviter les limites de path length
+mkdir -p .gradle-cache .build-cache 2>/dev/null || true
+./gradlew assembleRelease \
+  --build-cache \
+  -PreactNativeArchitectures=arm64-v8a \
+  -Dorg.gradle.projectcachedir=.gradle-cache \
+  -Dandroid.ndkVersion=26.1.10909125
 
 # ─── Install ─────────────────────────────────────────────────────────────────
 APK_RAW="$FRONTEND_DIR/android/app/build/outputs/apk/release/app-release.apk"
-APK_PATH="$ROOT_DIR/monpetitroadtrip.apk"
+APK_PATH="$ROOT_DIR/planyourtrip.apk"
 
 if [ -f "$APK_RAW" ]; then
   cp "$APK_RAW" "$APK_PATH"
-  echo -e "\n${GREEN}✓ APK : monpetitroadtrip.apk${RESET}"
+  echo -e "\n${GREEN}✓ APK : planyourtrip.apk${RESET}"
   echo -e "\n${YELLOW}[4/5]${RESET} Installation sur le téléphone..."
   DEVICES=$(adb devices 2>/dev/null | grep -v "List of devices" | grep "device$" | wc -l)
   if [ "$DEVICES" -gt 0 ]; then
@@ -166,8 +174,8 @@ if [ -f "$APK_RAW" ]; then
 
   echo -e "\n${YELLOW}[5/5]${RESET} Upload APK vers CT111..."
   if ssh -o ConnectTimeout=5 ct111 "echo ok" &>/dev/null; then
-    scp "$APK_PATH" ct111:/opt/MonPetitRoadtrip/downloads/monpetitroadtrip.apk
-    echo -e "${GREEN}✓ APK disponible sur https://monpetitroadtrip.harmonixe.fr/downloads/monpetitroadtrip.apk${RESET}"
+    scp "$APK_PATH" ct111:/opt/PlanYourTrip/downloads/planyourtrip.apk
+    echo -e "${GREEN}✓ APK uploadé sur CT111${RESET}"
   else
     echo -e "${YELLOW}⚠ CT111 inaccessible — upload ignoré.${RESET}"
   fi

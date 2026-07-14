@@ -1,5 +1,5 @@
 const fs = require('fs');
-const path = '/opt/planyourride/frontend/web/src/pages/RoadtripPage.jsx';
+const path = '/opt/planyourtrip/frontend/web/src/pages/RoadtripPage.jsx';
 let src = fs.readFileSync(path, 'utf-8');
 
 // 1. Replace the carousel div to add onScroll handler

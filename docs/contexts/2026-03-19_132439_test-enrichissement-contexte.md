@@ -64,7 +64,7 @@ test enrichissement contexte
   - docs/contexts/2026-03-18_125458_master.md
   - docs/contexts/INDEX.md
   - frontend/.gitignore
-  - frontend/MonPetitRoadtrip.code-workspace
+  - frontend/PlanYourTrip.code-workspace
   - frontend/app.json
   - frontend/google-services.json
   - frontend/package-lock.json

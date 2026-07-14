@@ -12,7 +12,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'mxh77';
-const GITHUB_REPO  = process.env.GITHUB_REPO  || 'MonPetitRoadtrip';
+const GITHUB_REPO  = process.env.GITHUB_REPO  || 'PlanYourTrip';
 const GITHUB_PAT   = process.env.GITHUB_PAT   || '';
 
 function githubFetch(path) {
@@ -26,7 +26,7 @@ function githubFetch(path) {
         Authorization: `Bearer ${GITHUB_PAT}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': 'MonPetitRoadtrip-Backfill/1.0',
+        'User-Agent': 'PlanYourTrip-Backfill/1.0',
       },
     }, (res) => {
       let data = '';

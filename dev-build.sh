@@ -52,7 +52,7 @@ if [ "$1" != "--skip-build" ]; then
   # Prebuild si le projet natif n'existe pas encore
   MANIFEST="$FRONTEND_DIR/android/app/src/main/AndroidManifest.xml"
   NEED_PREBUILD=false
-  if ! grep -q "com.mxh7777.monpetitroadtrip.dev" "$MANIFEST" 2>/dev/null; then
+  if ! grep -q "com.mxh7777.planyourtrip.dev" "$MANIFEST" 2>/dev/null; then
     NEED_PREBUILD=true
   fi
   if [ "$NEED_PREBUILD" = true ]; then
@@ -81,9 +81,16 @@ if [ "$1" != "--skip-build" ]; then
     echo "org.gradle.java.home=C:\\\\PROGRA~1\\\\Java\\\\jdk-20" >> "$GRADLE_PROPS"
   fi
 
+  # Nettoyer les caches Metro/Gradle avant de compiler
+  echo -e "${YELLOW}🧹 Nettoyage des caches...${RESET}"
+  rm -rf "$FRONTEND_DIR/.expo" "$FRONTEND_DIR/node_modules/.cache" "$FRONTEND_DIR/android/build" "$FRONTEND_DIR/android/.gradle"
+  cd "$FRONTEND_DIR/android"
+  ./gradlew clean 2>/dev/null || true
+  sleep 1
+
   echo -e "\n${YELLOW}[1/2]${RESET} Gradle assembleDebug...\n"
   cd "$FRONTEND_DIR/android"
-  ./gradlew assembleDebug --build-cache
+  ./gradlew assembleDebug
   BUILD_EXIT=$?
   cd "$FRONTEND_DIR"
 
@@ -93,18 +100,18 @@ if [ "$1" != "--skip-build" ]; then
     exit $BUILD_EXIT
   fi
 
-  cp "$APK_RAW" "$(dirname "$FRONTEND_DIR")/monpetitroadtrip.debug.apk"
-  echo -e "${GREEN}✓ monpetitroadtrip.debug.apk${RESET}"
+  cp "$APK_RAW" "$(dirname "$FRONTEND_DIR")/planyourtrip.debug.apk"
+  echo -e "${GREEN}✓ planyourtrip.debug.apk${RESET}"
 
   echo -e "\n${YELLOW}[2/2]${RESET} Installation sur l'appareil...\n"
   DEVICES=$(adb devices 2>/dev/null | grep -v "List of devices" | grep "device$" | wc -l)
   if [ "$DEVICES" -eq 0 ]; then
     echo -e "${YELLOW}⚠ Build OK — mais aucun appareil connecté. Pour installer manuellement :${RESET}"
-    echo -e "  adb install -r monpetitroadtrip.debug.apk"
+    echo -e "  adb install -r planyourtrip.debug.apk"
     exit 0
   fi
 
-  adb install -r "$(dirname "$FRONTEND_DIR")/monpetitroadtrip.debug.apk"
+  adb install -r "$(dirname "$FRONTEND_DIR")/planyourtrip.debug.apk"
   echo -e "\n${GREEN}✓ APK installé !${RESET}"
 
 fi

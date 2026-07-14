@@ -15,7 +15,7 @@ Suis les étapes ci-dessous dans l'ordre strict. **Ne passe à l'étape suivante
 Exécute cette commande dans le terminal :
 
 ```bash
-ssh ct111 "cd /opt/MonPetitRoadtrip/backend && node scripts/list-suggestions.js"
+ssh ct111 "cd /opt/PlanYourTrip/backend && node scripts/list-suggestions.js"
 ```
 
 Ce script affiche toutes les suggestions non encore traitées avec leur numéro, ID, date, utilisateur et texte.
@@ -129,7 +129,7 @@ Implémente le plan validé en suivant les règles du projet.
 1. Résume les fichiers modifiés.
 2. Marque la suggestion comme traitée :
    ```bash
-   ssh ct111 "cd /opt/MonPetitRoadtrip/backend && node scripts/list-suggestions.js --mark SUGGESTION_ID"
+   ssh ct111 "cd /opt/PlanYourTrip/backend && node scripts/list-suggestions.js --mark SUGGESTION_ID"
    ```
    *(Remplace `SUGGESTION_ID` par l'ID réel affiché à l'étape 1)*
 

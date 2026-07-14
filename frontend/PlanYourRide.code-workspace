@@ -13,7 +13,7 @@
 	"settings": {
 		"java.configuration.updateBuildConfiguration": "disabled",
 		"chat.tools.terminal.autoApprove": {
-			"/^cd \"C:/MonPetitRoadtrip\" && bash analyze_run\\.sh 6 full 2>&1$/": {
+			"/^cd \"C:/PlanYourTrip\" && bash analyze_run\\\\.sh 6 full 2>&1$/": {
 				"approve": true,
 				"matchCommandLine": true
 			}

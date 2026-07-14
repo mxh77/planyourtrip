@@ -4,7 +4,7 @@ const path     = require('path')
 const fs       = require('fs')
 const { execFile } = require('child_process')
 const { promisify } = require('util')
-const { v4: uuidv4 } = require('uuid')
+const { randomUUID } = require('crypto')
 const mammoth  = require('mammoth')
 
 const execFileAsync = promisify(execFile)
@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
   filename:    (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '')
-    cb(null, `${uuidv4()}${ext}`)
+    cb(null, `${randomUUID()}${ext}`)
   },
 })
 

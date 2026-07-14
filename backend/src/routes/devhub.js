@@ -10,7 +10,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'mxh77';
-const GITHUB_REPO = process.env.GITHUB_REPO || 'MonPetitRoadtrip';
+const GITHUB_REPO = process.env.GITHUB_REPO || 'PlanYourTrip';
 const GITHUB_PAT = process.env.GITHUB_PAT || '';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
@@ -55,7 +55,7 @@ function githubFetch(path, options = {}) {
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         'Content-Type': 'application/json',
-        'User-Agent': 'MonPetitRoadtrip-DevHub/1.0',
+        'User-Agent': 'PlanYourTrip-DevHub/1.0',
         ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}),
       },
     };

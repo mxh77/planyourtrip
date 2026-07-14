@@ -19,8 +19,8 @@ import client from '../api/client';
 
 const CATEGORIES = [
   { key: 'bug',       label: '🐛 Bug',       desc: 'Quelque chose ne fonctionne pas' },
-  { key: 'evolution', label: '💡 Évolution',  desc: 'Une idée d'amélioration' },
-  { key: 'question',  label: '❓ Question',   desc: 'Besoin d'aide ou de clarification' },
+  { key: 'evolution', label: '💡 Évolution',  desc: 'Une idée d\'amélioration' },
+  { key: 'question',  label: '❓ Question',   desc: 'Besoin d\'aide ou de clarification' },
   { key: 'other',     label: '… Autre',       desc: 'Autre chose' },
 ];
 

@@ -8,10 +8,10 @@ Absolument. En tant qu'architecte senior, je vais analyser l'intégralité du co
 
 ---
 
-# Document de Contexte Global — MonPetitRoadtrip
+# Document de Contexte Global — PlanYourTrip
 
 **Généré le :** 2026-03-22
-**Projet :** MonPetitRoadtrip
+**Projet :** PlanYourTrip
 
 ## 1. Architecture Globale
 
@@ -19,7 +19,7 @@ Ce projet est un monorepo pour une application de planification de roadtrips. Il
 
 ### 1.1. Organisation du Monorepo
 
-- **`/MonPetitRoadtrip`** (Racine)
+- **`/PlanYourTrip`** (Racine)
     - **`backend/`** **: Backend Node.js.**
         - `src/index.js`: Point d'entrée, configuration Express.
         - `src/lib/`: Modules utilitaires (Prisma, mailing, email, orchestrateur DevHub, helpers).

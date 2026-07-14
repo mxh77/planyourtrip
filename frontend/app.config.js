@@ -13,9 +13,9 @@ require('dotenv').config({ path: path.resolve(__dirname, envFile) });
 module.exports = ({ config }) => {
   const finalConfig = {
     ...config,
-    name: IS_DEV ? 'PYR_Debug' : 'PlanYourRide',
-    slug: 'planyourride',
-    scheme: IS_DEV ? 'planyourride-dev' : 'planyourride',
+    name: IS_DEV ? 'PlanYourTrip_Debug' : 'PlanYourTrip',
+    slug: 'planyourtrip',
+    scheme: IS_DEV ? 'planyourtrip-dev' : 'planyourtrip',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -36,8 +36,8 @@ module.exports = ({ config }) => {
       },
       edgeToEdgeEnabled: true,
       package: IS_DEV
-        ? 'com.mxh7777.planyourride.dev'
-        : 'com.mxh7777.planyourride',
+        ? 'com.mxh7777.planyourtrip.dev'
+        : 'com.mxh7777.planyourtrip',
     },
     web: {
       favicon: './assets/favicon.png',
@@ -54,14 +54,17 @@ module.exports = ({ config }) => {
     const app = cfg.modResults.manifest.application[0];
     if (!app['meta-data']) app['meta-data'] = [];
     app['meta-data'] = app['meta-data'].filter(
-      (m) => m.0.['android:name'] !== 'com.google.android.geo.API_KEY'
+      (m) => m.$['android:name'] !== 'com.google.android.geo.API_KEY'
     );
-    app['meta-data'].push({
-      $: {
-        'android:name': 'com.google.android.geo.API_KEY',
-        'android:value': process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
-      },
-    });
+    // Only add the API key if it's defined
+    if (process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY) {
+      app['meta-data'].push({
+        $: {
+          'android:name': 'com.google.android.geo.API_KEY',
+          'android:value': process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
+        },
+      });
+    }
     return cfg;
   });
 };

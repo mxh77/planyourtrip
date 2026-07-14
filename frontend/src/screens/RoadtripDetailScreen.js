@@ -66,73 +66,84 @@ const MOCK_STEPS = [
 ];
 
 // ─── StepCard (compact pour la liste) ────────────────────────────────────────
-function StepCard({ step, index, isActive, onPress, color }) {
+function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
   const nights = durationDays(step.startDate, step.endDate);
   const hasAccom = !!step.accommodation;
   const hasActivities = step.activities?.length > 0;
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[styles.stepCard, isActive && styles.stepCardActive]}
-      activeOpacity={0.7}
-    >
-      {/* Timeline dot */}
-      <View style={styles.timelineCol}>
-        <View style={[styles.timelineDot, { backgroundColor: color }]} />
-        <View style={styles.timelineLine} />
-      </View>
+    <View style={[styles.stepCard, isActive && styles.stepCardActive]}>
+      <TouchableOpacity
+        onPress={onPress}
+        style={{ flex: 1, flexDirection: 'row' }}
+        activeOpacity={0.7}
+      >
+        {/* Timeline dot */}
+        <View style={styles.timelineCol}>
+          <View style={[styles.timelineDot, { backgroundColor: color }]} />
+          <View style={styles.timelineLine} />
+        </View>
 
-      {/* Content */}
-      <View style={styles.stepContent}>
-        <View style={styles.stepTopRow}>
-          <Text style={[styles.stepName, isActive && styles.stepNameActive]} numberOfLines={1}>
-            {step.name}
-          </Text>
-          {step.type && step.type !== 'STAGE' && (
-            <Text style={styles.stepType}>{step.type === 'DEPARTURE' ? 'DÉPART' : step.type === 'STOP' ? 'STOP' : step.type}</Text>
-          )}
-        </View>
-        <Text style={styles.stepLocation} numberOfLines={1}>{step.location}</Text>
-        <View style={styles.stepMeta}>
-          {step.startDate && (
-            <Text style={styles.stepMetaText}>
-              📅 {formatDate(step.startDate)}{step.endDate ? ` → ${formatDate(step.endDate)}` : ''}
+        {/* Content */}
+        <View style={styles.stepContent}>
+          <View style={styles.stepTopRow}>
+            <Text style={[styles.stepName, isActive && styles.stepNameActive]} numberOfLines={1}>
+              {step.name}
             </Text>
-          )}
-          {nights && <Text style={styles.stepMetaText}> 🌙 {nights} nuit{nights > 1 ? 's' : ''}</Text>}
-        </View>
-        {hasAccom && (
-          <View style={styles.tagRow}>
-            <Text style={styles.tagAccom}>
-              {ACCOM_ICONS[step.accommodation.type] || '🏕️'} {step.accommodation.name}
-            </Text>
-          </View>
-        )}
-        {hasActivities && (
-          <View style={styles.tagRow}>
-            {step.activities.slice(0, 2).map((a, i) => (
-              <Text key={i} style={styles.tagActivity}>🥾 {a.name}</Text>
-            ))}
-            {step.activities.length > 2 && (
-              <Text style={styles.tagMore}>+{step.activities.length - 2}</Text>
+            {step.type && step.type !== 'STAGE' && (
+              <Text style={styles.stepType}>{step.type === 'DEPARTURE' ? 'DÉPART' : step.type === 'STOP' ? 'STOP' : step.type}</Text>
             )}
           </View>
-        )}
-      </View>
-
-      {/* Travel time */}
-      {step.distanceFromPrev && (
-        <View style={styles.travelCol}>
-          <Text style={styles.travelTime}>
-            {step.durationFromPrev >= 60
-              ? `${Math.floor(step.durationFromPrev / 60)}h${String(Math.round(step.durationFromPrev % 60)).padStart(2, '0')}`
-              : `${Math.round(step.durationFromPrev)} min`}
-          </Text>
-          <Text style={styles.travelDist}>{Math.round(step.distanceFromPrev)} km</Text>
+          <Text style={styles.stepLocation} numberOfLines={1}>{step.location}</Text>
+          <View style={styles.stepMeta}>
+            {step.startDate && (
+              <Text style={styles.stepMetaText}>
+                📅 {formatDate(step.startDate)}{step.endDate ? ` → ${formatDate(step.endDate)}` : ''}
+              </Text>
+            )}
+            {nights && <Text style={styles.stepMetaText}> 🌙 {nights} nuit{nights > 1 ? 's' : ''}</Text>}
+          </View>
+          {hasAccom && (
+            <View style={styles.tagRow}>
+              <Text style={styles.tagAccom}>
+                {ACCOM_ICONS[step.accommodation.type] || '🏕️'} {step.accommodation.name}
+              </Text>
+            </View>
+          )}
+          {hasActivities && (
+            <View style={styles.tagRow}>
+              {step.activities.slice(0, 2).map((a, i) => (
+                <Text key={i} style={styles.tagActivity}>🥾 {a.name}</Text>
+              ))}
+              {step.activities.length > 2 && (
+                <Text style={styles.tagMore}>+{step.activities.length - 2}</Text>
+              )}
+            </View>
+          )}
         </View>
-      )}
-    </TouchableOpacity>
+
+        {/* Travel time */}
+        {step.distanceFromPrev && (
+          <View style={styles.travelCol}>
+            <Text style={styles.travelTime}>
+              {step.durationFromPrev >= 60
+                ? `${Math.floor(step.durationFromPrev / 60)}h${String(Math.round(step.durationFromPrev % 60)).padStart(2, '0')}`
+                : `${Math.round(step.durationFromPrev)} min`}
+            </Text>
+            <Text style={styles.travelDist}>{Math.round(step.distanceFromPrev)} km</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {/* Bouton info détail */}
+      <TouchableOpacity
+        onPress={onDetailPress}
+        style={styles.stepDetailBtn}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={styles.stepDetailBtnText}>ℹ️</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -183,6 +194,24 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Animation de la bottom sheet
   const sheetAnim = useRef(new Animated.Value(SHEET_COLLAPSED)).current;
+  const mapRef = useRef(null);
+
+  // Injecter titre + hamburger dans la barre de navigation native
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitle: roadtrip.title,
+      headerTitleAlign: 'center',
+      headerTitleStyle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+      headerStyle: { backgroundColor: 'rgba(26,26,38,1)' },
+      headerTintColor: '#fff',
+      headerRight: () => (
+        <TouchableOpacity style={{ marginRight: 12 }}>
+          <Text style={{ fontSize: 18, color: '#fff' }}>☰</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, roadtrip.title]);
 
   const toggleSheet = useCallback(() => {
     const toValue = sheetExpanded ? SHEET_COLLAPSED : SHEET_FULL;
@@ -212,89 +241,78 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* ─── MAP ────────────────────────────────────────────────────────── */}
-      <MapView
-        style={StyleSheet.absoluteFill}
-        initialRegion={region}
-        provider={PROVIDER_GOOGLE}
-        customMapStyle={DARK_MAP_STYLE}
-      >
-        {steps.map((s, i) => (
-          s.latitude && s.longitude && (
-            <Marker
-              key={s.id}
-              coordinate={{ latitude: s.latitude, longitude: s.longitude }}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
-              <View style={[styles.marker, { backgroundColor: ORDER_COLORS[i % ORDER_COLORS.length] }]}>
-                <Text style={styles.markerText}>{i + 1}</Text>
-              </View>
-            </Marker>
-          )
-        ))}
-      </MapView>
-
-      {/* ─── HEADER ─────────────────────────────────────────────────────── */}
-      <SafeAreaView style={styles.header}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
-            <Text style={styles.headerBtnText}>←</Text>
-          </TouchableOpacity>
-          <View style={styles.headerTitle}>
-            <Text style={styles.headerTitleText}>{roadtrip.title}</Text>
+      {/* ─── SEARCH (sous la nav native) ───────────────────────────────── */}
+      <View style={styles.headerContainer}>
+        {/* Search + Zone on same row */}
+        <View style={styles.searchArea}>
+          <View style={styles.searchBar}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Rechercher un lieu…"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              editable={false}
+            />
           </View>
-          <TouchableOpacity style={styles.headerBtn}>
-            <Text style={styles.headerBtnText}>👥</Text>
+          <TouchableOpacity
+            onPress={() => setShowSearchArea(!showSearchArea)}
+            style={[styles.zoneBtn, showSearchArea && styles.zoneBtnActive]}
+          >
+            <Text style={[styles.zoneBtnText, showSearchArea && styles.zoneBtnTextActive]}>🔍 Zone</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
-
-      {/* ─── SEARCH + ZONE ─────────────────────────────────────────────── */}
-      <View style={[styles.searchArea, { top: insets.top + 50 }]}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher un lieu…"
-            placeholderTextColor="rgba(255,255,255,0.3)"
-            editable={false}
-          />
-          <View style={styles.searchBadge}><Text style={styles.searchBadgeText}>{steps.length}</Text></View>
-        </View>
-        <TouchableOpacity
-          onPress={() => setShowSearchArea(!showSearchArea)}
-          style={[styles.zoneBtn, showSearchArea && styles.zoneBtnActive]}
-        >
-          <Text style={[styles.zoneBtnText, showSearchArea && styles.zoneBtnTextActive]}>🔍 Chercher dans cette zone</Text>
-        </TouchableOpacity>
       </View>
 
-      {/* ─── OVERLAY BUTTONS ───────────────────────────────────────────── */}
-      <View style={[styles.overlayCol, { top: '45%' }]}>
-        {OVERLAY_ITEMS.map(item => (
-          <TouchableOpacity
-            key={item.key}
-            onPress={() => toggleOverlay(item.key)}
-            style={[styles.ovBtn, activeOverlays[item.key] && styles.ovBtnActive]}
-          >
-            <Text style={styles.ovBtnIcon}>{item.icon}</Text>
-          </TouchableOpacity>
-        ))}
+      {/* ─── MAP (flex: 1 to fill remaining space) ───────────────────────── */}
+      <View style={styles.mapContainer}>
+        <MapView
+          ref={mapRef}
+          style={StyleSheet.absoluteFill}
+          initialRegion={region}
+          provider={PROVIDER_GOOGLE}
+          customMapStyle={DARK_MAP_STYLE}
+        >
+          {steps.map((s, i) => (
+            s.latitude && s.longitude && (
+              <Marker
+                key={s.id}
+                coordinate={{ latitude: s.latitude, longitude: s.longitude }}
+                anchor={{ x: 0.5, y: 0.5 }}
+              >
+                <View style={[styles.marker, { backgroundColor: ORDER_COLORS[i % ORDER_COLORS.length] }]}>
+                  <Text style={styles.markerText}>{i + 1}</Text>
+                </View>
+              </Marker>
+            )
+          ))}
+        </MapView>
+
+        {/* ─── OVERLAY BUTTONS (absolute within map) ─────────────────────── */}
+        <View style={[styles.overlayCol, { top: '45%' }]}>
+          {OVERLAY_ITEMS.map(item => (
+            <TouchableOpacity
+              key={item.key}
+              onPress={() => toggleOverlay(item.key)}
+              style={[styles.ovBtn, activeOverlays[item.key] && styles.ovBtnActive]}
+            >
+              <Text style={styles.ovBtnIcon}>{item.icon}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* ─── BOTTOM SHEET ──────────────────────────────────────────────── */}
-      <Animated.View style={[styles.sheet, { height: sheetAnim }]}>
-        {/* Handle */}
-        <TouchableOpacity onPress={toggleSheet} style={styles.sheetHandle}>
+      <Animated.View style={[styles.sheet, { height: sheetAnim }]} pointerEvents="box-none">
+        {/* Handle — simple tap to toggle */}
+        <TouchableOpacity onPress={toggleSheet} style={styles.sheetHandle} activeOpacity={0.7}>
           <View style={styles.handleBar} />
           {sheetExpanded && (
-            <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn}>
+            <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.sheetCloseText}>✕</Text>
             </TouchableOpacity>
           )}
         </TouchableOpacity>
 
-        <View style={styles.sheetContent}>
+        <View style={styles.sheetContent} pointerEvents={sheetExpanded ? 'auto' : 'none'}>
           {!sheetExpanded ? (
             /* Mode replié : étape en cours */
             selectedStep && (
@@ -307,7 +325,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             )
           ) : (
             /* Mode plein écran : liste des étapes */
-            <View style={styles.sheetFull}>
+            <View style={styles.sheetFull} pointerEvents="auto">
               {/* Onglets + en-tête */}
               <View style={styles.sheetFullHeader}>
                 <View style={styles.sheetSegments}>
@@ -328,6 +346,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 style={styles.stepList}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+                scrollEnabled={sheetExpanded}
+                pointerEvents="auto"
               >
                 {steps.map((s, i) => (
                   <StepCard
@@ -338,8 +358,26 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                     color={ORDER_COLORS[i % ORDER_COLORS.length]}
                     onPress={() => {
                       setSelectedIndex(i);
-                      openDetail(i);
+                      // Fermer le volet
+                      setSheetExpanded(false);
+                      const toValue = SHEET_COLLAPSED;
+                      Animated.spring(sheetAnim, {
+                        toValue,
+                        useNativeDriver: false,
+                        tension: 65,
+                        friction: 11,
+                      }).start();
+                      // Centrer la carte sur l'étape
+                      if (s.latitude && s.longitude) {
+                        mapRef.current?.animateToRegion({
+                          latitude: parseFloat(s.latitude),
+                          longitude: parseFloat(s.longitude),
+                          latitudeDelta: 0.1,
+                          longitudeDelta: 0.1,
+                        }, 500);
+                      }
                     }}
+                    onDetailPress={() => openDetail(i)}
                   />
                 ))}
               </ScrollView>
@@ -515,80 +553,133 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
 
-  // Header
-  header: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 30 },
+  // Header container (not absolute)
+  headerContainer: {
+    backgroundColor: 'rgba(26,26,38,0.98)',
+    paddingTop: 0, // insets.top sera appliqué dynamiquement
+  },
   headerRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    height: 44,
   },
   headerBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(20,20,30,0.7)',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerBtnText: { fontSize: 16, color: '#fff' },
+  headerBtnText: { fontSize: 18, color: '#fff', fontWeight: '600' },
   headerTitle: {
-    backgroundColor: 'rgba(20,20,30,0.7)',
-    borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
   },
-  headerTitleText: { fontSize: 13, fontWeight: '600', color: '#fff' },
 
-  // Search
-  searchArea: { position: 'absolute', left: 12, right: 12, zIndex: 25, gap: 4 },
+  // Search area (part of header black bar)
+  searchArea: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingBottom: SPACING.sm,
+    backgroundColor: 'rgba(26,26,38,0.98)',
+  },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(20,20,30,0.85)',
-    borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', gap: 8,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  searchIcon: { fontSize: 14, opacity: 0.6 },
   searchInput: { flex: 1, color: '#fff', fontSize: 13, padding: 0 },
-  searchBadge: {
-    backgroundColor: 'rgba(59,130,246,0.2)', borderRadius: 6,
-    paddingHorizontal: 6, paddingVertical: 2,
-  },
-  searchBadgeText: { color: '#60a5fa', fontSize: 10, fontWeight: '700' },
   zoneBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(59,130,246,0.2)', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderWidth: 1, borderColor: 'rgba(59,130,246,0.15)',
+    backgroundColor: 'rgba(59,130,246,0.4)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.3)',
   },
-  zoneBtnActive: { backgroundColor: 'rgba(59,130,246,0.35)' },
-  zoneBtnText: { color: '#93c5fd', fontSize: 11, fontWeight: '600' },
+  zoneBtnActive: { backgroundColor: 'rgba(59,130,246,0.6)' },
+  zoneBtnText: { color: '#93c5fd', fontSize: 12, fontWeight: '600' },
   zoneBtnTextActive: { color: '#fff' },
 
-  // Overlay buttons
-  overlayCol: { position: 'absolute', right: 12, zIndex: 20, gap: 8 },
-  ovBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  // Map container (flex: 1 to fill remaining space)
+  mapContainer: {
+    flex: 1,
+    position: 'relative',
   },
-  ovBtnActive: { backgroundColor: 'rgba(245,158,11,0.2)', borderColor: 'rgba(245,158,11,0.3)' },
+
+  // Overlay buttons (absolute within map)
+  overlayCol: {
+    position: 'absolute',
+    right: 12,
+    zIndex: 20,
+    gap: 8,
+  },
+  ovBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  ovBtnActive: {
+    backgroundColor: 'rgba(245,158,11,0.2)',
+    borderColor: 'rgba(245,158,11,0.3)',
+  },
   ovBtnIcon: { fontSize: 16 },
 
   // Map markers
   marker: {
-    width: 32, height: 32, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3, shadowRadius: 4, elevation: 5,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   markerText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
   // Bottom sheet
   sheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
     backgroundColor: '#1a1a26',
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.4, shadowRadius: 24, elevation: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 20,
     overflow: 'hidden',
   },
   sheetHandle: {
@@ -663,16 +754,16 @@ const styles = StyleSheet.create({
   timelineLine: { flex: 1, width: 1.5, backgroundColor: 'rgba(255,255,255,0.06)', marginTop: 2 },
   stepContent: { flex: 1, marginLeft: 10 },
   stepTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  stepName: { fontSize: 13, fontWeight: '600', color: '#fff', flex: 1 },
+  stepName: { fontSize: 14, fontWeight: '600', color: '#fff', flex: 1 },
   stepNameActive: { color: '#f59e0b' },
   stepType: {
     fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.4)',
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4,
     paddingHorizontal: 5, paddingVertical: 1,
   },
-  stepLocation: { fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 },
+  stepLocation: { fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 },
   stepMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, marginTop: 2 },
-  stepMetaText: { fontSize: 11, color: 'rgba(255,255,255,0.45)' },
+  stepMetaText: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 3 },
   tagAccom: {
     fontSize: 10, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4,
@@ -688,6 +779,13 @@ const styles = StyleSheet.create({
   travelCol: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 8, minWidth: 48 },
   travelTime: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.7)' },
   travelDist: { fontSize: 10, color: 'rgba(255,255,255,0.3)' },
+  stepDetailBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 8,
+  },
+  stepDetailBtnText: { fontSize: 14 },
 
   // Detail modal
   detailContainer: { flex: 1, backgroundColor: '#1a1a26' },

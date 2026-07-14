@@ -67,7 +67,7 @@ jobs:
       - name: Configurer git
         run: |
           git config user.name "fix-reviews-agent"
-          git config user.email "fix-reviews-agent@monpetitroadtrip.app"
+          git config user.email "fix-reviews-agent@planyourtrip.app"
 
       - name: Lancer l'agent de correction
         env:

@@ -32,7 +32,7 @@ const PIPELINE_META = [
 ];
 
 const PREVIEW_URL = 'http://192.168.1.111:6111';
-const GITHUB_ACTIONS_URL = 'https://github.com/mxh77/PlanYourRide/actions/workflows/delivery-agent.yml';
+const GITHUB_ACTIONS_URL = 'https://github.com/mxh77/PlanYourTrip/actions/workflows/delivery-agent.yml';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -3151,7 +3151,7 @@ export default function AdminDevHub() {
       <nav className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="text-sm font-bold text-gray-900 hover:text-amber-600 transition-colors">
-            🗺 PlanYourRide
+            🗺 PlanYourTrip
           </Link>
           <div className="flex items-center gap-1 text-sm">
             <Link to="/admin/suggestions" className="px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">Suggestions</Link>

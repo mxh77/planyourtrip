@@ -10,7 +10,7 @@ RED='\033[0;31m'
 RESET='\033[0m'
 
 SERVER="ct111"
-REMOTE_WEB="/opt/MonPetitRoadtrip/frontend/web"
+REMOTE_WEB="/opt/PlanYourTrip/frontend/web"
 LOCAL_WEB="$(cd "$(dirname "$0")/frontend/web" && pwd)"
 
 echo -e "\n${YELLOW}════════════════════════════════════════${RESET}"
@@ -43,7 +43,7 @@ server {
     listen 80;
     server_name _;
 
-    root /opt/MonPetitRoadtrip/frontend/web/dist;
+    root /opt/PlanYourTrip/frontend/web/dist;
     index index.html;
 
     # Frontend React (SPA — toutes les routes → index.html)

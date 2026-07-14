@@ -93,7 +93,7 @@ jobs:
       - name: Configurer git
         run: |
           git config user.name "qa-fix-agent"
-          git config user.email "qa-fix-agent@monpetitroadtrip.app"
+          git config user.email "qa-fix-agent@planyourtrip.app"
 
       - name: Lancer l'agent QA fix
         env:

@@ -7,7 +7,7 @@ export default function DownloadPage() {
 
         {/* Logo / titre */}
         <div>
-          <h1 className="text-3xl font-serif font-bold text-gray-900">PlanYourRide</h1>
+          <h1 className="text-3xl font-serif font-bold text-gray-900">PlanYourTrip</h1>
           <p className="mt-2 text-gray-500 text-sm">Planifiez vos aventures, même sans connexion.</p>
         </div>
 
@@ -16,7 +16,7 @@ export default function DownloadPage() {
 
         {/* Bouton de téléchargement */}
         <a
-          href="/downloads/monpetitroadtrip.apk"
+          href="/downloads/planyourtrip.apk"
           className="flex items-center justify-center gap-3 w-full bg-gray-900 text-white font-semibold py-4 px-6 rounded-2xl text-base hover:bg-gray-700 active:scale-95 transition"
         >
           <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="currentColor">

@@ -73,7 +73,7 @@ export default function AdminFeedbackPage() {
         <div className="flex items-center gap-3">
           <Link to="/" className="text-sm text-gray-500 hover:text-gray-800 transition">← Accueil</Link>
           <span className="text-gray-300">|</span>
-          <span className="text-2xl font-serif font-bold text-gray-900">PlanYourRide</span>
+          <span className="text-2xl font-serif font-bold text-gray-900">PlanYourTrip</span>
           <span className="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">Admin</span>
         </div>
         <div className="flex items-center gap-3">

@@ -29,7 +29,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     uses: mxh77/dev-agents-core/.github/workflows/product-spec-agent.yml@main
     with:
-      project_name: monpetitroadtrip
+      project_name: planyourtrip
       base_branch: master
       trigger_label: product-spec-agent
       ai_model: ${{ inputs.ai_model || 'deepseek-v4-flash' }}
@@ -78,7 +78,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.inputs.issue_number || github.event.issue.number }}
         run: |
           git config user.name "product-spec-agent"
-          git config user.email "product-spec-agent@monpetitroadtrip.app"
+          git config user.email "product-spec-agent@planyourtrip.app"
           git add .ai/issues/
           if git diff --staged --quiet; then
             echo "Aucun critère à commiter."

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Post-build verification — checks source files for critical patterns
 
-SRC="/opt/planyourride/frontend/web/src"
+SRC="/opt/planyourtrip/frontend/web/src"
 ERRORS=0
 
 check_src() {
@@ -22,7 +22,7 @@ check_src() {
   fi
 }
 
-echo "=== Verification post-build PlanYourRide ==="
+echo "=== Verification post-build PlanYourTrip ==="
 
 check_src "pages/RoadtripPage.jsx" "carouselRef" "Carrousel d etapes"
 check_src "pages/RoadtripPage.jsx" "overlayTypes" "Boutons overlay (campings rando P4N POI)"
@@ -35,7 +35,7 @@ check_src "components/MapView.jsx" "overlayData" "Support overlay data"
 check_src "components/MapView.jsx" "flyToCoord" "Support flyTo coord"
 check_src "components/MapView.jsx" "useCallback" "Import useCallback"
 
-BUILD_DIR="/opt/planyourride/frontend/web/dist"
+BUILD_DIR="/opt/planyourtrip/frontend/web/dist"
 BUNDLE=$(ls $BUILD_DIR/assets/index-*.js 2>/dev/null | head -1)
 CSS=$(ls $BUILD_DIR/assets/index-*.css 2>/dev/null | head -1)
 

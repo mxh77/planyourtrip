@@ -1,3 +1,3 @@
 #!/bin/bash
 clear
-cd /c/MonPetitRoadtrip/frontend/web && npm run dev
+cd /c/PlanYourTrip/frontend/web && npm run dev

@@ -210,7 +210,7 @@ export default function AdminSuggestionsPage() {
       <nav className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="text-sm font-bold text-gray-900 hover:text-amber-600 transition-colors">
-            🗺 PlanYourRide
+            🗺 PlanYourTrip
           </Link>
           <div className="flex items-center gap-1 text-sm">
             <Link to="/admin/suggestions" className="px-3 py-1.5 rounded-lg font-medium text-amber-700 bg-amber-50 transition-colors">

@@ -60,9 +60,9 @@ if ! ssh -o ConnectTimeout=5 "$SERVER" "echo ok" &>/dev/null; then
 else
   # Backend
   echo -e "${YELLOW}[5/6]${RESET} Déploiement backend sur CT 111..."
-  REMOTE_DIR="/opt/MonPetitRoadtrip/backend"
+  REMOTE_DIR="/opt/PlanYourTrip/backend"
 
-  ssh "$SERVER" "cd /opt/MonPetitRoadtrip && git remote set-url origin git@github.com:mxh77/MonPetitRoadtrip.git && git reset --hard HEAD && git clean -fd && git pull && cd backend && npm install --omit=dev && npx prisma migrate deploy && npx prisma generate && pm2 restart monpetitroadtrip-api --update-env" &>/dev/null
+  ssh "$SERVER" "cd /opt/PlanYourTrip && git remote set-url origin git@github.com:mxh77/PlanYourTrip.git && git reset --hard HEAD && git clean -fd && git pull && cd backend && npm install --omit=dev && npx prisma migrate deploy && npx prisma generate && pm2 restart planyourtrip-api --update-env" &>/dev/null
 
   sleep 1
   STATUS=$(ssh "$SERVER" "curl -s -o /dev/null -w '%{http_code}' http://localhost:3111/health")
@@ -75,7 +75,7 @@ else
   # Web
   echo -e "${YELLOW}[6/6]${RESET} Build + déploiement frontend web..."
   LOCAL_WEB="$(cd "$(dirname "$0")/frontend/web" && pwd)"
-  REMOTE_WEB="/opt/MonPetitRoadtrip/frontend/web"
+  REMOTE_WEB="/opt/PlanYourTrip/frontend/web"
 
   cd "$LOCAL_WEB" && npm run build && cd - > /dev/null
 
@@ -86,7 +86,7 @@ else
     listen 80;
     server_name _;
 
-    root /opt/MonPetitRoadtrip/frontend/web/dist;
+    root /opt/PlanYourTrip/frontend/web/dist;
     index index.html;
 
     location / {
