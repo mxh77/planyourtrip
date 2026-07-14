@@ -14,7 +14,7 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
-const SHEET_COLLAPSED = 80;
+const SHEET_COLLAPSED = 130;
 const SHEET_FULL = SCREEN_H - 200;
 
 const ORDER_COLORS = [
@@ -264,11 +264,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const sheetExpandedRef = useRef(false);
   const searchInputRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  const stepListRef = useRef(null);
 
   // Sync ref avec state pour PanResponder
   useEffect(() => {
     sheetExpandedRef.current = sheetExpanded;
   }, [sheetExpanded]);
+
+  // Scroller vers l'étape sélectionnée quand le volet s'agrandit
+  useEffect(() => {
+    if (sheetExpanded && stepListRef.current && selectedIndex >= 0) {
+      // Chaque StepCard a une hauteur approximative de ~110px, scroll pour centrer l'étape
+      const offsetY = Math.max(0, selectedIndex * 110 - 150);
+      stepListRef.current.scrollTo({ y: offsetY, animated: true });
+    }
+  }, [sheetExpanded, selectedIndex]);
 
   // PanResponder sur la poignée uniquement
   const handlePanResponder = useRef(
@@ -643,7 +653,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           style={styles.sheetHandle}
           {...handlePanResponder.panHandlers}
         >
-          <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 4 }}>
+          <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 12 }}>
             <View style={styles.handleBar} />
           </TouchableOpacity>
           {sheetExpanded && (
@@ -676,6 +686,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
               {/* Liste */}
               <ScrollView
+                ref={stepListRef}
                 style={styles.stepList}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
@@ -1094,12 +1105,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sheetHandle: {
-    alignItems: 'center', paddingVertical: 8,
+    alignItems: 'center', paddingVertical: 16,
     position: 'relative',
   },
   handleBar: {
-    width: 36, height: 4, borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 48, height: 5, borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
   },
   sheetCloseBtn: {
     position: 'absolute', right: 16, top: 6,
