@@ -293,47 +293,49 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     [id]
   );
 
+  // 🎯 Ref pour cache les distances enrichies (doit être avant transformedSteps qui l'utilise)
+  const distancesMapRef = useRef({});
+  const [distancesVersion, setDistancesVersion] = useState(0);  // 🎯 Counter pour trigger re-render du cache
+
   // Transformer les steps PowerSync en format utilisable
   const transformedSteps = useMemo(() => {
-    console.log('[transformedSteps] Recalcul avec psSteps:', psSteps?.length);
+    console.log('[transformedSteps] ⚙️ DEBUT useMemo, distancesVersion:', distancesVersion);  // 🎯 DEBUG
+    console.log('[transformedSteps] Recalcul avec psSteps:', psSteps?.length, 'polylinesLoaded:', polylinesLoaded, 'cachedDistances:', Object.keys(distancesMapRef.current).length);
     if (psSteps.length === 0) {
       console.log('[transformedSteps] psSteps vides → utilise BD');
       return [];
     }
     
     const result = psSteps.map((step, idx) => {
-      const prevStep = idx > 0 ? psSteps[idx - 1] : null;
       const stepAccommodations = psAccommodations.filter(a => a.stepId === step.id);
       const stepActivities = psActivities.filter(a => a.stepId === step.id);
       
-      // Calculer la distance et durée depuis l'étape précédente
-      let distanceFromPrev = 0;
-      let durationFromPrev = 0;
-      if (prevStep && step.latitude && step.longitude && prevStep.latitude && prevStep.longitude) {
-        const earth_r = 6371;
-        const lat1 = (prevStep.latitude * Math.PI) / 180;
-        const lat2 = (step.latitude * Math.PI) / 180;
-        const dLat = ((step.latitude - prevStep.latitude) * Math.PI) / 180;
-        const dLng = ((step.longitude - prevStep.longitude) * Math.PI) / 180;
-        const a =
-          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        distanceFromPrev = Math.round(earth_r * c);
-        durationFromPrev = Math.round((distanceFromPrev * 60) / 90);
+      // 🎯 PRIORITE 1 : Utiliser les distances du cache (vraies distances Google Routes)
+      if (distancesMapRef.current[step.id]) {
+        const { distance, duration } = distancesMapRef.current[step.id];
+        console.log('[transformedSteps] Step', idx, `${step.name}: ${distance}km du cache`);
+        return {
+          ...step,
+          distanceFromPrev: distance,
+          durationFromPrev: duration,
+          accommodation: stepAccommodations.length > 0 ? { ...stepAccommodations[0], status: 'BOOKED' } : null,
+          activities: stepActivities,
+        };
       }
-
+      
+      // 🎯 FALLBACK : Pas de vraies distances encore (cache vide) → affiche 0 (pas de Haversine!)
+      console.warn('[transformedSteps] Step', idx, `${step.name}: PAS DE DISTANCE EN CACHE — attente calcul Google Routes API`);
       return {
         ...step,
-        distanceFromPrev: distanceFromPrev || 0,
-        durationFromPrev: durationFromPrev || 0,
+        distanceFromPrev: 0,  // ← Force 0, pas de Haversine
+        durationFromPrev: 0,
         accommodation: stepAccommodations.length > 0 ? { ...stepAccommodations[0], status: 'BOOKED' } : null,
         activities: stepActivities,
       };
     });
     console.log('[transformedSteps] ✓', result.length, 'steps calculés');
     return result;
-  }, [psSteps, psAccommodations, psActivities, id]);
+  }, [psSteps, psAccommodations, psActivities, id, polylinesLoaded, distancesVersion]);
 
   // États
   const [steps, setSteps] = useState([]);
@@ -348,16 +350,26 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [routes, setRoutes] = useState([]);  // Itinéraires entre étapes
   const [loadingFromAPI, setLoadingFromAPI] = useState(false);
   const [refreshingRoutes, setRefreshingRoutes] = useState(false);
+  const [polylinesLoaded, setPolylinesLoaded] = useState(false);  // Track si polylines chargées
   const shouldRefreshRef = useRef(false);  // Ref pour éviter infinite loop sur refreshingRoutes
+  const [refreshCounter, setRefreshCounter] = useState(0);  // Trigger pour le useEffect directions
 
   // Créer une clé stable des steps pour éviter re-trigger inutile quand PowerSync retourne une nouvelle array
   const stepsLength = steps.length;
 
   // Mettre à jour la ref quand utilisateur clique 🔄 Refresh
   useEffect(() => {
+    console.log('[Refresh] useEffect refreshingRoutes:', refreshingRoutes);
     if (refreshingRoutes) {
+      console.log('[Refresh] >>> REFRESH DÉCLENCHÉ <<<');
       shouldRefreshRef.current = true;
-      setRefreshingRoutes(false);  // Reset le state immédiatement pour ne pas re-trigger
+      // Réinitialiser les flags pour forcer le rechargement complet
+      polylinesFetchedRef.current = false;
+      polylinesRef.current = [];
+      polylinesLoadingRef.current = false;
+      directionsCalculatedRef.current = false;
+      setRefreshingRoutes(false);
+      setRefreshCounter(c => c + 1);  // Trigger le second useEffect
     }
   }, [refreshingRoutes]);
 
@@ -373,6 +385,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     setSuggestions([]);
     setRoutes([]);
     setLoadingFromAPI(false);
+    polylinesFetchedRef.current = false;  // 🎯 Reset pour que premier useEffect recharge
+    polylinesRef.current = [];  // 🎯 Clear la ref
+    polylinesLoadingRef.current = false;  // 🎯 Reset flag
+    directionsCalculatedRef.current = false;  // 🎯 Reset le flag
   }, [id]);
 
   // Mettre à jour steps quand transformedSteps change
@@ -381,47 +397,14 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     setSteps(transformedSteps);
   }, [transformedSteps]);
 
-  // Charger les steps via API si PowerSync est vide
-  useEffect(() => {
-    if (psSteps.length === 0 && id && !loadingFromAPI) {
-      setLoadingFromAPI(true);
-      const token = useAuthStore.getState().token;
-      if (!token) {
-        console.log('[RoadtripDetail] Pas de token disponible');
-        return;
-      }
-
-      const loadFromAPI = async () => {
-        try {
-          console.log('[RoadtripDetail] Chargement des steps via API (PowerSync vide)...');
-          const res = await fetch(`${API_URL}/api/roadtrips/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            console.log('[RoadtripDetail] Données reçues via API:', data.steps?.length, 'steps');
-            setSteps((data.steps || []).map(s => ({
-              ...s,
-              accommodation: (s.accommodations?.[0] || s.accommodation) || null,
-              activities: s.activities || [],
-            })));
-            setRoadtrip(data);
-          }
-        } catch (err) {
-          console.error('[RoadtripDetail] Erreur API:', err);
-        } finally {
-          setLoadingFromAPI(false);
-        }
-      };
-
-      loadFromAPI();
-    }
-  }, [id, psSteps.length, loadingFromAPI]);
+  // (Désactivé : PowerSync synce maintenant correctement, pas besoin de fallback API)
+  // Si besoin futur (mode offline), on peut restaurer avec une meilleure logique
 
   // Charger les polylines sauvegardées depuis l'API au démarrage (PowerSync ne les inclut pas)
   const polylinesFetchedRef = useRef(false);
   const polylinesLoadingRef = useRef(false);  // Flag pour éviter le recalcul pendant le chargement
+  const polylinesRef = useRef([]);  // 🎯 Garder les polylines pour éviter qu'elles soient écrasées
+  const directionsCalculatedRef = useRef(false);  // 🎯 Tracker que directions est fait
   useEffect(() => {
     if (polylinesFetchedRef.current || stepsLength === 0) return;
 
@@ -440,8 +423,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           
           // Construire les routes depuis les polylines sauvegardées
           const routesFromDB = [];
+          const distancesMap = {}; // Map stepId -> { distance, duration }
+          
           for (let i = 0; i < stepsWithPolylines.length - 1; i++) {
             const current = stepsWithPolylines[i];
+            const next = stepsWithPolylines[i + 1];  // L'étape SUIVANTE
             if (current.routeEncodedPolyline) {
               try {
                 const coordinates = decodePolyline(current.routeEncodedPolyline);
@@ -449,6 +435,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   coordinates,
                   color: ORDER_COLORS[i % ORDER_COLORS.length],
                 });
+                // La distance est pour NEXT step (distanceFromPrev pour next)
+                distancesMap[next.id] = {
+                  distance: Math.round(current.routeDistanceMeters / 1000) || 0,  // Convertir en km
+                  duration: Math.round(current.routeDurationSeconds / 60) || 0,    // Convertir en minutes
+                };
                 console.log('[Directions] ✓ Polylines chargées depuis API pour route', i);
               } catch (err) {
                 console.log('[Directions] Erreur décodage:', err.message);
@@ -457,9 +448,62 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           }
 
           if (routesFromDB.length > 0) {
-            console.log('[Directions] Chargement depuis API: ' + routesFromDB.length + ' polylines (pas de recalcul)');
+            polylinesRef.current = routesFromDB;
             setRoutes(routesFromDB);
+            
+            // Recalculer les distances manquantes (distance=0 en DB) via Google API
+            const token = useAuthStore.getState().token;
+            for (let i = 0; i < stepsWithPolylines.length - 1; i++) {
+              const current = stepsWithPolylines[i];
+              const next = stepsWithPolylines[i + 1];
+              if (current.routeEncodedPolyline && (
+                !current.routeDistanceMeters || current.routeDistanceMeters === 0 ||
+                !current.routeDurationSeconds || current.routeDurationSeconds === 0
+              )) {
+                if (!GOOGLE_API_KEY || !current.latitude || !next.latitude) continue;
+                try {
+                  const resp = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+                    method: 'POST',
+                    headers: {
+                      'X-Goog-Api-Key': GOOGLE_API_KEY,
+                      'X-Goog-FieldMask': 'routes.legs.distanceMeters,routes.legs.duration',
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      origin: { location: { latLng: { latitude: parseFloat(current.latitude), longitude: parseFloat(current.longitude) } } },
+                      destination: { location: { latLng: { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) } } },
+                      travelMode: 'DRIVE',
+                    }),
+                  });
+                  const rdata = await resp.json();
+                  const leg = rdata.routes?.[0]?.legs?.[0];
+                  if (leg) {
+                    const distM = leg.distanceMeters || 0;
+                    // Duration est soit "3600s" (string) soit {seconds: "3600"} (objet)
+                    const durRaw = leg.duration;
+                    console.log('[Directions] durRaw:', JSON.stringify(durRaw), 'type:', typeof durRaw);
+                    const durS = typeof durRaw === 'string' ? parseInt(durRaw) : parseInt(durRaw?.seconds) || 0;
+                    distancesMap[next.id] = { distance: Math.round(distM / 1000), duration: Math.round(durS / 60) };
+                    // Persister en BD
+                    await fetch(`${API_URL}/api/steps/${current.id}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                      body: JSON.stringify({ routeDistanceMeters: distM, routeDurationSeconds: durS }),
+                    });
+                    console.log('[Directions] ✓ Distance recalculée pour route', i, ':', Math.round(distM/1000), 'km');
+                  }
+                } catch (e) {
+                  console.log('[Directions] Erreur recalcul distance route', i, e.message);
+                }
+              }
+            }
+            
+            distancesMapRef.current = distancesMap;
+            setDistancesVersion(v => v + 1);
+            setPolylinesLoaded(true);
             polylinesFetchedRef.current = true;
+          } else {
+            console.log('[Directions] ⚠️ routesFromDB.length === 0, setDistancesVersion NE SERA PAS APPELÉ!');  // 🎯 DEBUG
           }
         }
       } catch (err) {
@@ -529,14 +573,24 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Charger les itinéraires : d'abord depuis la BD, puis recalculer si refreshing + SAUVEGARDER
   useEffect(() => {
+    console.log('[Directions2] useEffect déclenché, stepsLength:', stepsLength, 'refreshCounter:', refreshCounter, 'shouldRefresh:', shouldRefreshRef.current);
     const loadRoutes = async () => {
       const needsRefresh = shouldRefreshRef.current;
       shouldRefreshRef.current = false;  // Reset immédiatement
-      console.log('[Directions] Chargement routes (refreshing:', needsRefresh, ')');
+      console.log('[Directions2] loadRoutes, needsRefresh:', needsRefresh);
       
-      // Si les polylines se chargent depuis l'API, attendre (ne pas recalculer)
-      if (polylinesLoadingRef.current && !needsRefresh) {
-        console.log('[Directions] Attente du chargement des polylines depuis l\'API...');
+      // 🎯 GARDE ABSOLUE : si le premier useEffect gère les polylines, on ne touche à rien
+      if (!needsRefresh && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
+        console.log('[Directions] Premier useEffect gère les polylines, second useEffect skip total');
+        return;
+      }
+      
+      // 🎯 Si les directions ont déjà été calculées et pas de refresh, skip
+      if (directionsCalculatedRef.current && !needsRefresh) {
+        console.log('[Directions] ✓ Directions déjà calculées, skip');
+        if (polylinesRef.current.length > 0) {
+          setRoutes(polylinesRef.current);
+        }
         return;
       }
       
@@ -547,8 +601,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       
       // Étape 1: Charger les polylines existantes depuis la BD
       if (!needsRefresh) {
+        const distancesFromBD = {}; // 🎯 Cache les distances existantes
         for (let i = 0; i < steps.length - 1; i++) {
           const current = steps[i];
+          const next = steps[i + 1];
           if (current.routeEncodedPolyline) {
             try {
               const coordinates = decodePolyline(current.routeEncodedPolyline);
@@ -557,21 +613,66 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 color: ORDER_COLORS[i % ORDER_COLORS.length],
               });
               console.log('[Directions] ✓ Chargé depuis BD: route', i);
+              
+              // 🎯 Remplir le cache avec les distances existantes
+              if (current.routeDistanceMeters && current.routeDurationSeconds) {
+                distancesFromBD[next.id] = {
+                  distance: Math.round(current.routeDistanceMeters / 1000),
+                  duration: Math.round(current.routeDurationSeconds / 60),
+                };
+                console.log('[Directions] 📏 Distance BD pour', next.name, ':', distancesFromBD[next.id].distance, 'km');
+              }
             } catch (err) {
               console.log('[Directions] Erreur décodage polyline:', err.message);
             }
           }
         }
         
+        // 🎯 Mettre à jour le cache avec les distances existantes
+        if (Object.keys(distancesFromBD).length > 0) {
+          console.log('[Directions] ✅ Distances chargées depuis BD:', Object.keys(distancesFromBD).length, 'steps');
+          distancesMapRef.current = { ...distancesMapRef.current, ...distancesFromBD };
+          setDistancesVersion(v => v + 1);
+        }
+        
         if (newRoutes.length === steps.length - 1) {
           console.log('[Directions] Toutes les routes chargées depuis BD');
-          setRoutes(newRoutes);
+          if (!needsRefresh && polylinesRef.current.length > 0) {
+            setRoutes(polylinesRef.current);
+          } else {
+            setRoutes(newRoutes);
+          }
+          directionsCalculatedRef.current = true;
           return;
         }
       }
       
       // Étape 2: Recalculer les routes manquantes (ou toutes si refreshing)
-      console.log('[Directions] Recalcul des routes (existantes:', newRoutes.length, ')...');
+      // 🎯 AUSSI recalculer les routes avec distance = 0
+      const routesNeedingRecalc = [];
+      for (let i = 0; i < steps.length - 1; i++) {
+        const current = steps[i];
+        const hasPolyline = current.routeEncodedPolyline;
+        const hasDistance = current.routeDistanceMeters && current.routeDistanceMeters > 0;
+        // Recalcul si : PAS de polyline OU distance = 0 OU refreshing
+        if (!hasPolyline || !hasDistance || needsRefresh) {
+          routesNeedingRecalc.push(i);
+        }
+      }
+      
+      console.log('[Directions] Routes à recalculer:', routesNeedingRecalc.length, 'index:', routesNeedingRecalc.join(', '));
+      
+      if (routesNeedingRecalc.length === 0) {
+        console.log('[Directions] ✓ Toutes les routes OK (polyline + distance > 0)');
+        if (!needsRefresh && polylinesRef.current.length > 0) {
+          setRoutes(polylinesRef.current);
+        } else {
+          setRoutes(newRoutes);
+        }
+        setRefreshingRoutes(false);
+        directionsCalculatedRef.current = true;
+        return;
+      }
       
       if (!GOOGLE_API_KEY) {
         console.log('[Directions] Pas de API_KEY, fallback ligne droite');
@@ -580,7 +681,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       }
       
       try {
-        for (let i = newRoutes.length; i < steps.length - 1; i++) {
+        for (const i of routesNeedingRecalc) {
           const current = steps[i];
           const next = steps[i + 1];
           
@@ -598,6 +699,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           
           let coordinates = null;
           let encodedPolyline = null;
+          let routeDistanceMeters = 0;
+          let routeDurationSeconds = 0;
           
           try {
             const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
@@ -611,18 +714,38 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               method: 'POST',
               headers: {
                 'X-Goog-Api-Key': GOOGLE_API_KEY,
-                'X-Goog-FieldMask': 'routes.polyline.encodedPolyline',
+                'X-Goog-FieldMask': 'routes.polyline.encodedPolyline,routes.legs.distanceMeters,routes.legs.duration',
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify(body),
             });
             
             const data = await response.json();
+            if (!data.routes?.[0]?.polyline?.encodedPolyline) {
+              console.log('[Directions] Route', i, 'réponse API:', response.status, JSON.stringify(data));
+            }
             if (data.routes?.[0]?.polyline?.encodedPolyline) {
               encodedPolyline = data.routes[0].polyline.encodedPolyline;
               coordinates = decodePolyline(encodedPolyline);
-              polylinesToSave[i] = encodedPolyline;
-              console.log('[Directions] Route', i, '✓ API:', coordinates.length, 'points (sauvé)');
+              
+              // Extraire les vraies distances/durées de Google Routes
+              if (data.routes[0].legs?.[0]) {
+                const leg = data.routes[0].legs[0];
+                routeDistanceMeters = leg.distanceMeters || parseInt(leg.distance?.value) || 0;
+                const durRaw = leg.duration;
+                routeDurationSeconds = typeof durRaw === 'string' ? parseInt(durRaw) : parseInt(durRaw?.seconds) || 0;
+              }
+              
+              // Sauvegarder les données complètes
+              polylinesToSave[i] = {
+                polyline: encodedPolyline,
+                distance: routeDistanceMeters,
+                duration: routeDurationSeconds,
+              };
+              
+              console.log('[Directions] Route', i, '✓ API:', 
+                `${Math.round(routeDistanceMeters/1000)}km / ${Math.round(routeDurationSeconds/60)}min`, 
+                coordinates.length, 'points');
             }
           } catch (err) {
             console.log('[Directions] Route', i, 'erreur API:', err.message);
@@ -643,12 +766,39 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         }
         
         console.log('[Directions] Final:', newRoutes.length, 'routes, à sauvegarder:', Object.keys(polylinesToSave).length);
-        setRoutes(newRoutes);
+        // 🎯 Ne jamais écraser les polylines du premier useEffect sauf si refresh explicite
+        if (!needsRefresh && polylinesRef.current.length > 0) {
+          console.log('[Directions] ✓ Polylines protégées, on garde celles du premier useEffect');
+          setRoutes(polylinesRef.current);
+        } else {
+          polylinesRef.current = newRoutes;
+          setRoutes(newRoutes);
+        }
         
-        // Étape 3: Sauvegarder les polylines en BD (via PATCH pour éviter upsert)
+        // Enrichir les distances dans le cache (pas via setSteps pour éviter overwrite)
+        const distancesFromAPI = {};
+        for (const [idx, routeData] of Object.entries(polylinesToSave)) {
+          const stepIdx = parseInt(idx);
+          if (stepIdx + 1 < steps.length) {
+            const nextStepId = steps[stepIdx + 1].id;
+            distancesFromAPI[nextStepId] = {
+              distance: Math.round(routeData.distance / 1000),
+              duration: Math.round(routeData.duration / 60),
+            };
+          }
+        }
+        
+        // 🎯 Mettre à jour le cache des distances au lieu de setSteps
+        if (Object.keys(distancesFromAPI).length > 0) {
+          console.log('[Directions] Mise à jour cache distances:', Object.keys(distancesFromAPI).length, 'steps');
+          distancesMapRef.current = { ...distancesMapRef.current, ...distancesFromAPI };
+          setDistancesVersion(v => v + 1);  // 🎯 Trigger re-render avec les nouvelles distances
+        }
+        
+        // Étape 3: Sauvegarder les polylines + distances + durations en BD (via PATCH pour éviter upsert)
         if (Object.keys(polylinesToSave).length > 0) {
           const token = useAuthStore.getState().token;
-          for (const [idx, polyline] of Object.entries(polylinesToSave)) {
+          for (const [idx, routeData] of Object.entries(polylinesToSave)) {
             const stepIdx = parseInt(idx);
             if (stepIdx >= steps.length) {
               console.log('[Directions] Index hors limites:', stepIdx, '/', steps.length);
@@ -656,7 +806,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             }
             const step = steps[stepIdx];
             const stepId = step.id;
-            console.log('[Directions] Save polyline pour step', stepIdx, '→ ID:', stepId);
+            console.log('[Directions] Save route pour step', stepIdx, 
+              `(${Math.round(routeData.distance/1000)}km / ${Math.round(routeData.duration/60)}min)`);
             try {
               const response = await fetch(`http://192.168.1.38:3111/api/steps/${stepId}`, {
                 method: 'PATCH',
@@ -665,27 +816,32 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                  routeEncodedPolyline: polyline,
+                  routeEncodedPolyline: routeData.polyline,
+                  routeDistanceMeters: routeData.distance,
+                  routeDurationSeconds: routeData.duration,
                 }),
               });
               if (response.ok) {
-                console.log('[Directions] ✓ Polyline sauvée pour step', stepId);
+                console.log('[Directions] ✓ Route sauvée pour step', stepId);
               } else {
                 const errText = await response.text();
                 console.log('[Directions] ✗ Erreur save step', stepId, response.status, errText);
               }
             } catch (err) {
-              console.log('[Directions] Erreur save polyline:', err.message);
+              console.log('[Directions] Erreur save route:', err.message);
             }
           }
         }
       } catch (err) {
         console.error('[Directions] Erreur:', err);
       }
+      
+      // 🎯 Marker que le calcul des directions est terminé
+      directionsCalculatedRef.current = true;
     };
     
     loadRoutes();
-  }, [stepsLength]);
+  }, [stepsLength, refreshCounter]);
 
   // Injecter titre + hamburger dans la barre de navigation native
   React.useLayoutEffect(() => {
@@ -945,6 +1101,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 12 }}>
             <View style={styles.handleBar} />
           </TouchableOpacity>
+        </View>
         {sheetExpanded && (
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, alignItems: 'center' }}>
             <TouchableOpacity 
@@ -961,7 +1118,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           </View>
         )}
-        </View>
 
         <View style={styles.sheetContent} pointerEvents={sheetExpanded ? 'auto' : 'none'}>
           {!sheetExpanded && selectedStep ? (
