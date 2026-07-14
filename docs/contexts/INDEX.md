@@ -2,6 +2,7 @@
 
 | Fichier | Feature | Date |
 |---------|---------|------|
+| `2026-07-14_181414_main.md` | Contexte — main | 2026-07-14 18:14:14 |
 | `2026-05-09_094526_chore-corriger-le-d-ploiement-backend-remote-ssh-e.md` | Contexte — chore: corriger le déploiement backend — remote SSH et migration Prisma | 2026-05-09 09:45:26 |
 | `2026-03-22_083130_feat-timeline-web-redesign-e-validation-de-dates-p.md` | Contexte — feat: timeline web redesignée, validation de dates partagée et pré-remplissage automatique | 2026-03-22 08:31:30 |
 | `2026-03-21_175730_feat-ajout-lat-lng-sur-activit-s-et-h-bergements-t.md` | Contexte — feat: ajout lat/lng sur activités et hébergements, types SUPERMARKET/HIKING/PARKING, onglets Proximité/Chercher sur web | 2026-03-21 17:57:30 |
