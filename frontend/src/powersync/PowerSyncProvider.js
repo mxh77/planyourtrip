@@ -40,7 +40,9 @@ export function AppPowerSyncProvider({ children }) {
     const getToken = () => Promise.resolve(useAuthStore.getState().token);
     connectorRef.current = new AppConnector(getToken);
 
-    db.connect(connectorRef.current);
+    db.connect(connectorRef.current).catch(err => {
+      console.error(TAG, 'db.connect erreur:', err.message, err);
+    });
 
     const unsubscribe = db.registerListener({
       statusChanged: (status) => {

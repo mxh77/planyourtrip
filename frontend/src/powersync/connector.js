@@ -61,7 +61,14 @@ export class AppConnector {
 
     if (!res.ok) throw new Error('Failed to fetch PowerSync token');
 
-    const { token: psToken, powersyncUrl } = await res.json();
+    const data = await res.json();
+    const { token: psToken, powersyncUrl, userId } = data;
+
+    console.log(TAG, 'fetchCredentials result:', {
+      endpoint: powersyncUrl,
+      tokenLength: psToken?.length,
+      userId,
+    });
 
     return {
       endpoint: powersyncUrl,

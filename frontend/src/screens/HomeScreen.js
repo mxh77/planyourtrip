@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS, RADIUS, SPACING, ROADTRIP_STATUS } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useRoadtrips } from '../hooks/usePowerSync';
+import { usePowerSyncDebug } from '../hooks/usePowerSyncDebug';
 import { db } from '../powersync/db';
 import { AppConnector } from '../powersync/connector';
 import BetaFeedbackModal from '../components/BetaFeedbackModal';
@@ -280,6 +281,7 @@ function TabBar({ active }) {
 export default function HomeScreen({ navigation }) {
   const { user, logout, token } = useAuthStore();
   const { roadtrips, isLoading, refreshShared } = useRoadtrips();
+  const { status: psStatus, forceSync } = usePowerSyncDebug();
   const [menuVisible, setMenuVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
@@ -356,6 +358,26 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* ─── PowerSync Status Debug ───────────────────────────────────── */}
+        {__DEV__ && (
+          <View style={{ paddingHorizontal: SPACING.md, marginBottom: SPACING.md, backgroundColor: '#1a1a1a', padding: SPACING.sm, borderRadius: RADIUS.sm }}>
+            <TouchableOpacity onPress={forceSync} style={{ marginBottom: SPACING.xs }}>
+              <Text style={{ color: COLORS.accent, fontSize: 11, fontWeight: '600' }}>
+                🔄 Force PowerSync {psStatus?.connected ? '✓' : '✗'}
+              </Text>
+            </TouchableOpacity>
+            {psStatus && (
+              <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: 'monospace' }}>
+                Connected: {psStatus.connected ? 'YES' : 'NO'}{'\n'}
+                LastSync: {psStatus.lastSyncedAt ? new Date(psStatus.lastSyncedAt).toLocaleTimeString() : 'Never'}{'\n'}
+                Down: {psStatus.downloading ? 'YES' : 'no'} | Up: {psStatus.uploading ? 'YES' : 'no'}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* ─── Featured Roadtrip ───────────────────────────────────────── */}
 
         {isLoading && roadtrips.length === 0 ? (
           <View style={styles.loader}>

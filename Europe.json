@@ -1,0 +1,1272 @@
+{
+  "name": "Europe",
+  "description": null,
+  "waypoints": [
+    {
+      "name": "Maison",
+      "address": "Clévilliers, France",
+      "lat": 48.543237,
+      "lng": 1.38867,
+      "nights": 0,
+      "checkin": null,
+      "checkout": "2026-07-31",
+      "notes": "Camping car : GY-212-ER",
+      "campings": [],
+      "trails": null,
+      "pois": null,
+      "selectedCamping": null
+    },
+    {
+      "name": "Dole du Jura",
+      "address": "39100 Dole",
+      "lat": 47.09534,
+      "lng": 5.49081,
+      "nights": 1,
+      "checkin": "2026-07-31",
+      "checkout": "2026-08-01",
+      "notes": null,
+      "campings": [
+        {
+          "placeId": "ChIJ3aCwnJFKjUcRNCWNmjNgns4",
+          "name": "Camping des Bords de Loue",
+          "address": "Rue du Camping, Parcey",
+          "lat": 47.0162101,
+          "lng": 5.481490900000001,
+          "rating": 4,
+          "userRatingsTotal": 907,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": false,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-ud375Gi0ZFB-qYXMhu06upDNdX4cQSnDzeo4JpiItPioIiKLKhjWwzh_rsyfqrsUiIX1R0WEEh7rKRPl9BCNh-alDFBd54eEaNs__dXHCwUW1SeIBg-dvXdZ7LhCFIeDgB4msOayo5idVP9VMJ3lNIwF25w7S2_cjrjBENrcgfGIhukgXIx1B7rJ8dOVu3gWNdstFvPcIXa7nRTqfR4w42BHkiykJNM742yKNjMe09O5EYR_9aV4l0XeBc-Uj3yrMWLxLhJkuu2qReit2JPgRAGFo1FOp2nUUr0nC4n4nxSPTUxtEKLUepYZkgTfqQkWE4QUFTAqg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null,
+          "reservationInfo": {
+            "status": "reservation_likely",
+            "acceptsReservation": true,
+            "message": "Réservation en ligne probable",
+            "providers": [],
+            "signals": []
+          }
+        }
+      ],
+      "trails": [],
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJ3aCwnJFKjUcRNCWNmjNgns4",
+        "name": "Camping des Bords de Loue",
+        "address": "Rue du Camping, Parcey",
+        "lat": 47.0162101,
+        "lng": 5.481490900000001,
+        "rating": 4,
+        "userRatingsTotal": 907,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": false,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-ud375Gi0ZFB-qYXMhu06upDNdX4cQSnDzeo4JpiItPioIiKLKhjWwzh_rsyfqrsUiIX1R0WEEh7rKRPl9BCNh-alDFBd54eEaNs__dXHCwUW1SeIBg-dvXdZ7LhCFIeDgB4msOayo5idVP9VMJ3lNIwF25w7S2_cjrjBENrcgfGIhukgXIx1B7rJ8dOVu3gWNdstFvPcIXa7nRTqfR4w42BHkiykJNM742yKNjMe09O5EYR_9aV4l0XeBc-Uj3yrMWLxLhJkuu2qReit2JPgRAGFo1FOp2nUUr0nC4n4nxSPTUxtEKLUepYZkgTfqQkWE4QUFTAqg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "reservationInfo": {
+          "status": "reservation_likely",
+          "acceptsReservation": true,
+          "message": "Réservation en ligne probable",
+          "providers": [],
+          "signals": []
+        },
+        "bookingRef": "18483538",
+        "pricePaid": "59",
+        "bookingDate": "2026-05-16",
+        "currency": "EUR",
+        "documents": [
+          {
+            "id": "49b24cdb-d604-437a-8211-a31465a21663",
+            "filename": "49b24cdb-d604-437a-8211-a31465a21663.pdf",
+            "originalname": "20260731 - Camping Les Bords de Loue.pdf",
+            "size": 45598,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-17T07:09:44.149Z"
+          },
+          {
+            "id": "0c5acb35-bf11-4666-9e38-904f8aadddb0",
+            "filename": "0c5acb35-bf11-4666-9e38-904f8aadddb0.pdf",
+            "originalname": "20260731 - Camping Les Bords de Loue.pdf",
+            "size": 1085380,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-18T06:32:26.528Z"
+          }
+        ],
+        "priceTotal": "59",
+        "campingNotes": "Équipements :\n- Camping municipal calme en bord de Loue\n- Aire de jeux pour enfants\n- Sanitaires de base (douches, WC)\n- Branchements électriques\n- Pêche, randonnées\n- Pas de piscine\n- Pas de wifi\n- Pas de restaurant sur place\nPrix : 59€ | Réservation : 18483538 | Document : 20260731 - Camping Les Bords de Loue.pdf"
+      }
+    },
+    {
+      "name": "Lauterbrunnen",
+      "address": "Lauterbrunnen, Suisse",
+      "lat": 46.5935058,
+      "lng": 7.9090981,
+      "nights": 1,
+      "checkin": "2026-08-01",
+      "checkout": "2026-08-02",
+      "notes": "Lac de Brienz / Bateau",
+      "campings": [
+        {
+          "placeId": "ChIJ11AhyVKZj0cRDa70x87yQtk",
+          "name": "Camping Gletscherdorf",
+          "address": "Locherbodenstrasse 29, Grindelwald",
+          "lat": 46.6211394,
+          "lng": 8.045051899999999,
+          "rating": 4.1,
+          "userRatingsTotal": 578,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": true,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-sWM5rmNSVENJNJYmtFM2azAWtyQxyeaJUujggj5VEg1D5HE7aTu4GXgRTh6jdCM5lCDKxWALgOnUd26fl5EfTgzqIp9JJjcHTt8LY8tAyddq2QGOvxuutnYBV-Nq2sCyUIAM5OtWK3_VViaJvSVYUozgND8qW52iCz_0r4q4-NatCZQAMvhCoqjz3y-_m5j6XW_NbrVya9xnbooEq2fkcX2Z-hBQ0WqrR4x8DZAWKZQ8WwQNcXz323VoUYMYnxpqvHCshQKkSiaiFvDPLkkX32OIIsE_Qjn0SqXBBrhZY7bcvJ2QmRNkKMwBz0oWQ1fDiOp4WrE-s&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null,
+          "bookingRef": "XIMV-YICW",
+          "pricePaid": "121.80CHF",
+          "campingNotes": "Dans la pièce jointe de cet email, vous trouverez votre bon personnel. Veuillez l'imprimer et le placer clairement visible derrière le pare-brise de votre véhicule ou l'accrocher à votre tente. Cela vous garantit une expérience fluide et simple pendant votre séjour.\n    Arrivée: 11:00 - 20:00\n    Départ: 07:00 - 11:00"
+        }
+      ],
+      "trails": [
+        {
+          "id": "google_ChIJS6otDOGhj0cRzU98d3JbXaI",
+          "source": "google",
+          "googlePlaceId": "ChIJS6otDOGhj0cRzU98d3JbXaI",
+          "name": "Grütschalp - Mürren - Schilthorn - Retour",
+          "description": "",
+          "lat": 46.5582745,
+          "lng": 7.8912581,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.8,
+          "userRatingsTotal": 66,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-ulyEFZYHxr1ac6b-vTiRAH2qij3KIb4Wy7SeM-hpIFtsRCPclCpJV17mOWZB1Bplt_uuSgkfKbLFGnPdfrUYrXax07bb1KoLm7JMXaRFskNiQ2jz8nEzjfalJWUQsCdS3BhbT3f2q9E1wEEl3v0v_igoVXTTQevk2HVFZrRHydezk5sQD-AY_q93HPwkdSnIO7Meb7OYv4td7uMiY9U2Li3aUx1BF1Nctr3Zit7m7XG8xv733zuJZ_955BKd5pT-v0RDlDDPnqxMvlsXIi1VxCxcAi-sFmDFrzRENPPDY-yDm_A4ws4vdG7qjYFOVHVIHCQaHZouHoxNJTtmNZHv4pHbzfYj2MR4qSV1cJn8uce2QUcax3EmbGLOhgWUkw1VmaPKN18hTAS65a_vwaXtVAkeOia5uDmxlXB7eTJVG_X-5L_5qweV9a2Z9sSwG7l6fiGKcAChz8T3pP_C19bbUK0aDFIVRTo41Z7BWV9IwT0jB5Zvcz2aDuvrHeS3EAGFjBc1LBAyfgAfc8fHACGyLBv_fikY_FLcPQK0TJxh0Wvvb7sOOhDSZsZ0zFcbXU8D8sdHYtn1-8AQ&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJS6otDOGhj0cRzU98d3JbXaI"
+        },
+        {
+          "id": "google_ChIJU-KeMrWhj0cRtAJrSzoR2TM",
+          "source": "google",
+          "googlePlaceId": "ChIJU-KeMrWhj0cRtAJrSzoR2TM",
+          "name": "Staubbachfall",
+          "description": "",
+          "lat": 46.5896276,
+          "lng": 7.905226399999999,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.7,
+          "userRatingsTotal": 4103,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-uj0A_WXbQPB577CsXyrCL6ym1LYi_sxbSAI7ywXkvbQ7PLH_4XLxiTjKylZ30_s3NOqwTB2omNWZQldkClnp8mfMazd-N1y3l4S22MWq9yVny0nqbRdyNZHrfrGFbINq8joQ7gIzMmsCJIb5YWDDIXtpKyQ4akYU-VkNZL4okGMlKF36yR773sjZM_fPqycLqNv677ZtepU4J4k0pNOsF_0G-zlr0i1f8TokYzPa8vZtjDoggoZzgNbeCj-qk96QZMPdqCHOWZazlTRKz1mHSgdPl6GBNtP4vpoIWQMq2QhGqsbq7aM_iayoFlMCdOuFeEpkzIl4C94YzcmcCFe4tX2K55mqPRSDxeR_mpBcvKFVnFUYiRt3uI2Y10NG5w9DqHpNaBsDTI9NQSe45HKKfOkJlDR08MYEYbFMsnkcA4ViObtacv7KaCclW5uMOJEWfLujE8F934_uih7zlNRwMvgFhnTyGqKEf9bTJbuhOMjMStN3HEVJ8YKarFcNekq1o6tgku7JOhC8WZPtEnYHSPYw1hr8vOxaqiY9uyQf4v6zvuTK_NcuX9hUsw1AaFWzRd6lA5HVHJLg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJU-KeMrWhj0cRtAJrSzoR2TM"
+        }
+      ],
+      "pois": [],
+      "selectedCamping": {
+        "placeId": "ChIJ11AhyVKZj0cRDa70x87yQtk",
+        "name": "Camping Gletscherdorf",
+        "address": "Locherbodenstrasse 29, Grindelwald",
+        "lat": 46.6211394,
+        "lng": 8.045051899999999,
+        "rating": 4.1,
+        "userRatingsTotal": 578,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": true,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-sWM5rmNSVENJNJYmtFM2azAWtyQxyeaJUujggj5VEg1D5HE7aTu4GXgRTh6jdCM5lCDKxWALgOnUd26fl5EfTgzqIp9JJjcHTt8LY8tAyddq2QGOvxuutnYBV-Nq2sCyUIAM5OtWK3_VViaJvSVYUozgND8qW52iCz_0r4q4-NatCZQAMvhCoqjz3y-_m5j6XW_NbrVya9xnbooEq2fkcX2Z-hBQ0WqrR4x8DZAWKZQ8WwQNcXz323VoUYMYnxpqvHCshQKkSiaiFvDPLkkX32OIIsE_Qjn0SqXBBrhZY7bcvJ2QmRNkKMwBz0oWQ1fDiOp4WrE-s&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "bookingRef": "XIMV-YICW",
+        "pricePaid": "121.80",
+        "campingNotes": "Équipements :\n- Sanitaires propres et chauffés\n- Douches et eau chaude gratuits\n- Machines à laver et sèche-linge\n- Raccordements électriques\n- Cuisine & barbecue\n- Salle commune\n- Places camping-cars, caravanes, tentes\n- Appartements disponibles\n- Pas de piscine\n- Pas de wifi\nPrix : 121.80 CHF | Réservation : XIMV-YICW | Documents inclus",
+        "currency": "CHF",
+        "bookingDate": "2026-05-16",
+        "documents": [
+          {
+            "id": "5d3491c7-7a7d-464d-8d8d-b20bf0da1752",
+            "filename": "5d3491c7-7a7d-464d-8d8d-b20bf0da1752.pdf",
+            "originalname": "2026080102 - Camping Gletscherdorf - Confirmation.pdf",
+            "size": 218332,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-18T06:41:18.008Z"
+          },
+          {
+            "id": "a49389fe-3b63-4ab8-9686-822a2d31bc09",
+            "filename": "a49389fe-3b63-4ab8-9686-822a2d31bc09.pdf",
+            "originalname": "2026080102 - Camping Gletscherdorf - Bordereau.pdf",
+            "size": 168273,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-18T06:41:46.510Z"
+          }
+        ],
+        "priceTotal": "121.80"
+      }
+    },
+    {
+      "name": "Gorges de l'Aar",
+      "address": "Gorges de l'Aar, Aareschluchtstrasse, Schattenhalb, Suisse",
+      "lat": 46.7192366,
+      "lng": 8.2122009,
+      "nights": 0,
+      "checkin": "2026-08-02",
+      "checkout": "2026-08-02",
+      "notes": "Meiringen",
+      "campings": [],
+      "trails": [
+        {
+          "id": "google_ChIJH7IlhgGPj0cRDrrpVgv5wGs",
+          "source": "google",
+          "googlePlaceId": "ChIJH7IlhgGPj0cRDrrpVgv5wGs",
+          "name": "Gorges de l'Aar",
+          "description": "",
+          "lat": 46.7192366,
+          "lng": 8.2122009,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.7,
+          "userRatingsTotal": 4692,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=AWCwydjYxBoh-GsiL230aMPPnho7eXU4l4-VApTf3XvA5yYlJUqXRdlJB8f_uEzcVPxyUUyQyW4rHGuu37k6gTNlLndpmPYpglDowR1hKaIHMlSXFkqkupRffm00Fgug5PAv1L2wlVv84MR0yshv5lJBOKUEHpjmp2EC7doQ4UK2_QHJwgcxKzBkv1gYMBb7sB9ASYTiUUAdYLUtEQzJwhi7BHJpt2serX0HyEEhjtPeZAiVnYlBseUF_sRAF0lrZohnkTAUfgjhdL2lq9tg6tbghjtJ4V22ojsAHLf_8YJ5FnhXfx_6RNxwzAWRB5UovjyknrJeAHUqC9AJsi8WwPP5Gmp16uEhlzrnRWVjagqFh-ZUbKcgwRi_TszXCkKhP01hpEfRTA9Wzdv6SUVF-V4puKOXX6CPXqFP-0Chpz8RiyYnicPdNs-9U8CpFOKQHfIBfqIWJVN6d62sCP1Pu3mqk2vE-uKP-G5vfIg3_nP_RHKFMIRRzYYa9txv5IAlwtz70aUl8rVJaCqEutjwFa8boYxvaQBOT_2vyBhrMdmf-aE_zgB-EzFHZswXe92YXY1a1Xpys64XYcOjgA&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJH7IlhgGPj0cRDrrpVgv5wGs"
+        },
+        {
+          "id": "google_ChIJDyRrBH-Xj0cRbZ0R3atG4l4",
+          "source": "google",
+          "googlePlaceId": "ChIJDyRrBH-Xj0cRbZ0R3atG4l4",
+          "name": "Uferweg Iseltwald",
+          "description": "",
+          "lat": 46.71813119999999,
+          "lng": 7.981887899999999,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.7,
+          "userRatingsTotal": 109,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=AWCwydhU0-YROf3FSQ8KBrw7-u_yXXeW1oBgD3aVpV4v2L4uGHqzKhicdgdArVAwIFfVcEBwojEqjtz4-8_ZG9GiZaJKFqI57M38foZl-OfFtrBUWptgG89Cv8b5i4vT4_BZ6hSF1Fzzffwgzil0DnS1ygSuhCEEjiSvVF8k23kqNh21WYGHhJhCVhkbe9KqeCtIRqnbEJVRfWE1VmdUSmjsfv5XNLg_YkXP3q_JQIz4GwCJaZqm25QsV1g993Ct7xglPRO5_btFRTFMxqxXFQbNn-r77GMEEtPf1ENJYxzs0WSy6EvS8xk4sxWTTxvpi78vz0MBap1xqnpyGVBqBSIrl8UwYPWeDKd6tMxUJexbt9A7Dsn4T7nC4G-iiddKwINad6OguNcdvrDg5y4UpHR-tHmhkVe6v_a8z21nNPvyrYbFjzItcXegj1svBUBqeNm8bhOhCUFC4RvAiU-y-2dOoa_Yp7I-DhakyEiPE4wxTwJYyG4-phtScYog31ohdgjF6D1NcXttVTctsrCviVWdHHKlS-eCKPcaEdnUBuXLB0UhaH1f_J3i6k_ogMfYxkJuwgOv5LZVdL3kmg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJDyRrBH-Xj0cRbZ0R3atG4l4"
+        }
+      ],
+      "pois": null,
+      "selectedCamping": null
+    },
+    {
+      "name": "Lucerne, Suisse",
+      "address": null,
+      "lat": 47.05016819999999,
+      "lng": 8.3093072,
+      "nights": 2,
+      "checkin": "2026-08-02",
+      "checkout": "2026-08-04",
+      "notes": null,
+      "campings": [
+        {
+          "placeId": "ChIJR76Yby7ij0cRgHDlfNGMUxc",
+          "name": "TCS Camping Sempach",
+          "address": "Seelandstrasse 6, Sempach",
+          "lat": 47.12535319999999,
+          "lng": 8.189932299999999,
+          "rating": 4.4,
+          "userRatingsTotal": 1643,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": true,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-u_4Uml6N9m5E3hzCnRUdZc1badV_IBwW3ZD7wWL1cD3Tj6GtV6dm89-BjrrrzHnQdqpcTl-OWLRoVpnvRwbcV_jvNFVv8rVbegsgEz9H74IyGR9HO41z1HZTVpqkZSeZdvA2iCim54qGoQRNhWfLu_1pwPSNwh0r6PZPyOlpk2ivoHOa1t19XdqZYsq0H78H1aDPfc-aIufVj3VzmN4pMOf2BWT2MdDcbnEIL5vN4G5csk76OaAgEsN7nngoHi5Wtd1PYbXu58Dppj1imJfBbi60ckD5f41k2s7Jl169AoIM159LoFxJLfXdYL1jmh2AHer8QYGYc&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": null,
+      "pois": [
+        {
+          "placeId": "ChIJPbgAuhTwj0cREOvEQPqZL3Q",
+          "name": "Pilatus",
+          "address": "Pilatus, 6010 Alpnach, Suisse",
+          "lat": 46.9794705,
+          "lng": 8.2548011,
+          "rating": 4.8,
+          "userRatingsTotal": 4387,
+          "types": [
+            "establishment",
+            "natural_feature"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-v4NuYUqSGWCKLI22Bdm-XCG7uXrN-6P6EvVFMC2mZYHulmE3HIB_zlNhB1O7b5tQX3Fa7K-ndRKFs7n8yLATKHtziMytrKu6lRPunsBzxvaNDBIifqlBKMQgXIdYac02_GvpJcYEtP51DaKlqwrts8UvyGOHcwo-MlJyzsMbt3hWTOcaSIytNMR3RfYcQfXOqt1GV4xTWWZt1UOdV9erB9cS3KNaL8tzHktbm0UTukGmaCNb-DcjRShwzl-e76-iV2PhJ3w14iBaDl-4VVvcGayyKsDVJ7nIkgfmaCy_UAx4lnKuovCib0r7RouU9WbmpKoVgHdDE6iDaOp2CKDNETSxt04LgJowQqNVFs1Z-X09Pn7F5sMp8_v4daSCe8OZWh4vw5Eyn5ecgulbb1LapCzwz7kmRPh_vRrgSHS9ImLs7m&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10"
+        }
+      ],
+      "selectedCamping": {
+        "placeId": "ChIJR76Yby7ij0cRgHDlfNGMUxc",
+        "name": "TCS Camping Sempach",
+        "address": "Seelandstrasse 6, Sempach",
+        "lat": 47.12535319999999,
+        "lng": 8.189932299999999,
+        "rating": 4.4,
+        "userRatingsTotal": 1643,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": true,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-u_4Uml6N9m5E3hzCnRUdZc1badV_IBwW3ZD7wWL1cD3Tj6GtV6dm89-BjrrrzHnQdqpcTl-OWLRoVpnvRwbcV_jvNFVv8rVbegsgEz9H74IyGR9HO41z1HZTVpqkZSeZdvA2iCim54qGoQRNhWfLu_1pwPSNwh0r6PZPyOlpk2ivoHOa1t19XdqZYsq0H78H1aDPfc-aIufVj3VzmN4pMOf2BWT2MdDcbnEIL5vN4G5csk76OaAgEsN7nngoHi5Wtd1PYbXu58Dppj1imJfBbi60ckD5f41k2s7Jl169AoIM159LoFxJLfXdYL1jmh2AHer8QYGYc&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "currency": "CHF",
+        "documents": [
+          {
+            "id": "ff66fcb2-59e4-4834-91dc-d88c212612af",
+            "filename": "ff66fcb2-59e4-4834-91dc-d88c212612af.pdf",
+            "originalname": "2026080204 - Camping Sempach - Confirmation.pdf",
+            "size": 215951,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-18T06:46:50.150Z"
+          },
+          {
+            "id": "e87354f5-5f9a-4093-8b5a-434ddc761377",
+            "filename": "e87354f5-5f9a-4093-8b5a-434ddc761377.pdf",
+            "originalname": "20260803 - Pilatus.pdf",
+            "size": 515951,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-07-11T13:42:13.480Z"
+          }
+        ],
+        "bookingRef": "50153",
+        "bookingDate": "2026-05-16",
+        "priceTotal": "227.60",
+        "pricePaid": "200",
+        "campingNotes": "Équipements :\n- Piscine plein air (accès libre)\n- Plage de baignade lac\n- Terrain de jeux\n- WiFi gratuit\n- Location de vélos\n- Restaurant Seeland (self-service)\n- Sanitaires modernes\n- Foyer/feu de camp\n- Chiens admis (max 2, tenus en laisse)\n- Bornes électriques 6/13A\n- Hébergements : PODs, Bungalows, Tipis, Family PODs\n- Accessible PMR\nPrix : 200 CHF | Réservation : 50153 | Documents inclus"
+      }
+    },
+    {
+      "name": "Verzasca",
+      "address": "Verzasca, Suisse",
+      "lat": 46.2274803,
+      "lng": 8.8519657,
+      "nights": 0,
+      "checkin": "2026-08-04",
+      "checkout": "2026-08-04",
+      "notes": "Sonogno ou randos le long de la rivière",
+      "campings": null,
+      "trails": null,
+      "pois": null,
+      "selectedCamping": null
+    },
+    {
+      "name": "Côme, Italie",
+      "address": null,
+      "lat": 45.8063817,
+      "lng": 9.0851867,
+      "nights": 1,
+      "checkin": "2026-08-04",
+      "checkout": "2026-08-05",
+      "notes": null,
+      "campings": [
+        {
+          "placeId": "ChIJ01FEVTophEcRxg6yfH4mGIA",
+          "name": "Camping Monte Generoso",
+          "address": "Via Tannini 12, Melano",
+          "lat": 45.9280952,
+          "lng": 8.976677799999997,
+          "rating": 4.4,
+          "userRatingsTotal": 888,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": true,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tiSCB5QTi_WrjPZOGoAMGcB1rLJnYTXQ60KbXDK_OcgclbPcMLPU0KAa0L-xd8g5ebN0v27NlX8XOYZX8vWT2vLBfGas01HbdJXNXxYImB0Zc-tea327z-dK4daRyYj36BAp-aROKaPSuG5VNtn6UTVfYntKo1Kzy6ZL2a5iJT1Hs9apKUntw_jte7u7yYa02MJAHMnDqyipInay43WPj7W4Aw4iG0uAQ62LzZMMjhvzRm5VMI1dAlGZBzTcZ4gd1FOYWckGdvpkqpVguT5Xd_N0Wy6llqFpq7Fe1OTF4M3CpDlpTcddVc0LNGCa0kWNdzl7P-Ghg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": [
+        {
+          "id": "google_ChIJnSgPrCidhkcR5nty7FjcgsY",
+          "source": "google",
+          "googlePlaceId": "ChIJnSgPrCidhkcR5nty7FjcgsY",
+          "name": "Parco Regionale Spina Verde",
+          "description": "",
+          "lat": 45.8180778,
+          "lng": 9.0263415,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.4,
+          "userRatingsTotal": 2259,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-uoGeedvhVl3nilnCPdx3EEh0oSfqIGGZh1ngzkoxG2YNoiSSvXqcWUKCoNTC0FUwJYj3m8yih3Y5EJ0MA634PvHXhmk64q-bTVuirthJNQfQXMx8xrmNWFoSeKXcC9zUhREZg378oanQeApMiIMNHbFLq9471Z8_AQWKrnv3CQ0EsPfTdJ64gQ_UcVrO8qQRXp1Ap_IafTLSkzIDeVBoFFZX4DcDWPZ6Xm39pZ92G0miJ8whWYFPCg-cDrcgmvCSsa7ckaP0UCpvbPw6bhzb7C_cp19V0BH74quWUAQWdOrRzfykxEc_ANAur8I_6BX9gujsD14dObt8XU92CfPSraGoX2U-sa3TdKwxorPGTghYtM-gZBtQ07Ghg9sOObL0wgO9MhBZWg8R034TwJzYmemY5fbyyLbXtMZlgt5SkWn3JQO4JwAkVfUcypcyItNKgLNZ2SQaExCnMEPv-5ElSnG9P1kpdxJxrENX1zSphgLnM-ZhiNdaKodG47kuu7yNR6dNxAVaTDEKRpzOnpO8waFkOkKrOaSW8nLLPigOv0VkO4N8kKmX2ooYn8XboO2Szld9S1&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJnSgPrCidhkcR5nty7FjcgsY"
+        },
+        {
+          "id": "google_ChIJLeiGKC0phEcRL1WxeeLKGU0",
+          "source": "google",
+          "googlePlaceId": "ChIJLeiGKC0phEcRL1WxeeLKGU0",
+          "name": "Cascata del Botto",
+          "description": "",
+          "lat": 45.93083739999999,
+          "lng": 8.9963889,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.7,
+          "userRatingsTotal": 157,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-sUBK1ZJurcnVA2CPqdKNlZOJn5zCBt4Dx865GmQr7UEC1gojjTP6hyaxBUUD8yRGPRGW6DJ4h8zNfk45Mpc3pZT1JQKmz3gCU-gC_qrzwhuKDI3wVFIDZS5l7B1Am2sSlnlgeOid_LWeQ9znDJMu-Km12PNns5RdUwjWefrkcW-QB5tBn9H2CvlWTyXXQqhTRq1tob8GB_JQfhyibRlhgQYyjOoPWI4759OcmnrhJX19yfEISry5UsP-yz0VQA8AXz6BlS_dcpDLPGpQcqz6wGTZ3mq9Al9TgoqwMIF257ErDhOgI9Cezl8vSDWPTuRQwAtxgmuo9G2K1SxeDpgCAIWG2NmQuXtV8IejLOFfTBKA8MbfV5QhojdcV0izMKXW1Km0BtnZHKYj2QUz0B4z552O6u1uAPC-kQ2G7_JggE9DWNtdYar6u0ohGQ7phajEWNcn-PWr75PCUFjNSh7D21AN2m33LzVG0CU3HnnXLDYJPG8G742K4PlqkN8gktjmRYhLfnAhoI7H4VcwaaUyqgtn_Pz6LF2BK4QaG1DtcILlY_bDGyPLKgFfHAgc8a-us-xA&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJLeiGKC0phEcRL1WxeeLKGU0"
+        }
+      ],
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJ01FEVTophEcRxg6yfH4mGIA",
+        "name": "Camping Monte Generoso",
+        "address": "Via Tannini 12, Melano",
+        "lat": 45.9280952,
+        "lng": 8.976677799999997,
+        "rating": 4.4,
+        "userRatingsTotal": 888,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": true,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tiSCB5QTi_WrjPZOGoAMGcB1rLJnYTXQ60KbXDK_OcgclbPcMLPU0KAa0L-xd8g5ebN0v27NlX8XOYZX8vWT2vLBfGas01HbdJXNXxYImB0Zc-tea327z-dK4daRyYj36BAp-aROKaPSuG5VNtn6UTVfYntKo1Kzy6ZL2a5iJT1Hs9apKUntw_jte7u7yYa02MJAHMnDqyipInay43WPj7W4Aw4iG0uAQ62LzZMMjhvzRm5VMI1dAlGZBzTcZ4gd1FOYWckGdvpkqpVguT5Xd_N0Wy6llqFpq7Fe1OTF4M3CpDlpTcddVc0LNGCa0kWNdzl7P-Ghg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "bookingRef": "31936042",
+        "pricePaid": "106.4",
+        "currency": "CHF",
+        "bookingDate": "2026-05-16",
+        "priceTotal": "106.4",
+        "documents": [
+          {
+            "id": "a15bd3f9-3990-42d2-a6e3-865026904d89",
+            "filename": "a15bd3f9-3990-42d2-a6e3-865026904d89.pdf",
+            "originalname": "2026080405 - Camping Monte Generoso - Confirmation.pdf",
+            "size": 748519,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-30T05:44:26.937Z"
+          }
+        ],
+        "campingNotes": "Équipements :\n- Plage / baignade lac\n- Terrain de jeux enfants\n- WiFi gratuit\n- Location bateaux (canoë, paddle, pédalo)\n- Bar au bord du lac\n- Pizza & Grill\n- Mini-marché\n- Machines à laver\n- Pain frais sur commande\n- Réfrigérateurs et congélateurs\n- Zone de recyclage\nPrix : 106.40 CHF | Réservation : 31936042 | Documents inclus"
+      }
+    },
+    {
+      "name": "Vérone",
+      "address": "Vérone, Italie",
+      "lat": 45.4383659,
+      "lng": 10.9917136,
+      "nights": 0,
+      "checkin": "2026-08-05",
+      "checkout": "2026-08-05",
+      "notes": null,
+      "campings": [
+        {
+          "placeId": "ChIJVQKvJEZff0cRvarOCTP8aj4",
+          "name": "Area Sosta Camper Porta Palio - Service Camper",
+          "address": "Via Luigi Piccoli, Verona",
+          "lat": 45.43387599999999,
+          "lng": 10.9782114,
+          "rating": 4,
+          "userRatingsTotal": 121,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": true,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=AWCwydjOVvuJnX7KuC2RfayE-MkkyfIN5FXqzG89oAsgncTz4qERhl5lvfvmTm7hxnldTiMWFeaxK7mFm7S4Ue139qzJxf6LeMWPmoRBbZ2S5wWund_7qI8_4GrpKtqFBdfE_S4_U_6q0bYa_9lfzJNy5nZmE16JfnU5CRdtMQAdBqaOl_xEk1GdAgjRmtChKozIOth6BXszA4H8xbwBrruD8-sEYbzlf3ZJOnTovUvtIAVUpHGYULTadPSC09-33W8gbgNCYywPfu7avOpLJcANOdQD9PWHgPVEcaTW1ddqF5HIu33cMa0ztrQr3k7SB3mm4XSDOyRMc50JejQhWdPq2AwZMM8QImzg_qX4R-bhD6cLtsDmRwaX1hfjWLu14eg75C_USKdRcYeUdqdDAVTtG6pppLeW3_K28uoi1dB5IPe_n6S2BeiIYW9Ar3j5rf-GSl7DW5NnED_Ad5hWP1zzrRvirmEyotDbOFunNU1Yzhw33TLqN0QjdSWpGq5VPkfMD-smKSriOnPmk1Cxm6iLTLUmFKIVNeYDHvH2S3myO4x_JpviEVGtMf-ss0vLIkL3XwY_CP3Mh4wkWilwi7RaH9T27rhdluf2r1iq3CFt-uy-KG_WJXST_7uiMcyuYH7Ref2-_sjZ0MfX507yXbFTQRXOxQY&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": true,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": null,
+      "pois": null,
+      "selectedCamping": null
+    },
+    {
+      "name": "Lago di Garda",
+      "address": "Agriturismo Agricamping GARDA NATURA, Via della Valletta, Costermano, Vérone, Italie",
+      "lat": 45.592641,
+      "lng": 10.7186121,
+      "nights": 2,
+      "checkin": "2026-08-05",
+      "checkout": "2026-08-07",
+      "notes": "Monte Baldo par téléphérique : 10h30\nParking Retelino\n\nChateau + Ville",
+      "campings": [
+        {
+          "placeId": "ChIJMb1ziLPzgUcRT1hPl5hsWo8",
+          "name": "Agriturismo Agricamping GARDA NATURA",
+          "address": "Via della Valletta, 19, Costermano sul Garda",
+          "lat": 45.592641,
+          "lng": 10.7186121,
+          "rating": 4.7,
+          "userRatingsTotal": 183,
+          "types": [
+            "campground",
+            "lodging",
+            "store",
+            "restaurant",
+            "food",
+            "point_of_interest",
+            "establishment"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-uF3l63Lfd45-UKsvcezXm5qVqnpSBRUypIf8xgij82Uht5_T5T8ziTzU9p4Ls5ehetIOgxBoXjxZxh3bFO_iiRhHIHDZ64vCTrLfn-tKJfRMIzK-Tx2qfjZ_48tJKBVuzuRllIko-CchDDN_O5AOwgRJmGbcv7qVhVgzD1N8ONLU-Zwrn-LCA9bItP8i5DzGhhOaV23tmzVUFg_D6NKCPXBr95SYaEdIEyUG2sr0XeCx9swIbV_kpRnWXn7ufisDzbPBWIg5eDby8yJGlQ7XxKLCFLW2WAg2qwtAyJ5xfbYzlCKTcOalNkvIT20e9uctJv2QkdJrUjGF4H1Onr3biGYy-idKQ14vcviiTCu_carYj7_z7q79W-cmCxIl0Yps62AUYPAm1kj1q2kyqhxfwFYFkvvRvcVy_uu_aBnW0kyAPSDc0sZYLV3nOnN1-XtIlt4gv2dX79X9aC5gcdJNTDyDQcwBLJv61cl6OIcNtKnnZ0aORgD8bmmTdrT0VWM-_vj3luwyBd1ufgn4exZYweBsWAHpay8qW2JHLySxgzyWk7jMq7sYDM2r7hrD5TNfoAzEqr_4yAu3aYg01yzRa6O8PJszFd5uohsEM_bvS0w2gVdV3QzqclWn2DhxqW&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": null,
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJMb1ziLPzgUcRT1hPl5hsWo8",
+        "name": "Agriturismo Agricamping GARDA NATURA",
+        "address": "Via della Valletta, 19, Costermano sul Garda",
+        "lat": 45.592641,
+        "lng": 10.7186121,
+        "rating": 4.7,
+        "userRatingsTotal": 183,
+        "types": [
+          "campground",
+          "lodging",
+          "store",
+          "restaurant",
+          "food",
+          "point_of_interest",
+          "establishment"
+        ],
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-uF3l63Lfd45-UKsvcezXm5qVqnpSBRUypIf8xgij82Uht5_T5T8ziTzU9p4Ls5ehetIOgxBoXjxZxh3bFO_iiRhHIHDZ64vCTrLfn-tKJfRMIzK-Tx2qfjZ_48tJKBVuzuRllIko-CchDDN_O5AOwgRJmGbcv7qVhVgzD1N8ONLU-Zwrn-LCA9bItP8i5DzGhhOaV23tmzVUFg_D6NKCPXBr95SYaEdIEyUG2sr0XeCx9swIbV_kpRnWXn7ufisDzbPBWIg5eDby8yJGlQ7XxKLCFLW2WAg2qwtAyJ5xfbYzlCKTcOalNkvIT20e9uctJv2QkdJrUjGF4H1Onr3biGYy-idKQ14vcviiTCu_carYj7_z7q79W-cmCxIl0Yps62AUYPAm1kj1q2kyqhxfwFYFkvvRvcVy_uu_aBnW0kyAPSDc0sZYLV3nOnN1-XtIlt4gv2dX79X9aC5gcdJNTDyDQcwBLJv61cl6OIcNtKnnZ0aORgD8bmmTdrT0VWM-_vj3luwyBd1ufgn4exZYweBsWAHpay8qW2JHLySxgzyWk7jMq7sYDM2r7hrD5TNfoAzEqr_4yAu3aYg01yzRa6O8PJszFd5uohsEM_bvS0w2gVdV3QzqclWn2DhxqW&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "bookingRef": "3107",
+        "currency": "EUR",
+        "bookingDate": "2026-05-17",
+        "pricePaid": "260",
+        "priceTotal": "260",
+        "documents": [
+          {
+            "id": "c466de5b-53a5-4c72-8623-236a9f7cb317",
+            "filename": "c466de5b-53a5-4c72-8623-236a9f7cb317.pdf",
+            "originalname": "2026080508 - Camping Garda Natura - Confirmation.pdf",
+            "size": 1235919,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-30T05:45:36.154Z"
+          }
+        ],
+        "campingNotes": "Équipements :\n- Piscine à l'eau salée\n- Piazzole avec salle de bain privée\n- Mobil-homes (Agrivillette, Maxicaravan, Studio)\n- Restaurant agriturismo (produits locaux)\n- Énergie 100% renouvelable\n- Location VTT électriques (E-MTB)\n- Ferme agricole (olives, vin, confitures)\nPrix : 260 € | Réservation : 3107 | Documents inclus"
+      }
+    },
+    {
+      "name": "Dolomites",
+      "address": "Camping Sass Dlacia, Badia, Sud-Tyrol, Italie",
+      "lat": 46.55419,
+      "lng": 11.969996,
+      "nights": 5,
+      "checkin": "2026-08-07",
+      "checkout": "2026-08-12",
+      "notes": "Booking number: 36289385\nBooking number: 36289397\n\n1er jour : Seceda ou ALpi Di Siusi\n2ème jour : Tre CIme (10h30). Parking réservé\n3eme jour : Lac de brayes\n4eme jour : Lagazuoi : parking. Telepherique aller. Redescente galleries guerre\n5eme jour : rando autour du camping\n",
+      "campings": [
+        {
+          "placeId": "ChIJeeYtsAE5eEcRSrGAWo2NOe0",
+          "name": "Camping Sass Dlacia",
+          "address": "Sciarè 11 San Cassiano in, Badia",
+          "lat": 46.55419000000001,
+          "lng": 11.969996,
+          "rating": 4.3,
+          "userRatingsTotal": 1205,
+          "types": [
+            "campground",
+            "rv_park",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": true,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tZTvKkRytftYYKnVu74qxKMLHq61vZJbptm2DufeHnDJZQSxOKVoKjR4m0oH6xnEXhnBpyquog6csJR947Rm6LJI2UuGE-fjYZq_BpWqsZWRDjOY05kcdWJltNJuB1Y5Nao94roqIsgp8LZFfqcn5HcbohD-C0a5uC7FiiPhWbsUszuPz2S7-udlQl0eTa07GAfN2roNCMEbNDbkUc0vfnt3xoq2bER1qjd7SraZEItAntbx7e03uteSkTqBa0Y_vPKQW1rFYgIcwyq3g4XBCwxpHIS0IINYnCUHzfJg11cMKJxtdZO5xRYyPjYFYjs6LFF6wQ8Q1NnR267YKBi10G8UDVtqCivvUQPph49SsuwGLusEqhtWP2oEvYNz24S2A2chH-UWNLIv6x00Qy2U678kZvY_fjCDNynS1hxFW68cfVTiAaY9FrJxkOehCLv9fCa2c1Yiz1tAPvuAtw2XXPvoL5Uw3SRaDzxoXXdM5Ewhsa8j_5iHIBUoXHyphRzBXMXcJT6-OuZP1_neP9G41n5Q3-RvWoYWZ7wC1rj3kGb8yBIgDs4tTC_EomsiufvndpMTyucbG4puq-4p010dqTP90-PoladW6YUwDXOhPbAcuHUYTg-cS4MZeaskLf&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": [
+        {
+          "id": "google_ChIJ5cUQ8pzNeUcRsCGJCy2Mofc",
+          "source": "google",
+          "googlePlaceId": "ChIJ5cUQ8pzNeUcRsCGJCy2Mofc",
+          "name": "Tre Cime di Lavaredo - partenza del sentiero",
+          "description": "",
+          "lat": 46.61254280000001,
+          "lng": 12.2965549,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.9,
+          "userRatingsTotal": 183,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=AWCwydhmEJgfOVRBce91RJT-0imZ1NtMDXus8zMU2ljL-ezwssDXwizIIg39T06jB8Qv-HEwS5VMwL8zkODevJx58bzhQqIyPnZycMNPm7dXRlF50KfboR6NihkRv7sWwe2mTzUNm5HFA8OulrvrLMKBfMBvJC0agXMatF-ZrtMPd04CJakTI04DDjQVviO-o6XF3p9PW5iqBjAkSOu_oauX55Co4__Cr470yQOMV417-_lv98RokyVrIrawsGJRfF7X5qd1TqNH1PR5SwKj6rVR_X8lyOsn4wu013b4lX-LeHAcJDXH7g2addLwmIBtUH_4yb_4jEN7FBMR0z85uOExWecpKFnc33JCPVtn29nF_ZfNECfExSf5ZyhKEdK97t4AEq3lyoKH8Fo3dRXbOwTy1NvSG_BN0E1IGtucphQy8fQNirmUDEIYMFdr3ptRtZ8fUdui6lLMiYl4fspDnH_cpSLWtRgptsnEWx3O8Yx1b7GNSNXmnv2FbxyY8Ix7KqmeuiIIcUuRv9vqt9l7qU58xRqXRQGbkeM9eY6oEtYHqTwFSIuwqjio2w9-POGlqAu3JVjFH_I3&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJ5cUQ8pzNeUcRsCGJCy2Mofc"
+        }
+      ],
+      "pois": [
+        {
+          "placeId": "ChIJ5-06In4veEcR9cJfTfG0Lb0",
+          "name": "Pragser Wildsee",
+          "address": "Pragser Wildsee, 39030 Braies, Sud-Tyrol, Italie",
+          "lat": 46.694333,
+          "lng": 12.0854273,
+          "rating": 4.7,
+          "userRatingsTotal": 17916,
+          "types": [
+            "establishment",
+            "natural_feature"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-typpNeIZFmVTcKhglqAbPVh1b3pUv3yficnQEmCcylYuoS418Itg35EpSdzji1KrAwFuiTDUEWXdCgqR8GU9T7O2Qa0Ch-BR46vVU0iAEMcDvJvK1WXydBANEWDeFysAY5qWFeAI9gEckGnGnHto5CT9udTzQiVDAffhSsJoghktj-M_ckDk5g3TPXcIG2-D7FbfEbZpvYHhzn1nfjcsPigJPWCdXloDp5hODv8jMielZ2cy3rgvgzfU8yQdamHHJxfNtDD7Nqy4gPkt46sjdteN2Ypr39AUhw-T723hZeQ3nU-ltnjL261mKnLUduphiD_knFDrxrwNYFkROk-i0zpaCVHozGvieSTXQvGCwVFvA6D3mfzz7qOCjZ8s_U3dWa7VAQfH5QCUyEVKUHbg5DzEc28zlZPQIhPodPu_ISGg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10"
+        },
+        {
+          "placeId": "ChIJq-baFe4TeEcRT1PQxgvIDfs",
+          "name": "Seceda",
+          "address": "Seceda, 39046 Urtijëi, Autonomous Province of Bolzano – South Tyrol, Italie",
+          "lat": 46.5980566,
+          "lng": 11.7241678,
+          "rating": 4.8,
+          "userRatingsTotal": 1807,
+          "types": [
+            "establishment",
+            "natural_feature"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-vhGQKJ_aDeF0OgzqAnZUu8g3jSDoTRx3gVTnllbsAuZjLC1WsBQ9L_wggxKcEjakeLvkOmPeU_lLPiw1IV6FgRlFFRtLF1N4gYwtkRYCNL-rUHxJH5NDHhioqLwO2AkkMj6--7pAvY1faUdNL640bZHHGEIHuPfZ-1zuRk9HX0f6wASx1eqcW6j01LdhzUpD4uHp5K6Dnw7v3AgekMwYKIiiabOn9P1MopnM6S9pSCfezQdk-hd7o-k3ZdUVsLTcEpKr3AObHO_V2al7PSiNw6ymAoZ7o9Yhnm03TF62olrIck4quNOr5UYTuKHyRR1Dj3kcazo-PT618mOxPSxYyJVyh5BCLPIQ3OpoQfNT7UsrYGnMt_zmv9B3vpEG2tgZss7b_jU9MyHoMnkwJTpHun7hkv8JtxXL8RcgIxuicpAw&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10"
+        },
+        {
+          "placeId": "ChIJryhkuM4UeEcRO8LvfWPzGJQ",
+          "name": "Alpe di Siusi",
+          "address": "Alpe di Siusi, Provincia autonoma di Bolzano - Alto Adige, Italie",
+          "lat": 46.5423435,
+          "lng": 11.6168855,
+          "rating": 4.7,
+          "userRatingsTotal": 4384,
+          "types": [
+            "establishment",
+            "natural_feature"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-sLS_uCNe-9he_sIP9wsYsGKD-wyVCzYQWjUJXl9JP7hWF1d7uKk4WpfAcz6E6tkIyFfqFgAqWl-s8DXf8UeiclmMomWHblCgNBuOaZ-o7J03YUl2P0FbGqedYAqw3_GRhi81VdNWq3NkdmsdhjViYMEYA6TDouAA6bV9Ajkc_QIKnePML62iT9uPKHXnjmtUcXkVyn8xzbsmlSNINCsMgOhZLJ5ZLv_iFN2XsB5UDKp-HmOw3Z6WlzUcdrrIF73sFX-eQ0vTJQgBWmfwlJqeYLkpRV17gADPLkaWZ0Fvg2hH7-v9L23S1TXZQe3fgyrZ_PuvRaI6a5QWe71bQUc4UORF0BhH0zbIszi4r1RA6WVuaK7Zcfoi-1isZSYJG9KywlG5H09zQ7uNVpYfNVMhxq0vQnJKNY50rDxeNgqgzguA&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10"
+        },
+        {
+          "placeId": "ChIJv9cthasyeEcRnn62kB3dxgE",
+          "name": "Tre Cime di Lavaredo",
+          "address": "Tre Cime di Lavaredo, Italie",
+          "lat": 46.6186777,
+          "lng": 12.3027679,
+          "rating": 4.8,
+          "userRatingsTotal": 5211,
+          "types": [
+            "establishment",
+            "natural_feature"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-vu-a4UwVX6OGqzXHn0i8uAwU85XVd_wfm9ElOl-o1GDyKMya6MkWdnd3nrnx-53UjwxocR0J7s6_dH8vePbR1v9JvgrYlYl-zG-n3EEcxhMaem4L-vTM-pVAvBIhJS-_P_V7r0OBc6jUagfFtpz9hpkqr4YuS5xHk_invbYIe7wcBLw4cwcpSA_R1H5_jfKy1W5-xa7chiQngu3tTcB7uLWDtzvQbotp0LY5w8BW4Fk8fWbo9RzFe3H4FZP-b1vDlyv33c0d8yF60SRhzcq0Ki7sWjCIlRHvpXV_tuLamtNFdJSklV9zE5tDC9_8xdUSix8rsYS-NvpzO8k7QmPPqNcKB1wu3WVnV3MaqHSX1Y1pZuvz0ziirhbwWbcQNx-B4l7FxeLj2ncAACAXHr7r15673qgoigK-i7XelHBOf-5Dkx&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10"
+        }
+      ],
+      "selectedCamping": {
+        "placeId": "ChIJeeYtsAE5eEcRSrGAWo2NOe0",
+        "name": "Camping Sass Dlacia",
+        "address": "Sciarè 11 San Cassiano in, Badia",
+        "lat": 46.55419000000001,
+        "lng": 11.969996,
+        "rating": 4.3,
+        "userRatingsTotal": 1205,
+        "types": [
+          "campground",
+          "rv_park",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": true,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tZTvKkRytftYYKnVu74qxKMLHq61vZJbptm2DufeHnDJZQSxOKVoKjR4m0oH6xnEXhnBpyquog6csJR947Rm6LJI2UuGE-fjYZq_BpWqsZWRDjOY05kcdWJltNJuB1Y5Nao94roqIsgp8LZFfqcn5HcbohD-C0a5uC7FiiPhWbsUszuPz2S7-udlQl0eTa07GAfN2roNCMEbNDbkUc0vfnt3xoq2bER1qjd7SraZEItAntbx7e03uteSkTqBa0Y_vPKQW1rFYgIcwyq3g4XBCwxpHIS0IINYnCUHzfJg11cMKJxtdZO5xRYyPjYFYjs6LFF6wQ8Q1NnR267YKBi10G8UDVtqCivvUQPph49SsuwGLusEqhtWP2oEvYNz24S2A2chH-UWNLIv6x00Qy2U678kZvY_fjCDNynS1hxFW68cfVTiAaY9FrJxkOehCLv9fCa2c1Yiz1tAPvuAtw2XXPvoL5Uw3SRaDzxoXXdM5Ewhsa8j_5iHIBUoXHyphRzBXMXcJT6-OuZP1_neP9G41n5Q3-RvWoYWZ7wC1rj3kGb8yBIgDs4tTC_EomsiufvndpMTyucbG4puq-4p010dqTP90-PoladW6YUwDXOhPbAcuHUYTg-cS4MZeaskLf&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "bookingRef": "36289385 / 36289397",
+        "pricePaid": "179",
+        "currency": "EUR",
+        "bookingDate": "2026-05-15",
+        "priceTotal": "641",
+        "documents": [
+          {
+            "id": "b945eed0-9f21-4a8b-bf1f-0d0a41a98e87",
+            "filename": "b945eed0-9f21-4a8b-bf1f-0d0a41a98e87.pdf",
+            "originalname": "2026080712 - Camping Sass Dlacia - 36289385.pdf",
+            "size": 122526,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-30T06:03:08.192Z"
+          },
+          {
+            "id": "a694f599-20c0-4205-88dd-7bd1774db196",
+            "filename": "a694f599-20c0-4205-88dd-7bd1774db196.pdf",
+            "originalname": "2026080712 - Camping Sass Dlacia - 36289397.pdf",
+            "size": 123119,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-30T06:03:13.568Z"
+          }
+        ],
+        "campingNotes": "Équipements :\n- Wellness / Spa (Natura Wellness)\n- Sauna\n- Massages\n- Restaurant, Pizzeria, Bosch Bar\n- Location de vélos\n- Service petit-déjeuner\n- Conciergerie activités outdoor (rando, VTT, ski, escalade)\n- A-Frame Cabins, Forest Cabins, Lodge\n- Emplacements (Pitches)\nPrix : 179 € | Réservations : 36289385 / 36289397 | Documents inclus"
+      }
+    },
+    {
+      "name": "Ile de Krk",
+      "address": "Njivice, Croatie",
+      "lat": 45.1644434,
+      "lng": 14.5448533,
+      "nights": 4,
+      "checkin": "2026-08-12",
+      "checkout": "2026-08-16",
+      "notes": null,
+      "campings": [
+        {
+          "placeId": "ChIJGeTWeiVkY0cRW0rVwWuEvsY",
+          "name": "Aminess Style Camping Atea Resort",
+          "address": "Primorska cesta 41, Njivice",
+          "lat": 45.17003999999999,
+          "lng": 14.547028,
+          "rating": 4.3,
+          "userRatingsTotal": 4217,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tlCUUPiwnJqKSQfbgUv58Jr_Nn2OjFRVyjZRcaH_U4jE04nRMv1Ty5pXcuqRYQygXEaaO4VxYyEe_xljEOW0KT1S8WvRWRWiKYlAPOghd6dZxG0hH6oG08AzQR2QhZrqUV9Xpy16ihd847cBuAN_DJKVeH9xrV3mrVcXLKipZjgVtf69xIUIgJsTaTq1p2vqNk4yArE1VNkvnwU6_letuDVTMt-KhhfxU0OuBCGatmpZlVS233Amb54Wck1LWfazhMyJBRVMPpgPF5kxIoxg8XjBXSvkMku-6FQuVMhlK_PqEPS6EGtxDBesx1u1bGNBkaIZKk6Vw&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": null,
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJGeTWeiVkY0cRW0rVwWuEvsY",
+        "name": "Aminess Style Camping Atea Resort",
+        "address": "Primorska cesta 41, Njivice",
+        "lat": 45.17003999999999,
+        "lng": 14.547028,
+        "rating": 4.3,
+        "userRatingsTotal": 4217,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tlCUUPiwnJqKSQfbgUv58Jr_Nn2OjFRVyjZRcaH_U4jE04nRMv1Ty5pXcuqRYQygXEaaO4VxYyEe_xljEOW0KT1S8WvRWRWiKYlAPOghd6dZxG0hH6oG08AzQR2QhZrqUV9Xpy16ihd847cBuAN_DJKVeH9xrV3mrVcXLKipZjgVtf69xIUIgJsTaTq1p2vqNk4yArE1VNkvnwU6_letuDVTMt-KhhfxU0OuBCGatmpZlVS233Amb54Wck1LWfazhMyJBRVMPpgPF5kxIoxg8XjBXSvkMku-6FQuVMhlK_PqEPS6EGtxDBesx1u1bGNBkaIZKk6Vw&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "bookingRef": "PH27866820",
+        "pricePaid": "763.84",
+        "currency": "EUR",
+        "bookingDate": "2026-05-15",
+        "priceTotal": "763.84",
+        "documents": [
+          {
+            "id": "26812e34-78a4-45f9-8ecf-7da6dc007f84",
+            "filename": "26812e34-78a4-45f9-8ecf-7da6dc007f84.pdf",
+            "originalname": "2026081216 - Camping Aminese - Confirmation.pdf",
+            "size": 1454752,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-30T06:39:30.346Z"
+          }
+        ],
+        "campingNotes": "Équipements :\n- Complexe piscines avec toboggans aquatiques\n- Plage de galets\n- Animations enfants & adultes\n- Activités sportives\n- Emplacements de luxe avec piscine privée\n- Glamping & mobil-homes\n- Restaurants, bars, boulangerie, marché\n- WiFi\n- Installations sanitaires modernes\nPrix : 763.84 € | Réservation : PH27866820 | Documents inclus"
+      }
+    },
+    {
+      "name": "Parc national du Triglav",
+      "address": "Triglav National Park, Bohinjsko jezero, Slovénie",
+      "lat": 46.34247269999999,
+      "lng": 13.7990434,
+      "nights": 2,
+      "checkin": "2026-08-16",
+      "checkout": "2026-08-18",
+      "notes": null,
+      "campings": [
+        {
+          "placeId": "ChIJseRpB7f3ekcRiVdx8VGzKJM",
+          "name": "Maya outdoor center",
+          "address": "Volče 87c, Tolmin",
+          "lat": 46.1814155,
+          "lng": 13.716958,
+          "rating": 4.8,
+          "userRatingsTotal": 258,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": false,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-t45C8cROrPuVOUxmnEfvJ8ZGsplJo7ALt87yd6lUPkVTaDcsVf4N3j94X9YLj1ho9UcpP_VmU5f5vxN6zFMag-KhGhSlcYI09ySff1VOQKi9WXfZLoPiWI06sL9N5gVTwwyPFUocX7lyvunN0o4gQHDGievbIfSc98wjI9K3TISU0UywN0HEBOIaK8oeNpnGIrnqOl8C2EKGou2vX1E8M-xVa1gg7sroY1_dD6ZD_66PKGotzUhIn1l1crDHhJVFtrDJq1OqOEKnQ9iYhejLJbHC6Vy1JDDeyi4qVXCpGUVA6BT_atpObmQxMftiJ0aoYOy7S1WQg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": [
+        {
+          "id": "google_ChIJrdMoWgD1ekcRgKfBYvv6kQY",
+          "source": "google",
+          "googlePlaceId": "ChIJrdMoWgD1ekcRgKfBYvv6kQY",
+          "name": "Zlatorog Fairy Trail",
+          "description": "",
+          "lat": 46.2790404,
+          "lng": 13.8347003,
+          "distance": null,
+          "ascent": null,
+          "descent": null,
+          "difficulty": "unknown",
+          "difficultyLabel": "Inconnue",
+          "duration": null,
+          "durationLabel": "Durée inconnue",
+          "color": "#64748b",
+          "rating": 4.7,
+          "userRatingsTotal": 26,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-uaIeWrihw9jEVI8AskXhnBijRStq9Plj8JeuWiAKpZRG4_Wz2IxTlNv6DClhX0rHfGCcG5HUXPMljWnIO1cJJlzLE3L19Fnx9DAAXcGp4hqT7yitvSl5IVbE3PW18q8RgBVNdr3fQbf4vveLPQ0q29bfYWaJZ2wDQyG9pjj5_izaj5kJpXd3PVLcG1Sqo7tZhk51MTgPKfg71lQQ8EPJkYnLmygGeg9xe6vX3awF7VSHtGEDbBW9t33IlKr2jr-9q5u3LxC3SInlnWgf7l13v8-f-w3RzI6KbbtYAp-mIkM5MdCt1s7t4lAax4jGpORYMTt7FthmZC8_nTTwV3f48MdV39MY1yzuQo1DocKGA4VcxtjyEFZHc7emd1q-B1CtORn7AjOF7ytfNJqL5mzvk0uT7soVLjHODrg3CohLys6oJjEvrdp40iAEloTQvoboi-Pn-5Ci_aKbNqfLjgDkomdVIl4j8rirZWyImxb6kfUtobMU29lGjMvg8ZbSdZPPFpXYX9jPjMZU_f6hrfPHcoP0zyidSP8Zoy5WFwLfvVi0uPDiYpbmEsGHU8HiLTDc1S9cU6awuzUZUp17mnPC3cp3_ARQ&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "website": null,
+          "osmUrl": null,
+          "waymarkedUrl": null,
+          "gmapsUrl": "https://www.google.com/maps/place/?q=place_id:ChIJrdMoWgD1ekcRgKfBYvv6kQY"
+        }
+      ],
+      "pois": [],
+      "selectedCamping": {
+        "placeId": "ChIJseRpB7f3ekcRiVdx8VGzKJM",
+        "name": "Maya outdoor center",
+        "address": "Volče 87c, Tolmin",
+        "lat": 46.1814155,
+        "lng": 13.716958,
+        "rating": 4.8,
+        "userRatingsTotal": 258,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": false,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-t45C8cROrPuVOUxmnEfvJ8ZGsplJo7ALt87yd6lUPkVTaDcsVf4N3j94X9YLj1ho9UcpP_VmU5f5vxN6zFMag-KhGhSlcYI09ySff1VOQKi9WXfZLoPiWI06sL9N5gVTwwyPFUocX7lyvunN0o4gQHDGievbIfSc98wjI9K3TISU0UywN0HEBOIaK8oeNpnGIrnqOl8C2EKGou2vX1E8M-xVa1gg7sroY1_dD6ZD_66PKGotzUhIn1l1crDHhJVFtrDJq1OqOEKnQ9iYhejLJbHC6Vy1JDDeyi4qVXCpGUVA6BT_atpObmQxMftiJ0aoYOy7S1WQg&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "documents": [
+          {
+            "id": "abca1b94-0e81-4a2d-b5e7-16519be2f2d5",
+            "filename": "abca1b94-0e81-4a2d-b5e7-16519be2f2d5.pdf",
+            "originalname": "2026081618 - Camping Maya.pdf",
+            "size": 108056,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-06-05T12:05:33.586Z"
+          }
+        ],
+        "currency": "EUR",
+        "priceTotal": "183",
+        "pricePaid": "183",
+        "bookingRef": "9062",
+        "bookingDate": "2026-06-04",
+        "campingNotes": "Équipements :\n- Centre d'activités outdoor\n- Rafting en eaux vives\n- Sports d'eau vive (kayak, canoë)\n- Cadre naturel exceptionnel (Triglav)\n- Randonnées\nPrix : 183 € | Réservation : 9062 | Documents inclus"
+      }
+    },
+    {
+      "name": "Innsbruck",
+      "address": "Innsbruck, Autriche",
+      "lat": 47.2675322,
+      "lng": 11.3910349,
+      "nights": 1,
+      "checkin": "2026-08-18",
+      "checkout": "2026-08-19",
+      "notes": null,
+      "campings": null,
+      "trails": null,
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJyWFPNlBknUcRhGb4NafTIq8",
+        "name": "Camping Aschach Castle",
+        "address": "Hochschwarzweg 2, Volders",
+        "lat": 47.2870194,
+        "lng": 11.5724585,
+        "rating": 4.5,
+        "userRatingsTotal": 818,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": false,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=AaVGc3mWmX47tqSOH98iir5m3WwgHCaO_LZFSr1PUECWmpa04vWUMN_LhC9n4bXYnKVguQdT-bJuLWotdq91ytf3FGfwpp9mEJgHG8KWxHrltbGKNN5_SULccrFmRWyjSB3dDpZRGtHwJB2zPmAithUtsGM-i5tUuN95aXq5Ijh_Izop9obdjAVXH6TlDFoVnPqL0w5WBk6-S4g5q5LrWJDfFIdePM9hkSXCTtQGUeibqYNyP7Ilb_vnwHk_HZUMw7zq8mIZijTuYGIJSOjs9yS0W2I-tEt8DeJ9v74Bl-gA9gMWiS9vmBXXRc08JXpqOYfpd-Oel1m8px_Ud8WjQZkhEEJIbZxK9i5uEQ7e4O0okjImJ2NKnR3mtDR69zAz7mAIMU42L9xsnVn4Xg3Em0GVqymN_ZriSKfAADHfeqnO7oDoWNMzXRNuQtPF57wY5EgP2XCydvEwgYsazknOttLrskSvOOcriz0wlhhuwhSLIJxTmKH2Y3UIlmrXXawK5awtv_4XysUOaAVx7j0AdCiM7sT7uXqqLJxoi6NDAfVE4urO_y4UPrmSB6DRCFS2deWOmIIOoZ_yjMjU9VFpk0PU_phYpFy6ZZZklXpM21W7AMDE0yfpihwW0-_V8LA3f4gGiVTJ9g&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "campingNotes": "Équipements :\n- Camping près du château d'Aschach\n- Informations détaillées non disponibles en ligne\nPrix : non renseigné | Réservation : non renseignée"
+      }
+    },
+    {
+      "name": "Château de Neuschwanstein",
+      "address": "Neuschwanstein Castle, Neuschwansteinstraße, Schwangau, Allemagne",
+      "lat": 47.557574,
+      "lng": 10.7498004,
+      "nights": 1,
+      "checkin": "2026-08-19",
+      "checkout": "2026-08-20",
+      "notes": "Chateau 20 : 11:45",
+      "campings": [
+        {
+          "placeId": "ChIJuQfsz-2KnEcReuWQ_m-k8yQ",
+          "name": "Camping Pfronten",
+          "address": "Tiroler Straße 184, Pfronten",
+          "lat": 47.5632509,
+          "lng": 10.5786647,
+          "rating": 4.7,
+          "userRatingsTotal": 789,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-t7cHwISLs0XUUn8QnlgkQQEyVRbpdSMa2vDA5dzb24WZWEP0kDbji7KvnBZfXvMi4mfcsRxOcN8-S400xnWpEVWEJvYObyPu574_k4QoVL97nx17SKFWYkHPquuKRHmvDzULBKr9FR5tO1SnjJ3nJAwi1Fs4cgQOXZ2eJXtrg0sQcut5514N-k3sLKu-dGMu4Ph4XNh9vhwz4SSpwqzbde05PVYX62UfTWwue9Nx7nDAqMMMG-youKf_gwDDXQCaHusqQluuHAD1GTpiGy6FU7xHaYAz5AFM4EIvDW3Jjzhmn7NyU_rrYCoGNWAf07LCHuZ20G9RE&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        },
+        {
+          "placeId": "ChIJ65lubX2PnEcRlKr0sAU172M",
+          "name": "RV park - Bad Hindelang",
+          "address": "Ostrachstraße 31, Bad Hindelang",
+          "lat": 47.4995963,
+          "lng": 10.3723824,
+          "rating": 4.1,
+          "userRatingsTotal": 525,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": true,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-urXbK7SWFhAmNWFU_kxjDfi5S9GSSU4bLTXbeEn5iTUlPIfCQDNZDYDYdcsxfKCQ6AEVft5vAjgkM0-Gpm_0G37MbJX_Usr4mBcYVtqb9gtnuYf23V4ARs0WP0isNJuVSKR2JclqrUyQVFqwqGXSAm8lMJs2X9Xc60Bb3s5UYTJrzTDsF-21KjF9GWCSbarwy9TzFzDSNuw4rsCMzfnTFqqBBiQxzDPvLoApaNtyRwQsR75A6qCZbNrqh91Qn3UKtitrbuAL4UPuhbU85ZdoakPAKIlnjslirSTOQreSTMCUa_vyK1Yueugu6HRrWl6PpP35Z6SiPqSD8IDPvCTQu52hz04gumnX0-v0V5esCK5dlzp6aUxn2oz_Vw_I2dhdNCeUf_TYZo4jR4GHDuspZ1995sz8cyvwBZoPjoMfnO62US-a6inr1LpbLnX4JieX9FP9KCDlEECsiq9M-a2ervs-1XyrJFfv1NMy0n97ePybK5-zWQuZx_hQzydE7k2cW1V806LYMKW-5kesjK6N8341DXvQeqMxAaAeVOuqJXdT3-NFxvzBGb5f-wYy_1UKkGq3DMkn1JIkmX2y0wCVQtGagrhDpVZABS_52JXUGdcftESEn304sXu8-uGOkUOtGDtiBO&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": null,
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJ5Y-yUpVYnEcRI5FTdLN7gys",
+        "name": "Camping Brunnen",
+        "address": "Seestraße 81, Schwangau-Brunnen",
+        "lat": 47.597439,
+        "lng": 10.7370703,
+        "rating": 4.5,
+        "userRatingsTotal": 2699,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": true,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-um5V4PNB7vj85S4Uhp7rOtKcnX3iHKsQUDhq-uRK_jr-GYo2Qpi-gcQAFql7bPbwgY_wpUgu8kdHF33kagbBalyDN-dua226f7QsX6q1mKF3IJZAHkZBW_tYKD0WCswVvN2n1Y5SwDl6RcCHR7JEdGFxvkuWCIdfqg9kDsuqcqXMUuneRbYZP_I4h9LCH1xINniFGxWpiLKPv6_9TZkkd8EG_04_edxUHqHGLfdJ0EC3YcYPhBDDKHopHcFFTmTEtxijhyNUnHHzNUv1sE8GZ3SGTZ3Jvkpt5UpC37wTLCFEvUhQr4QYTMgVwmo7IPmORc0DmslEA8HK_2c9ReFezOmvLbCveiaUuripjjEIswJBpLl9c3fZxsJIZ40TsPneOtamj6DVCPSaG6eoPYBboFJCfRBG3cEnwwq7WsCmDUVwYAk2LJRfaNVAlyJIJDmwHUAqVG1ws2q6fCxMS40RyafNylWoELMykMdGO6JJrtkb70Y5wkHV6lmY6PR70POI914_3xuxCznBNmt_vsVItHjzp-PTZK0hDFcJVAbhLJ3noxTDuelRHmJTATHpon9Fq2KzmTjyOpgTyD9Uz62e-I8HMCOVODcvUupNwdAQNVtyVQgxJzhgimP-UorNTC&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "documents": [
+          {
+            "id": "0fd04fcf-6412-435a-bfd6-52273db34386",
+            "filename": "0fd04fcf-6412-435a-bfd6-52273db34386.pdf",
+            "originalname": "2026081920 - Camping Brunnen.pdf",
+            "size": 3356413,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-06-06T05:11:12.693Z"
+          }
+        ],
+        "bookingRef": "270058",
+        "currency": "EUR",
+        "bookingDate": "2026-06-05",
+        "priceTotal": "85.45",
+        "pricePaid": "42.73",
+        "campingNotes": "Équipements :\n- Lac Forggensee (baignade, sports nautiques)\n- Terrain de jeux & foot\n- Garde d'enfants\n- Restaurant Brunnenstüberl\n- Mini-Marché\n- WiFi sur tout le terrain\n- Sanitaires modernes\n- Connexions électriques individuelles\n- Billard\n- Vue sur les Alpes et château de Neuschwanstein\nPrix : 42.73 € | Réservation : 270058 | Documents inclus"
+      }
+    },
+    {
+      "name": "Lac de Constance",
+      "address": "Constance, Allemagne",
+      "lat": 47.6779808,
+      "lng": 9.1736741,
+      "nights": 1,
+      "checkin": "2026-08-20",
+      "checkout": "2026-08-21",
+      "notes": null,
+      "campings": [],
+      "trails": null,
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJNxGfkkb3mkcRe1kbHEqFAmE",
+        "name": "Camping Fischerhaus",
+        "address": "Promenadenstrasse 52, Kreuzlingen",
+        "lat": 47.64697630000001,
+        "lng": 9.1986207,
+        "rating": 4.5,
+        "userRatingsTotal": 710,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": false,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=AaVGc3kBfXcyNgrgeC1vj_MwYswg7PXdU7wNp63bNUGJXxmcY4oVKIkxtye3GGBjM1qPvJDsR5wmX8GQBTp5E8UJKT_EcPzyrhj9r3RfU-XcU8EDL4hNQiQac2JkC3hL33wNOnsyKD73lYGP6QFIhPwh5Gu89dVma5fjSr5FbwzDWGyGi0CRrW7F75f3_7kXGhKQQlsYDeuCiNsYIBwMX6cy7nAseZTrhZ_fccJf9vRiG_9Hpd0GaUjmknlcUQDRI-tDR9SrXWpkfXbyIcRpCvgH_7IGpjjxT8TKaA2jp2_NJgyZj78cNwPDbNiwdKtwGHc3uItzBdkZJqhWQXmmEKMiG84MyPZ7ZJpqdiAwz-qoX40JZWU4gREhlEO8_iI1N_mDmtbDnlhNnF6vzEHFCnPxxPD54Qrh3bPOTLXpxBsH8fUAuAmltaJHmEddb6MURZKW4_gqy8mMynDoOJA9Cs_mPdmZg2dTUgctj33TDIiuBD-FFHWcXSB7036LQrs8ySVq6Ups2Yym97-sDeHRrsbNiS6ACrxiLdSsDLQrlpH4qZAV4ooChgtPQoa4Lqe0MGk5y05zZaFmNhk_LCTjjUzW14eVIBrsxVF7LriWwFIlrF4DuJV-w-dJJmBfo0Xj1JBrNUDlML_2&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "priceTotal": "89.5",
+        "currency": "CHF",
+        "pricePaid": "85",
+        "bookingDate": "2026-06-06",
+        "campingNotes": "Équipements :\n- Entrée gratuite piscine Hörnli (Kreuzlingen)\n- Terrain de jeux\n- Grillpavillon\n- Kiosk\n- Sanitaires\n- Location de chambres\n- Campingareal, Fischerhäuser\nPrix : 85 CHF | Réservation : non renseignée"
+      }
+    },
+    {
+      "name": "Europa-Park",
+      "address": "Europa-Park, Europa-Park-Straße, Rust, Allemagne",
+      "lat": 48.2660194,
+      "lng": 7.7220076,
+      "nights": 2,
+      "checkin": "2026-08-21",
+      "checkout": "2026-08-23",
+      "notes": null,
+      "campings": [
+        {
+          "placeId": "ChIJ8w4sBDM5kUcRUBj5lCID4YY",
+          "name": "Europa-Park-Camping",
+          "address": "Rheinweg 5, Rust",
+          "lat": 48.2728443,
+          "lng": 7.7148479,
+          "rating": 4.3,
+          "userRatingsTotal": 1699,
+          "types": [
+            "campground",
+            "lodging",
+            "point_of_interest",
+            "establishment"
+          ],
+          "openNow": true,
+          "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tVO_KwW_QhzbxAnhAeaqO3xbf-BgyOvoVHqXNl7xGFHT39vk4Vvu1y84Xm7wzmECzuCV8tuWLc7BG_4qlbeVQ9OCwb-Yad3dApezoiK-hvHW4nrctx1_h7qwYI8svMnUCbo_u8X9BDPOPzPnKJy325o-KgUp4hadTzTZUv0y8FRTxGNF_o9k4eykipVKrZ7vza-3-gnAzD1jN34IvSTdf04gSrOyb7ejPzQOWr_lh0juY9-21PufUXWGH-pckb5Ki07-Mo4-adXStk4bLHsyS6IRcyWaI9xR09kvjzctSOre_UcthqJwphXtdriOmOKHCg0d9RgCoaAopsB2tdPhQhpgNG6PYHV898CNESc9UVjt6nskYruLkeDnewXR03De7EqxjS5IFkc4M5fFVr2LidTf2NyMRTdjcKFyQSVm4c9EVckPf15RgScS0W3EJYwEwza9Q_H4eUXmc19Hirkt0jKwkGQW_RGkXUWqphaMY0GGCeB6x3dzKQV92xhyfWdaPSBbRvQ4LjhJ94Ly2CgDtAvo7spTwBD06NdLCfU5Br4dE33VQQbIfUvNJkXfEDuh6nh1ZexDZFIU_CxaInwrq4JXlcJSno5jEcpurZpa_AEEz6AcIQ6QJB2BkWrc-5WTOFww&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+          "kampaohId": null,
+          "source": "google",
+          "acceptsCampingCar": false,
+          "bookingProvider": null,
+          "webcampId": null
+        }
+      ],
+      "trails": null,
+      "pois": null,
+      "selectedCamping": {
+        "placeId": "ChIJ8w4sBDM5kUcRUBj5lCID4YY",
+        "name": "Europa-Park-Camping",
+        "address": "Rheinweg 5, Rust",
+        "lat": 48.2728443,
+        "lng": 7.7148479,
+        "rating": 4.3,
+        "userRatingsTotal": 1699,
+        "types": [
+          "campground",
+          "lodging",
+          "point_of_interest",
+          "establishment"
+        ],
+        "openNow": true,
+        "photo": "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=Ab43m-tVO_KwW_QhzbxAnhAeaqO3xbf-BgyOvoVHqXNl7xGFHT39vk4Vvu1y84Xm7wzmECzuCV8tuWLc7BG_4qlbeVQ9OCwb-Yad3dApezoiK-hvHW4nrctx1_h7qwYI8svMnUCbo_u8X9BDPOPzPnKJy325o-KgUp4hadTzTZUv0y8FRTxGNF_o9k4eykipVKrZ7vza-3-gnAzD1jN34IvSTdf04gSrOyb7ejPzQOWr_lh0juY9-21PufUXWGH-pckb5Ki07-Mo4-adXStk4bLHsyS6IRcyWaI9xR09kvjzctSOre_UcthqJwphXtdriOmOKHCg0d9RgCoaAopsB2tdPhQhpgNG6PYHV898CNESc9UVjt6nskYruLkeDnewXR03De7EqxjS5IFkc4M5fFVr2LidTf2NyMRTdjcKFyQSVm4c9EVckPf15RgScS0W3EJYwEwza9Q_H4eUXmc19Hirkt0jKwkGQW_RGkXUWqphaMY0GGCeB6x3dzKQV92xhyfWdaPSBbRvQ4LjhJ94Ly2CgDtAvo7spTwBD06NdLCfU5Br4dE33VQQbIfUvNJkXfEDuh6nh1ZexDZFIU_CxaInwrq4JXlcJSno5jEcpurZpa_AEEz6AcIQ6QJB2BkWrc-5WTOFww&key=AIzaSyDQI9ej3HgIs4_UMqecySic0ZejTBpVZ10",
+        "kampaohId": null,
+        "source": "google",
+        "acceptsCampingCar": false,
+        "bookingProvider": null,
+        "webcampId": null,
+        "documents": [
+          {
+            "id": "e630a69a-f439-45a9-b0d6-3caba4d96776",
+            "filename": "e630a69a-f439-45a9-b0d6-3caba4d96776.pdf",
+            "originalname": "2026082123 - Camping Europa Park - Confirmation.pdf",
+            "size": 615168,
+            "mimetype": "application/pdf",
+            "uploadedAt": "2026-05-18T15:36:09.334Z"
+          }
+        ],
+        "bookingRef": "CR14447013",
+        "currency": "EUR",
+        "bookingDate": "2026-05-17",
+        "priceTotal": "181.60",
+        "pricePaid": "181.60",
+        "campingNotes": "Équipements :\n- Accès au parc Europa-Park\n- Piscine (dans le complexe)\n- Wellness\n- Restaurants & bars\n- Sanitaires modernes\nPrix : 181.60 € | Réservation : CR14447013 | Documents inclus"
+      }
+    },
+    {
+      "name": "Reims",
+      "address": "51100 Reims",
+      "lat": 49.258329,
+      "lng": 4.031696,
+      "nights": 1,
+      "checkin": "2026-08-23",
+      "checkout": "2026-08-24",
+      "notes": null,
+      "campings": null,
+      "trails": null,
+      "pois": null,
+      "selectedCamping": null
+    },
+    {
+      "name": "Clévilliers",
+      "address": "28300 Clévilliers",
+      "lat": 48.543237,
+      "lng": 1.38867,
+      "nights": 0,
+      "checkin": "2026-08-24",
+      "checkout": "2026-08-24",
+      "notes": null,
+      "campings": null,
+      "trails": null,
+      "pois": null,
+      "selectedCamping": null
+    }
+  ]
+}

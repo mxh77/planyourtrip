@@ -1,12 +1,15 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
   ScrollView, Animated, StatusBar, Alert, ActivityIndicator,
   Modal, TextInput, Platform, PanResponder,
 } from 'react-native';
+import { useQuery } from '@powersync/react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { useAuthStore } from '../store/authStore';
+import API_URL from '../api/config';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -14,7 +17,7 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
-const SHEET_COLLAPSED = 130;
+const SHEET_COLLAPSED = 150;
 const SHEET_FULL = SCREEN_H - 200;
 
 const ORDER_COLORS = [
@@ -89,9 +92,14 @@ function decodePolyline(encoded) {
 }
 
 function durationDays(start, end) {
-  if (!start || !end) return null;
-  const d = Math.round((new Date(end) - new Date(start)) / 86400000);
-  return d > 0 ? d : null;
+  if (!start || !end) return 0;
+  try {
+    const d = Math.round((new Date(end) - new Date(start)) / 86400000);
+    return d > 0 ? d : 0;
+  } catch (err) {
+    console.error('[durationDays] Erreur:', err);
+    return 0;
+  }
 }
 
 function computeRegion(steps) {
@@ -110,18 +118,14 @@ function computeRegion(steps) {
 }
 
 // ─── Données mock pour prototype ─────────────────────────────────────────────
-const MOCK_STEPS = [
-  { id: '1', name: 'Maison', location: 'Clévilliers, France', latitude: 48.53, longitude: 1.38, startDate: '2026-07-31', type: 'DEPARTURE' },
-  { id: '2', name: 'Dole du Jura', location: '39100 Dole, France', latitude: 47.09, longitude: 5.49, startDate: '2026-07-31T15:00', endDate: '2026-08-01T11:00', type: 'STAGE', distanceFromPrev: 85, durationFromPrev: 75, prevStepName: 'Dijon', route: 'A39', accommodation: { name: 'Camping des Bords de Loue', type: 'CAMPING', bookingRef: '18483538', price: '59€', status: 'BOOKED' }, activities: [{ name: 'Balade en ville', description: 'Centre historique', status: 'PENDING' }, { name: 'Dîner Chez Julien', description: 'Rue du centre · réservation 19h', status: 'BOOKED' }, { name: 'Visite Musée des Beaux-Arts', description: 'Entrée 8€', status: 'BOOKED' }], notes: 'Arrivée prévue vers 15h. Faire les courses à l\'Intermarche avant l\'arrivée au camping.' },
-  { id: '3', name: 'Lauterbrunnen', location: 'Lauterbrunnen, Suisse', latitude: 46.59, longitude: 7.91, startDate: '2026-08-01', endDate: '2026-08-02', type: 'STAGE', distanceFromPrev: 220, durationFromPrev: 240, prevStepName: 'Dole du Jura', route: 'A39/E25', accommodation: { name: 'Camping Gletscherdorf', type: 'CAMPING', bookingRef: 'XIMV-YICW', price: '121.80 CHF', status: 'BOOKED' }, activities: [{ name: 'Via Ferrata', description: 'Murrenbach', status: 'PENDING' }] },
-  { id: '4', name: 'Gorges de l\'Aar', location: 'Schattenhalb, Suisse', latitude: 46.71, longitude: 8.19, startDate: '2026-08-02', type: 'STOP', distanceFromPrev: 30, durationFromPrev: 45, prevStepName: 'Lauterbrunnen' },
-  { id: '5', name: 'Lucerne', location: 'Lucerne, Suisse', latitude: 47.05, longitude: 8.30, startDate: '2026-08-02', endDate: '2026-08-04', type: 'STAGE', distanceFromPrev: 50, durationFromPrev: 60, prevStepName: 'Gorges de l\'Aar', route: 'A2', accommodation: { name: 'TCS Camping Sempach', type: 'CAMPING', bookingRef: '50153', price: '227.60 CHF', status: 'BOOKED' }, activities: [{ name: 'Randonnée Rigi', description: '', status: 'PENDING' }] },
-  { id: '6', name: 'Verzasca', location: 'Verzasca, Suisse', latitude: 46.19, longitude: 8.83, startDate: '2026-08-04', type: 'STOP', distanceFromPrev: 85, durationFromPrev: 90, prevStepName: 'Lucerne' },
-  { id: '7', name: 'Côme', location: 'Côme, Italie', latitude: 45.81, longitude: 9.08, startDate: '2026-08-04', endDate: '2026-08-05', type: 'STAGE', distanceFromPrev: 35, durationFromPrev: 45, prevStepName: 'Verzasca', accommodation: { name: 'Camping Monte Generoso', type: 'CAMPING', status: 'BOOKED' } },
-];
-
 // ─── StepCard (compact pour la liste) ────────────────────────────────────────
 function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
+  console.log(`[StepCard] Rendu step ${index}:`, { 
+    name: step?.name,
+    hasActivities: !!step?.activities?.length,
+    activities: step?.activities,
+    accommodation: step?.accommodation
+  });
   const nights = durationDays(step.startDate, step.endDate);
   const hasAccom = !!step.accommodation;
   const hasActivities = step.activities?.length > 0;
@@ -150,22 +154,26 @@ function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
             )}
           </View>
           <Text style={styles.stepLocation} numberOfLines={1}>{step.location}</Text>
-          
-          {/* Trajet depuis l'étape précédente */}
-          {step.distanceFromPrev && (
+          {(step.distanceFromPrev || 0) > 0 && (
             <Text style={styles.stepTrajet}>
-              🚐 {step.distanceFromPrev} km{step.durationFromPrev ? ` • ${step.durationFromPrev >= 60 ? `${Math.floor(step.durationFromPrev / 60)}h${String(Math.round(step.durationFromPrev % 60)).padStart(2, '0')}` : `${Math.round(step.durationFromPrev)}min`}` : ''}
+              🚐 {step.distanceFromPrev || 0} km{(step.durationFromPrev || 0) > 0 ? ` • ${(step.durationFromPrev || 0) >= 60 ? `${Math.floor((step.durationFromPrev || 0) / 60)}h${String(Math.round((step.durationFromPrev || 0) % 60)).padStart(2, '0')}` : `${Math.round(step.durationFromPrev || 0)}min`}` : ''}
             </Text>
           )}
-          
-          <View style={styles.stepMeta}>
-            {step.startDate && (
-              <Text style={styles.stepMetaText}>
-                📅 {formatDate(step.startDate)}{step.endDate ? ` → ${formatDate(step.endDate)}` : ''}
-              </Text>
-            )}
-            {nights && <Text style={styles.stepMetaText}> 🌙 {nights} nuit{nights > 1 ? 's' : ''}</Text>}
-          </View>
+          {(step.startDate || step.endDate || nights > 0) ? (
+            <View style={styles.stepMeta}>
+              {step.startDate && (
+                <Text style={styles.stepMetaText}>
+                  📅 {formatDate(step.startDate)}{step.endDate ? ` → ${formatDate(step.endDate)}` : ''}
+                </Text>
+              )}
+              {step.endDate && !step.startDate && (
+                <Text style={styles.stepMetaText}>
+                  📅 → {formatDate(step.endDate)}
+                </Text>
+              )}
+              {nights > 0 && <Text style={styles.stepMetaText}>🌙 {nights} nuit{nights > 1 ? 's' : ''}</Text>}
+            </View>
+          ) : null}
           {hasAccom && (
             <View style={styles.tagRow}>
               <Text style={styles.tagAccom}>
@@ -186,14 +194,14 @@ function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
         </View>
 
         {/* Travel time */}
-        {step.distanceFromPrev && (
+        {(step.distanceFromPrev || 0) > 0 && (
           <View style={styles.travelCol}>
             <Text style={styles.travelTime}>
-              {step.durationFromPrev >= 60
-                ? `${Math.floor(step.durationFromPrev / 60)}h${String(Math.round(step.durationFromPrev % 60)).padStart(2, '0')}`
-                : `${Math.round(step.durationFromPrev)} min`}
+              {(step.durationFromPrev || 0) >= 60
+                ? `${Math.floor((step.durationFromPrev || 0) / 60)}h${String(Math.round((step.durationFromPrev || 0) % 60)).padStart(2, '0')}`
+                : `${Math.round(step.durationFromPrev || 0)} min`}
             </Text>
-            <Text style={styles.travelDist}>{Math.round(step.distanceFromPrev)} km</Text>
+            <Text style={styles.travelDist}>{Math.round(step.distanceFromPrev || 0)} km</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -213,6 +221,23 @@ function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
 // ─── Detail card pour l'étape active (mode collapsed) ────────────────────────
 function CurrentStepBar({ step, index, color, onPress }) {
   const nights = durationDays(step.startDate, step.endDate);
+  
+  // Formatter les dates avec heures si disponibles
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return '';
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    const hasTime = dateStr.includes('T');
+    if (hasTime) {
+      return date.toLocaleString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  };
+  
   return (
     <TouchableOpacity style={styles.currentBar} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.currentDot, { backgroundColor: color }]}>
@@ -220,10 +245,15 @@ function CurrentStepBar({ step, index, color, onPress }) {
       </View>
       <View style={styles.currentInfo}>
         <Text style={styles.currentName}>{step.name}</Text>
+        {(step.distanceFromPrev || 0) > 0 && (
+          <Text style={styles.currentTrajet}>
+            🚐 {step.distanceFromPrev || 0} km · {(step.durationFromPrev || 0) >= 60 ? `${Math.floor((step.durationFromPrev || 0) / 60)}h${String(Math.round((step.durationFromPrev || 0) % 60)).padStart(2, '0')}` : `${Math.round(step.durationFromPrev || 0)}min`}
+          </Text>
+        )}
         <Text style={styles.currentMeta}>
           {step.endDate
-            ? `${nights} nuit${nights > 1 ? 's' : ''} · ${formatDate(step.startDate)} → ${formatDate(step.endDate)}`
-            : formatDate(step.startDate)}
+            ? `${nights || 0} nuit${(nights || 0) > 1 ? 's' : ''} · ${step.startDate ? formatDateTime(step.startDate) : ''} → ${formatDateTime(step.endDate)}`
+            : step.startDate ? formatDateTime(step.startDate) : 'Date non définie'}
         </Text>
       </View>
       {step.accommodation?.status === 'BOOKED' && (
@@ -246,9 +276,68 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const { id } = route.params || {};
   const insets = useSafeAreaInsets();
 
+  // Charger les steps depuis PowerSync
+  const { data: psSteps = [] } = useQuery(
+    'SELECT * FROM steps WHERE roadtripId = ? ORDER BY "order" ASC',
+    [id]
+  );
+
+  // Charger les accommodations et activities
+  const { data: psAccommodations = [] } = useQuery(
+    'SELECT * FROM accommodations WHERE roadtripId = ?',
+    [id]
+  );
+
+  const { data: psActivities = [] } = useQuery(
+    'SELECT * FROM activities WHERE roadtripId = ?',
+    [id]
+  );
+
+  // Transformer les steps PowerSync en format utilisable
+  const transformedSteps = useMemo(() => {
+    console.log('[transformedSteps] Recalcul avec psSteps:', psSteps?.length);
+    if (psSteps.length === 0) {
+      console.log('[transformedSteps] psSteps vides → utilise BD');
+      return [];
+    }
+    
+    const result = psSteps.map((step, idx) => {
+      const prevStep = idx > 0 ? psSteps[idx - 1] : null;
+      const stepAccommodations = psAccommodations.filter(a => a.stepId === step.id);
+      const stepActivities = psActivities.filter(a => a.stepId === step.id);
+      
+      // Calculer la distance et durée depuis l'étape précédente
+      let distanceFromPrev = 0;
+      let durationFromPrev = 0;
+      if (prevStep && step.latitude && step.longitude && prevStep.latitude && prevStep.longitude) {
+        const earth_r = 6371;
+        const lat1 = (prevStep.latitude * Math.PI) / 180;
+        const lat2 = (step.latitude * Math.PI) / 180;
+        const dLat = ((step.latitude - prevStep.latitude) * Math.PI) / 180;
+        const dLng = ((step.longitude - prevStep.longitude) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        distanceFromPrev = Math.round(earth_r * c);
+        durationFromPrev = Math.round((distanceFromPrev * 60) / 90);
+      }
+
+      return {
+        ...step,
+        distanceFromPrev: distanceFromPrev || 0,
+        durationFromPrev: durationFromPrev || 0,
+        accommodation: stepAccommodations.length > 0 ? { ...stepAccommodations[0], status: 'BOOKED' } : null,
+        activities: stepActivities,
+      };
+    });
+    console.log('[transformedSteps] ✓', result.length, 'steps calculés');
+    return result;
+  }, [psSteps, psAccommodations, psActivities, id]);
+
   // États
-  const [steps, setSteps] = useState(MOCK_STEPS);
-  const [selectedIndex, setSelectedIndex] = useState(1);
+  const [steps, setSteps] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [activeOverlays, setActiveOverlays] = useState({});
@@ -257,6 +346,131 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [routes, setRoutes] = useState([]);  // Itinéraires entre étapes
+  const [loadingFromAPI, setLoadingFromAPI] = useState(false);
+  const [refreshingRoutes, setRefreshingRoutes] = useState(false);
+  const shouldRefreshRef = useRef(false);  // Ref pour éviter infinite loop sur refreshingRoutes
+
+  // Créer une clé stable des steps pour éviter re-trigger inutile quand PowerSync retourne une nouvelle array
+  const stepsLength = steps.length;
+
+  // Mettre à jour la ref quand utilisateur clique 🔄 Refresh
+  useEffect(() => {
+    if (refreshingRoutes) {
+      shouldRefreshRef.current = true;
+      setRefreshingRoutes(false);  // Reset le state immédiatement pour ne pas re-trigger
+    }
+  }, [refreshingRoutes]);
+
+  // Réinitialiser les states quand on change de roadtrip
+  useEffect(() => {
+    console.log('[RoadtripDetail] 🔄 Roadtrip id:', id);
+    setSelectedIndex(0);
+    setSheetExpanded(false);
+    setShowDetail(false);
+    setActiveOverlays({});
+    setShowSearchArea(false);
+    setSearchQuery('');
+    setSuggestions([]);
+    setRoutes([]);
+    setLoadingFromAPI(false);
+  }, [id]);
+
+  // Mettre à jour steps quand transformedSteps change
+  useEffect(() => {
+    console.log('[RoadtripDetail] 📌 Mise à jour de steps, transformedSteps:', transformedSteps.length);
+    setSteps(transformedSteps);
+  }, [transformedSteps]);
+
+  // Charger les steps via API si PowerSync est vide
+  useEffect(() => {
+    if (psSteps.length === 0 && id && !loadingFromAPI) {
+      setLoadingFromAPI(true);
+      const token = useAuthStore.getState().token;
+      if (!token) {
+        console.log('[RoadtripDetail] Pas de token disponible');
+        return;
+      }
+
+      const loadFromAPI = async () => {
+        try {
+          console.log('[RoadtripDetail] Chargement des steps via API (PowerSync vide)...');
+          const res = await fetch(`${API_URL}/api/roadtrips/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            console.log('[RoadtripDetail] Données reçues via API:', data.steps?.length, 'steps');
+            setSteps((data.steps || []).map(s => ({
+              ...s,
+              accommodation: (s.accommodations?.[0] || s.accommodation) || null,
+              activities: s.activities || [],
+            })));
+            setRoadtrip(data);
+          }
+        } catch (err) {
+          console.error('[RoadtripDetail] Erreur API:', err);
+        } finally {
+          setLoadingFromAPI(false);
+        }
+      };
+
+      loadFromAPI();
+    }
+  }, [id, psSteps.length, loadingFromAPI]);
+
+  // Charger les polylines sauvegardées depuis l'API au démarrage (PowerSync ne les inclut pas)
+  const polylinesFetchedRef = useRef(false);
+  const polylinesLoadingRef = useRef(false);  // Flag pour éviter le recalcul pendant le chargement
+  useEffect(() => {
+    if (polylinesFetchedRef.current || stepsLength === 0) return;
+
+    polylinesLoadingRef.current = true;  // Bloquer le recalcul ci-dessous
+    const loadPolylines = async () => {
+      try {
+        const token = useAuthStore.getState().token;
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/api/roadtrips/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const stepsWithPolylines = data.steps || [];
+          
+          // Construire les routes depuis les polylines sauvegardées
+          const routesFromDB = [];
+          for (let i = 0; i < stepsWithPolylines.length - 1; i++) {
+            const current = stepsWithPolylines[i];
+            if (current.routeEncodedPolyline) {
+              try {
+                const coordinates = decodePolyline(current.routeEncodedPolyline);
+                routesFromDB.push({
+                  coordinates,
+                  color: ORDER_COLORS[i % ORDER_COLORS.length],
+                });
+                console.log('[Directions] ✓ Polylines chargées depuis API pour route', i);
+              } catch (err) {
+                console.log('[Directions] Erreur décodage:', err.message);
+              }
+            }
+          }
+
+          if (routesFromDB.length > 0) {
+            console.log('[Directions] Chargement depuis API: ' + routesFromDB.length + ' polylines (pas de recalcul)');
+            setRoutes(routesFromDB);
+            polylinesFetchedRef.current = true;
+          }
+        }
+      } catch (err) {
+        console.log('[Directions] Erreur chargement polylines API:', err.message);
+      } finally {
+        polylinesLoadingRef.current = false;  // Débloquer le recalcul
+      }
+    };
+
+    loadPolylines();
+  }, [stepsLength, id]);
 
   // Animation de la bottom sheet
   const sheetAnim = useRef(new Animated.Value(SHEET_COLLAPSED)).current;
@@ -265,6 +479,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const searchInputRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const stepListRef = useRef(null);
+
+  // Synchroniser les steps avec PowerSync
+  useEffect(() => {
+    setSteps(transformedSteps);
+  }, [transformedSteps]);
 
   // Sync ref avec state pour PanResponder
   useEffect(() => {
@@ -308,54 +527,85 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     })
   ).current;
 
-  // Charger les itinéraires au montage
+  // Charger les itinéraires : d'abord depuis la BD, puis recalculer si refreshing + SAUVEGARDER
   useEffect(() => {
-    const fetchDirections = async () => {
-      console.log('[Directions] Starting... API Key:', GOOGLE_API_KEY ? '✓' : '✗', 'Steps:', steps.length);
+    const loadRoutes = async () => {
+      const needsRefresh = shouldRefreshRef.current;
+      shouldRefreshRef.current = false;  // Reset immédiatement
+      console.log('[Directions] Chargement routes (refreshing:', needsRefresh, ')');
       
-      if (!GOOGLE_API_KEY || steps.length < 2) {
-        console.log('[Directions] Early exit: API_KEY=', !!GOOGLE_API_KEY, 'steps.length=', steps.length);
+      // Si les polylines se chargent depuis l'API, attendre (ne pas recalculer)
+      if (polylinesLoadingRef.current && !needsRefresh) {
+        console.log('[Directions] Attente du chargement des polylines depuis l\'API...');
         return;
       }
       
+      if (steps.length < 2) return;
+      
       const newRoutes = [];
-      try {
+      const polylinesToSave = {}; // { stepIndex: encodedPolyline }
+      
+      // Étape 1: Charger les polylines existantes depuis la BD
+      if (!needsRefresh) {
         for (let i = 0; i < steps.length - 1; i++) {
           const current = steps[i];
+          if (current.routeEncodedPolyline) {
+            try {
+              const coordinates = decodePolyline(current.routeEncodedPolyline);
+              newRoutes.push({
+                coordinates,
+                color: ORDER_COLORS[i % ORDER_COLORS.length],
+              });
+              console.log('[Directions] ✓ Chargé depuis BD: route', i);
+            } catch (err) {
+              console.log('[Directions] Erreur décodage polyline:', err.message);
+            }
+          }
+        }
+        
+        if (newRoutes.length === steps.length - 1) {
+          console.log('[Directions] Toutes les routes chargées depuis BD');
+          setRoutes(newRoutes);
+          return;
+        }
+      }
+      
+      // Étape 2: Recalculer les routes manquantes (ou toutes si refreshing)
+      console.log('[Directions] Recalcul des routes (existantes:', newRoutes.length, ')...');
+      
+      if (!GOOGLE_API_KEY) {
+        console.log('[Directions] Pas de API_KEY, fallback ligne droite');
+        setRefreshingRoutes(false);
+        return;
+      }
+      
+      try {
+        for (let i = newRoutes.length; i < steps.length - 1; i++) {
+          const current = steps[i];
           const next = steps[i + 1];
-          console.log(`[Directions] ${i}: ${current.name} → ${next.name}`);
           
           if (!current.latitude || !current.longitude || !next.latitude || !next.longitude) {
-            console.log('[Directions] Skipping: missing coordinates');
+            console.log('[Directions] Route', i, ': coordonnées manquantes');
+            newRoutes.push({
+              coordinates: [
+                { latitude: parseFloat(current.latitude), longitude: parseFloat(current.longitude) },
+                { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) },
+              ],
+              color: ORDER_COLORS[i % ORDER_COLORS.length],
+            });
             continue;
           }
           
           let coordinates = null;
+          let encodedPolyline = null;
           
-          // Essayer la Routes API
           try {
             const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
             const body = {
-              origin: {
-                location: {
-                  latLng: {
-                    latitude: parseFloat(current.latitude),
-                    longitude: parseFloat(current.longitude),
-                  },
-                },
-              },
-              destination: {
-                location: {
-                  latLng: {
-                    latitude: parseFloat(next.latitude),
-                    longitude: parseFloat(next.longitude),
-                  },
-                },
-              },
+              origin: { location: { latLng: { latitude: parseFloat(current.latitude), longitude: parseFloat(current.longitude) } } },
+              destination: { location: { latLng: { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) } } },
               travelMode: 'DRIVE',
             };
-            
-            console.log('[Directions] Fetching Routes API...');
             
             const response = await fetch(url, {
               method: 'POST',
@@ -368,33 +618,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             });
             
             const data = await response.json();
-            console.log('[Directions] Routes API Response:', data.error ? data.error.status : 'OK', data.routes?.length || 0, 'routes');
-            
-            if (data.routes && data.routes[0]) {
-              const encodedPolyline = data.routes[0].polyline?.encodedPolyline;
-              if (encodedPolyline) {
-                coordinates = decodePolyline(encodedPolyline);
-                console.log('[Directions] ✓ Routes API success:', coordinates.length, 'points');
-              }
-            } else if (data.error) {
-              console.log('[Directions] Routes API error:', data.error.status, '- using fallback');
+            if (data.routes?.[0]?.polyline?.encodedPolyline) {
+              encodedPolyline = data.routes[0].polyline.encodedPolyline;
+              coordinates = decodePolyline(encodedPolyline);
+              polylinesToSave[i] = encodedPolyline;
+              console.log('[Directions] Route', i, '✓ API:', coordinates.length, 'points (sauvé)');
             }
           } catch (err) {
-            console.log('[Directions] Routes API fetch error - using fallback:', err.message);
+            console.log('[Directions] Route', i, 'erreur API:', err.message);
           }
           
-          // Fallback : ligne droite entre les deux étapes
+          // Fallback
           if (!coordinates) {
-            console.log('[Directions] Using fallback (straight line)');
             coordinates = [
-              {
-                latitude: parseFloat(current.latitude),
-                longitude: parseFloat(current.longitude),
-              },
-              {
-                latitude: parseFloat(next.latitude),
-                longitude: parseFloat(next.longitude),
-              },
+              { latitude: parseFloat(current.latitude), longitude: parseFloat(current.longitude) },
+              { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) },
             ];
           }
           
@@ -403,14 +641,51 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             color: ORDER_COLORS[i % ORDER_COLORS.length],
           });
         }
-        console.log('[Directions] Final routes:', newRoutes.length);
+        
+        console.log('[Directions] Final:', newRoutes.length, 'routes, à sauvegarder:', Object.keys(polylinesToSave).length);
         setRoutes(newRoutes);
+        
+        // Étape 3: Sauvegarder les polylines en BD (via PATCH pour éviter upsert)
+        if (Object.keys(polylinesToSave).length > 0) {
+          const token = useAuthStore.getState().token;
+          for (const [idx, polyline] of Object.entries(polylinesToSave)) {
+            const stepIdx = parseInt(idx);
+            if (stepIdx >= steps.length) {
+              console.log('[Directions] Index hors limites:', stepIdx, '/', steps.length);
+              continue;
+            }
+            const step = steps[stepIdx];
+            const stepId = step.id;
+            console.log('[Directions] Save polyline pour step', stepIdx, '→ ID:', stepId);
+            try {
+              const response = await fetch(`http://192.168.1.38:3111/api/steps/${stepId}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  routeEncodedPolyline: polyline,
+                }),
+              });
+              if (response.ok) {
+                console.log('[Directions] ✓ Polyline sauvée pour step', stepId);
+              } else {
+                const errText = await response.text();
+                console.log('[Directions] ✗ Erreur save step', stepId, response.status, errText);
+              }
+            } catch (err) {
+              console.log('[Directions] Erreur save polyline:', err.message);
+            }
+          }
+        }
       } catch (err) {
-        console.error('[Directions] Unexpected error:', err);
+        console.error('[Directions] Erreur:', err);
       }
     };
-    fetchDirections();
-  }, [steps, GOOGLE_API_KEY]);
+    
+    loadRoutes();
+  }, [stepsLength]);
 
   // Injecter titre + hamburger dans la barre de navigation native
   React.useLayoutEffect(() => {
@@ -504,8 +779,19 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const selectedStep = steps[selectedIndex];
   const color = ORDER_COLORS[selectedIndex % ORDER_COLORS.length];
 
-  return (
-    <View style={styles.container}>
+  console.log('[RoadtripDetail] 📱 Rendu:', steps.length, 'steps, idx:', selectedIndex);
+  
+  // Vérifier la structure des premiers steps
+  if (steps.length > 0) {
+    if (steps[0]) {
+      const { routeEncodedPolyline, ...stepWithoutPolyline } = steps[0];
+      console.log('[StepStructure] First step:', JSON.stringify(stepWithoutPolyline, null, 2));
+    }
+  }
+
+  try {
+    return (
+      <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
       {/* ─── SEARCH (sous la nav native) ───────────────────────────────── */}
@@ -617,19 +903,22 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           ))}
           
           {/* Afficher les marqueurs */}
-          {steps.map((s, i) => (
-            s.latitude && s.longitude && (
+          {steps.map((s, i) => {
+            if (!s.latitude || !s.longitude) {
+              return null;
+            }
+            return (
               <Marker
                 key={s.id}
-                coordinate={{ latitude: s.latitude, longitude: s.longitude }}
+                coordinate={{ latitude: parseFloat(s.latitude), longitude: parseFloat(s.longitude) }}
                 anchor={{ x: 0.5, y: 0.5 }}
               >
                 <View style={[styles.marker, { backgroundColor: ORDER_COLORS[i % ORDER_COLORS.length] }]}>
                   <Text style={styles.markerText}>{i + 1}</Text>
                 </View>
               </Marker>
-            )
-          ))}
+            );
+          })}
         </MapView>
 
         {/* ─── OVERLAY BUTTONS (absolute within map) ─────────────────────── */}
@@ -656,26 +945,33 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 12 }}>
             <View style={styles.handleBar} />
           </TouchableOpacity>
-          {sheetExpanded && (
+        {sheetExpanded && (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, alignItems: 'center' }}>
+            <TouchableOpacity 
+              onPress={() => {
+                console.log('[UI] Rafraîchir itinéraires');
+                setRefreshingRoutes(true);
+              }}
+              style={{ padding: 8 }}
+            >
+              <Text style={{ fontSize: 18 }}>🔄</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.sheetCloseText}>✕</Text>
             </TouchableOpacity>
-          )}
+          </View>
+        )}
         </View>
 
         <View style={styles.sheetContent} pointerEvents={sheetExpanded ? 'auto' : 'none'}>
-          {!sheetExpanded ? (
-            /* Mode replié : étape en cours */
-            selectedStep && (
-              <CurrentStepBar
-                step={selectedStep}
-                index={selectedIndex}
-                color={color}
-                onPress={() => openDetail(selectedIndex)}
-              />
-            )
-          ) : (
-            /* Mode plein écran : liste des étapes */
+          {!sheetExpanded && selectedStep ? (
+            <CurrentStepBar
+              step={selectedStep}
+              index={selectedIndex}
+              color={color}
+              onPress={() => openDetail(selectedIndex)}
+            />
+          ) : sheetExpanded ? (
             <View style={styles.sheetFull} pointerEvents="auto">
               {/* En-tête */}
               <View style={styles.sheetFullHeader}>
@@ -726,7 +1022,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 ))}
               </ScrollView>
             </View>
-          )}
+          ) : null}
         </View>
       </Animated.View>
 
@@ -749,11 +1045,22 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         />}
       </Modal>
     </View>
-  );
+    );
+  } catch (err) {
+    console.error('❌ [RoadtripDetail] ERREUR RENDER:', err);
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: 'red', padding: 20 }}>
+          Erreur: {err.message}
+        </Text>
+      </View>
+    );
+  }
 }
 
 // ─── StepDetailModal ─────────────────────────────────────────────────────────
 function StepDetailModal({ step, index, color, onClose, onNext }) {
+  console.log('[StepDetailModal] Rendu:', step?.name);
   const nights = durationDays(step.startDate, step.endDate);
   const insets = useSafeAreaInsets();
 
@@ -1132,8 +1439,9 @@ const styles = StyleSheet.create({
   },
   currentDotText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   currentInfo: { flex: 1 },
-  currentName: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  currentMeta: { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 },
+  currentName: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  currentTrajet: { fontSize: 12, color: '#4ade80', marginTop: 2, fontWeight: '500' },
+  currentMeta: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 1 },
   currentBadge: {
     backgroundColor: 'rgba(34,197,94,0.15)', borderRadius: 6,
     paddingHorizontal: 6, paddingVertical: 3,
@@ -1165,20 +1473,20 @@ const styles = StyleSheet.create({
   timelineLine: { flex: 1, width: 1.5, backgroundColor: 'rgba(255,255,255,0.06)', marginTop: 2 },
   stepContent: { flex: 1, marginLeft: 10 },
   stepTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  stepName: { fontSize: 14, fontWeight: '600', color: '#fff', flex: 1 },
+  stepName: { fontSize: 16, fontWeight: '600', color: '#fff', flex: 1 },
   stepNameActive: { color: '#f59e0b' },
   stepType: {
-    fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.4)',
+    fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.4)',
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4,
     paddingHorizontal: 5, paddingVertical: 1,
   },
-  stepLocation: { fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 },
-  stepTrajet: { fontSize: 11, color: '#4ade80', marginTop: 3, fontWeight: '500' },
+  stepLocation: { fontSize: 14, color: 'rgba(255,255,255,0.35)', marginTop: 2 },
+  stepTrajet: { fontSize: 13, color: '#4ade80', marginTop: 3, fontWeight: '500' },
   stepMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, marginTop: 2 },
-  stepMetaText: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
+  stepMetaText: { fontSize: 13, color: 'rgba(255,255,255,0.45)' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 3 },
   tagAccom: {
-    fontSize: 10, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4,
+    fontSize: 11, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4,
     backgroundColor: 'rgba(34,197,94,0.1)', color: '#4ade80',
     overflow: 'hidden',
   },

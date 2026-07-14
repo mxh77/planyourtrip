@@ -294,25 +294,38 @@ router.post('/logout', async (req, res) => {
   res.status(204).send();
 });
 
-// GET /api/auth/powersync-token — génère un token JWT compatible PowerSync
+// GET /api/auth/powersync-token — génère un token JWT compatible PowerSync (Custom HS256)
 router.get('/powersync-token', auth, async (req, res) => {
-  // PowerSync attend le secret décodé depuis base64url (pas la string brute)
-  const psSecret = Buffer.from(process.env.POWERSYNC_JWT_SECRET, 'base64url');
-  const psToken = jwt.sign(
-    {
+  try {
+    // Utilise le secret PowerSync partagé (Custom HS256 dans PowerSync Cloud)
+    const psSecret = Buffer.from(process.env.POWERSYNC_JWT_SECRET, 'base64url');
+    const payload = {
       sub: req.user.userId,
-      user_id: req.user.userId,  // claim custom accessible via token_parameters.user_id
+      user_id: req.user.userId,  // claim custom pour PowerSync
       iat: Math.floor(Date.now() / 1000),
-    },
-    psSecret,
-    {
-      expiresIn: '1h',
-      audience: process.env.POWERSYNC_URL,
-      keyid: process.env.POWERSYNC_JWT_KID,
-    }
-  );
+    };
+    
+    const psToken = jwt.sign(
+      payload,
+      psSecret,
+      {
+        expiresIn: '1h',
+        audience: process.env.POWERSYNC_URL,
+        keyid: process.env.POWERSYNC_JWT_KID,
+      }
+    );
 
-  res.json({ token: psToken, powersyncUrl: process.env.POWERSYNC_URL });
+    console.log('[PowerSync Token] Generated for userId:', req.user.userId);
+
+    res.json({ 
+      token: psToken, 
+      powersyncUrl: process.env.POWERSYNC_URL,
+      userId: req.user.userId,
+    });
+  } catch (err) {
+    console.error('[PowerSync Token Error]', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/auth/push-token — enregistrer le token Expo Push de l'appareil
