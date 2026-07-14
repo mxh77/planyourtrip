@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
   ScrollView, Animated, StatusBar, Alert, ActivityIndicator,
-  Modal, TextInput, Platform,
+  Modal, TextInput, Platform, PanResponder,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -195,6 +195,40 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // Animation de la bottom sheet
   const sheetAnim = useRef(new Animated.Value(SHEET_COLLAPSED)).current;
   const mapRef = useRef(null);
+  const sheetExpandedRef = useRef(false);
+
+  // Sync ref avec state pour PanResponder
+  useEffect(() => {
+    sheetExpandedRef.current = sheetExpanded;
+  }, [sheetExpanded]);
+
+  // PanResponder sur la poignée uniquement
+  const handlePanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 5,
+      onPanResponderMove: (_, gs) => {
+        const isExpanded = sheetExpandedRef.current;
+        const base = isExpanded ? SHEET_FULL : SHEET_COLLAPSED;
+        const next = Math.max(SHEET_COLLAPSED, Math.min(SHEET_FULL, base - gs.dy));
+        sheetAnim.setValue(next);
+      },
+      onPanResponderRelease: (_, gs) => {
+        const isExpanded = sheetExpandedRef.current;
+        // Swipe vers le haut (dy < -40) → ouvrir ; vers le bas (dy > 40) → fermer
+        const shouldExpand = isExpanded ? gs.dy < 40 : gs.dy < -40;
+        const toValue = shouldExpand ? SHEET_FULL : SHEET_COLLAPSED;
+        Animated.spring(sheetAnim, {
+          toValue,
+          useNativeDriver: false,
+          tension: 65,
+          friction: 11,
+        }).start();
+        sheetExpandedRef.current = shouldExpand;
+        setSheetExpanded(shouldExpand);
+      },
+    })
+  ).current;
 
   // Injecter titre + hamburger dans la barre de navigation native
   React.useLayoutEffect(() => {
@@ -302,15 +336,20 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
       {/* ─── BOTTOM SHEET ──────────────────────────────────────────────── */}
       <Animated.View style={[styles.sheet, { height: sheetAnim }]} pointerEvents="box-none">
-        {/* Handle — simple tap to toggle */}
-        <TouchableOpacity onPress={toggleSheet} style={styles.sheetHandle} activeOpacity={0.7}>
-          <View style={styles.handleBar} />
+        {/* Handle — tap ET swipe pour toggle */}
+        <View
+          style={styles.sheetHandle}
+          {...handlePanResponder.panHandlers}
+        >
+          <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 4 }}>
+            <View style={styles.handleBar} />
+          </TouchableOpacity>
           {sheetExpanded && (
             <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.sheetCloseText}>✕</Text>
             </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </View>
 
         <View style={styles.sheetContent} pointerEvents={sheetExpanded ? 'auto' : 'none'}>
           {!sheetExpanded ? (
