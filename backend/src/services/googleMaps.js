@@ -98,12 +98,16 @@ async function autocomplete({ input, sessionToken, location, radius = 50000, lan
     // Transformer les suggestions en format compatible (mainText, secondaryText)
     return (resp.data.suggestions || []).map(sugg => {
       const pp = sugg.placePrediction || {};
+      const text = pp.text?.text || '';
       const structured = pp.structuredFormat || {};
+      const mainText = structured.mainText?.text || '';
+      const secondaryText = structured.secondaryText?.text || '';
+      console.log(`[googleMaps] Prediction: placeId=${pp.placeId}, text="${text.slice(0, 50)}", main="${mainText.slice(0, 50)}", secondary="${secondaryText.slice(0, 50)}"`);
       return {
         place_id: pp.placeId,
-        description: pp.mainText?.text || '',
-        main_text: structured.mainText?.text || '',
-        secondary_text: structured.secondaryText?.text || '',
+        description: mainText || text,  // Utiliser mainText si dispo, sinon le texte complet
+        main_text: mainText,
+        secondary_text: secondaryText,
         types: pp.types || [],
       };
     });

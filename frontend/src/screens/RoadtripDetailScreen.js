@@ -1112,8 +1112,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
-        console.log('[Places] Response:', data);
+        console.log('[Places] Response type:', typeof data, Array.isArray(data) ? 'array' : 'object', 'length:', data?.length);
         const predictions = Array.isArray(data) ? data : data.predictions || [];
+        console.log('[Places] Predictions count:', predictions.length);
+        if (predictions.length > 0) {
+          console.log('[Places] First prediction:', JSON.stringify(predictions[0]).slice(0, 300));
+        }
 
         // Parser la structure predictions Google Autocomplete
         const formatted = predictions.map(p => ({

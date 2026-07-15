@@ -34,7 +34,17 @@ export default function LocationPicker({ label = 'Lieu (optionnel)', initialValu
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setSuggestions(Array.isArray(data) ? data : data.predictions || []);
+      const rawPredictions = Array.isArray(data) ? data : data.predictions || [];
+      console.log('[LocationPicker] raw predictions:', rawPredictions.length, JSON.stringify(rawPredictions[0]).slice(0, 200));
+      // Normaliser les champs : l'API renvoie place_id (snake_case)
+      const formatted = rawPredictions.map(p => ({
+        placeId: p.place_id || p.placeId,
+        description: p.description || p.mainText || '',
+        mainText: p.main_text || '',
+        secondaryText: p.secondary_text || '',
+        types: p.types || [],
+      }));
+      setSuggestions(formatted);
       setShowDropdown(true);
     } catch (e) {
       console.log('[LocationPicker] Erreur autocomplete:', e.message);
@@ -96,7 +106,7 @@ export default function LocationPicker({ label = 'Lieu (optionnel)', initialValu
           placeholderTextColor={COLORS.textDim}
           value={input}
           onChangeText={handleChangeText}
-          onFocus={() => input && setSuggestions.length > 0 && setShowDropdown(true)}
+          onFocus={() => input && suggestions.length > 0 && setShowDropdown(true)}
         />
         
         {loading && <ActivityIndicator size="small" color={COLORS.accent} style={styles.loader} />}
@@ -111,15 +121,22 @@ export default function LocationPicker({ label = 'Lieu (optionnel)', initialValu
       {showDropdown && suggestions.length > 0 && (
         <FlatList
           data={suggestions}
-          keyExtractor={(item, i) => `${item.place_id || i}`}
+          keyExtractor={(item, i) => `${item.placeId || i}`}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.suggRow}
-              onPress={() => handleSelectSuggestion(item)}
+              onPress={() => {
+                console.log('[LocationPicker] Selected:', item.placeId, item.description);
+                handleSelectSuggestion(item);
+              }}
             >
-              <Text style={styles.description}>{item.description}</Text>
+              <Text style={styles.suggMainText} numberOfLines={1}>{item.mainText || item.description}</Text>
+              {item.secondaryText ? (
+                <Text style={styles.suggSubText} numberOfLines={1}>{item.secondaryText}</Text>
+              ) : null}
             </TouchableOpacity>
           )}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
           scrollEnabled={false}
           style={styles.listView}
         />
@@ -171,6 +188,16 @@ const styles = StyleSheet.create({
   description: {
     color: COLORS.text,
     fontSize: 14,
+  },
+  suggMainText: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  suggSubText: {
+    color: COLORS.textDim,
+    fontSize: 12,
+    marginTop: 2,
   },
   separator: {
     height: 1,
