@@ -21,11 +21,12 @@ function log(category, message, data = null) {
   const timestamp = new Date().toISOString();
   const now = Date.now();
   
-  // Détecter les logs trop rapides (boucle infinie?)
+  // Détecter les logs trop rapides (boucle infinie?) — silencieux, pas de warn
   if (lastLogTime[category]) {
     const timeSinceLastLog = now - lastLogTime[category];
     if (timeSinceLastLog < LOG_INTERVAL_THRESHOLD) {
-      warn('LOGGER', `⚠️ Logs ${category} trop rapides (${timeSinceLastLog}ms apart) - POSSIBLE BOUCLE!`);
+      lastLogTime[category] = now;  // Reset pour éviter le spam
+      return;  // Ignorer ce log, il est trop proche du précédent
     }
   }
   lastLogTime[category] = now;

@@ -434,12 +434,20 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // Au démarrage (quand les étapes sont chargées), zoomer sur tout le roadtrip
   useEffect(() => {
     if (steps.length > 0 && selectedIndex === -1 && mapRef.current) {
-      const region = computeRoadtripRegion(steps, psAccommodations, psActivities);
-      if (region) {
-        mapRef.current.animateToRegion(region, 300);
+      const coords = getRoadtripCoordinates(steps, psAccommodations, psActivities);
+      if (coords.length > 0) {
+        mapRef.current.fitToCoordinates(coords, {
+          edgePadding: {
+            top: 80,
+            right: 40,
+            bottom: SHEET_COLLAPSED + 20,
+            left: 40,
+          },
+          animated: true,
+        });
       }
     }
-  }, [steps.length, selectedIndex, psAccommodations, psActivities, computeRoadtripRegion]);
+  }, [steps.length, selectedIndex, psAccommodations, psActivities, getRoadtripCoordinates]);
 
   // (Désactivé : PowerSync synce maintenant correctement, pas besoin de fallback API)
   // Si besoin futur (mode offline), on peut restaurer avec une meilleure logique
@@ -917,139 +925,72 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   }, [sheetExpanded, sheetAnim]);
 
   // Calculer la région qui englobe une étape et tous ses items (hébergements + activités)
-  const computeStepRegion = useCallback((step, accomList, activityList) => {
-    if (!step) return null;
+  // Récupérer les coordonnées d'une étape et tous ses items (pour fitToCoordinates)
+  const getStepCoordinates = useCallback((step, accomList, activityList) => {
+    if (!step) return [];
 
-    const allPoints = [];
+    const coords = [];
 
-    // Ajouter l'étape elle-même
     if (step.latitude && step.longitude) {
-      allPoints.push({
-        lat: parseFloat(step.latitude),
-        lng: parseFloat(step.longitude),
+      coords.push({
+        latitude: parseFloat(step.latitude),
+        longitude: parseFloat(step.longitude),
       });
     }
 
-    // Ajouter tous les hébergements de cette étape
     accomList
       .filter(a => a.stepId === step.id && a.latitude && a.longitude)
       .forEach(a => {
-        allPoints.push({
-          lat: parseFloat(a.latitude),
-          lng: parseFloat(a.longitude),
+        coords.push({
+          latitude: parseFloat(a.latitude),
+          longitude: parseFloat(a.longitude),
         });
       });
 
-    // Ajouter toutes les activités de cette étape
     activityList
       .filter(a => a.stepId === step.id && a.latitude && a.longitude)
       .forEach(a => {
-        allPoints.push({
-          lat: parseFloat(a.latitude),
-          lng: parseFloat(a.longitude),
+        coords.push({
+          latitude: parseFloat(a.latitude),
+          longitude: parseFloat(a.longitude),
         });
       });
 
-    // S'il n'y a pas de points, retourner null
-    if (!allPoints.length) return null;
-
-    // Calculer les limites
-    const lats = allPoints.map(p => p.lat);
-    const lngs = allPoints.map(p => p.lng);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-
-    // Calculer le centre et les deltas
-    const centerLat = (minLat + maxLat) / 2;
-    const centerLng = (minLng + maxLng) / 2;
-    let latDelta = Math.max(maxLat - minLat + 0.05, 0.08);
-    const lngDelta = Math.max(maxLng - minLng + 0.05, 0.08);
-
-    // Ajouter du padding en bas pour compenser la hauteur du volet fermé
-    // Le volet fermé occupe SHEET_COLLAPSED px, donc on doit exclure cette zone de la visibilité
-    const heightRatio = SHEET_COLLAPSED / SCREEN_H;
-    const bottomPadding = latDelta * heightRatio;
-    latDelta += bottomPadding;
-
-    // Décaler le centre vers le haut pour que les marqueurs ne soient pas cachés
-    const adjustedCenterLat = centerLat + (bottomPadding / 2);
-
-    return {
-      latitude: adjustedCenterLat,
-      longitude: centerLng,
-      latitudeDelta: latDelta,
-      longitudeDelta: lngDelta,
-    };
+    return coords;
   }, []);
 
-  // Calculer la région qui englobe tout le roadtrip (toutes les étapes + tous les items)
-  const computeRoadtripRegion = useCallback((stepList, accomList, activityList) => {
-    if (!stepList.length) return null;
+  // Récupérer les coordonnées de tout le roadtrip (pour fitToCoordinates)
+  const getRoadtripCoordinates = useCallback((stepList, accomList, activityList) => {
+    const coords = [];
 
-    const allPoints = [];
-
-    // Ajouter toutes les étapes
     stepList.forEach(step => {
       if (step.latitude && step.longitude) {
-        allPoints.push({
-          lat: parseFloat(step.latitude),
-          lng: parseFloat(step.longitude),
+        coords.push({
+          latitude: parseFloat(step.latitude),
+          longitude: parseFloat(step.longitude),
         });
       }
     });
 
-    // Ajouter tous les hébergements
     accomList.forEach(a => {
       if (a.latitude && a.longitude) {
-        allPoints.push({
-          lat: parseFloat(a.latitude),
-          lng: parseFloat(a.longitude),
+        coords.push({
+          latitude: parseFloat(a.latitude),
+          longitude: parseFloat(a.longitude),
         });
       }
     });
 
-    // Ajouter toutes les activités
     activityList.forEach(a => {
       if (a.latitude && a.longitude) {
-        allPoints.push({
-          lat: parseFloat(a.latitude),
-          lng: parseFloat(a.longitude),
+        coords.push({
+          latitude: parseFloat(a.latitude),
+          longitude: parseFloat(a.longitude),
         });
       }
     });
 
-    // S'il n'y a pas de points, retourner null
-    if (!allPoints.length) return null;
-
-    // Calculer les limites
-    const lats = allPoints.map(p => p.lat);
-    const lngs = allPoints.map(p => p.lng);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-
-    // Calculer le centre et les deltas
-    const centerLat = (minLat + maxLat) / 2;
-    const centerLng = (minLng + maxLng) / 2;
-    let latDelta = Math.max(maxLat - minLat + 0.1, 0.15);
-    const lngDelta = Math.max(maxLng - minLng + 0.1, 0.15);
-
-    // Ajouter du padding en bas pour compenser la hauteur du volet fermé
-    const heightRatio = SHEET_COLLAPSED / SCREEN_H;
-    const bottomPadding = latDelta * heightRatio;
-    latDelta += bottomPadding;
-
-    const adjustedCenterLat = centerLat + (bottomPadding / 2);
-
-    return {
-      latitude: adjustedCenterLat,
-      longitude: centerLng,
-      latitudeDelta: latDelta,
-      longitudeDelta: lngDelta,
-    };
+    return coords;
   }, []);
 
   const openDetail = useCallback((index) => {
@@ -1065,13 +1006,22 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     setSheetExpanded(false);
     
     // Zoomer sur la carte : englober l'étape ET tous ses items
+    // Utiliser fitToCoordinates avec edgePadding pour exclure la zone du volet fermé
     if (steps[index] && mapRef.current) {
-      const region = computeStepRegion(steps[index], psAccommodations, psActivities);
-      if (region) {
-        mapRef.current.animateToRegion(region, 300);
+      const coords = getStepCoordinates(steps[index], psAccommodations, psActivities);
+      if (coords.length > 0) {
+        mapRef.current.fitToCoordinates(coords, {
+          edgePadding: {
+            top: 80,
+            right: 40,
+            bottom: SHEET_COLLAPSED + 20,  // Exclure la zone du volet fermé
+            left: 40,
+          },
+          animated: true,
+        });
       }
     }
-  }, [steps, sheetAnim, psAccommodations, psActivities, computeStepRegion]);
+  }, [steps, sheetAnim, psAccommodations, psActivities, getStepCoordinates]);
 
   const openEditStep = useCallback((index) => {
     const step = steps[index];
@@ -1339,6 +1289,45 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             )}
           </MapView>
 
+          {/* ─── NAVIGATEUR D'ÉTAPE ── */}
+          {steps.length > 0 && (
+            <View style={styles.stepNav}>
+              <TouchableOpacity
+                style={styles.stepNavBtn}
+                onPress={() => {
+                  if (selectedIndex === -1) {
+                    // En vue globale, aller à la première étape
+                    openDetail(0);
+                  } else {
+                    const prev = Math.max(0, selectedIndex - 1);
+                    if (prev !== selectedIndex) openDetail(prev);
+                  }
+                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.stepNavBtnText}>◀</Text>
+              </TouchableOpacity>
+              <Text style={styles.stepNavCounter}>
+                {selectedIndex === -1 ? '🗺️' : `${selectedIndex + 1} / ${steps.length}`}
+              </Text>
+              <TouchableOpacity
+                style={styles.stepNavBtn}
+                onPress={() => {
+                  if (selectedIndex === -1) {
+                    // En vue globale, aller à la première étape
+                    openDetail(0);
+                  } else {
+                    const next = Math.min(steps.length - 1, selectedIndex + 1);
+                    if (next !== selectedIndex) openDetail(next);
+                  }
+                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.stepNavBtnText}>▶</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* ─── OVERLAY BUTTONS (absolute within map) ─────────────────────── */}
           <View style={[styles.overlayCol, { top: 12 }]}>
             {/* Bouton vue globale — visible seulement quand une étape est sélectionnée */}
@@ -1347,9 +1336,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 key="global-view"
                 onPress={() => {
                   setSelectedIndex(-1);
-                  const region = computeRoadtripRegion(steps, psAccommodations, psActivities);
-                  if (region && mapRef.current) {
-                    mapRef.current.animateToRegion(region, 300);
+                  const coords = getRoadtripCoordinates(steps, psAccommodations, psActivities);
+                  if (coords.length > 0 && mapRef.current) {
+                    mapRef.current.fitToCoordinates(coords, {
+                      edgePadding: {
+                        top: 80,
+                        right: 40,
+                        bottom: SHEET_COLLAPSED + 20,
+                        left: 40,
+                      },
+                      animated: true,
+                    });
                   }
                 }}
                 style={[styles.ovBtn, styles.ovBtnGlobal]}
@@ -1948,6 +1945,45 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(139,92,246,0.4)',
   },
   ovBtnIcon: { fontSize: 16 },
+
+  // Step navigator (au-dessus du volet)
+  stepNav: {
+    position: 'absolute',
+    bottom: SHEET_COLLAPSED + 8,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    zIndex: 15,
+  },
+  stepNavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(26,26,38,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  stepNavBtnText: {
+    fontSize: 14,
+    color: '#fff',
+  },
+  stepNavCounter: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(26,26,38,0.8)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
 
   // Map markers
   marker: {
