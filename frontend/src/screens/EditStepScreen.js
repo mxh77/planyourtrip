@@ -4,14 +4,11 @@ import {
   ScrollView, Alert, ActivityIndicator, Modal,
   Image, Dimensions, Pressable, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
-import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useRoadtripStore } from '../store/roadtripStore';
 import { useAuthStore } from '../store/authStore';
-import { useQuery } from '@powersync/react-native';
 import { useStepPhotos } from '../hooks/usePowerSync';
 import { localDeletePhoto, localInsertPhoto, generateId } from '../powersync/localWrite';
 import LocationPicker from '../components/LocationPicker';
@@ -59,45 +56,6 @@ export default function EditStepScreen({ route, navigation }) {
 
   const { updateStep, deleteStep } = useRoadtripStore();
   const userId = useAuthStore((s) => s.user?.id);
-
-  const miniMapRef = useRef(null);
-
-  const { data: mapAccommodations = [] } = useQuery(
-    'SELECT id, latitude, longitude, type FROM accommodations WHERE stepId = ?',
-    [step.id]
-  );
-  const { data: mapActivities = [] } = useQuery(
-    'SELECT id, latitude, longitude, type FROM activities WHERE stepId = ?',
-    [step.id]
-  );
-
-  const computeMapRegion = () => {
-    const stepCoord = latitude && longitude
-      ? { latitude: parseFloat(latitude), longitude: parseFloat(longitude) }
-      : null;
-    const allCoords = [
-      ...(stepCoord ? [stepCoord] : []),
-      ...mapAccommodations.filter(a => a.latitude != null && a.longitude != null)
-        .map(a => ({ latitude: parseFloat(a.latitude), longitude: parseFloat(a.longitude) })),
-      ...mapActivities.filter(a => a.latitude != null && a.longitude != null)
-        .map(a => ({ latitude: parseFloat(a.latitude), longitude: parseFloat(a.longitude) })),
-    ];
-    if (allCoords.length === 0) return null;
-    if (allCoords.length === 1) return { ...allCoords[0], latitudeDelta: 0.05, longitudeDelta: 0.05 };
-    const lats = allCoords.map(c => c.latitude);
-    const lngs = allCoords.map(c => c.longitude);
-    return {
-      latitude: (Math.min(...lats) + Math.max(...lats)) / 2,
-      longitude: (Math.min(...lngs) + Math.max(...lngs)) / 2,
-      latitudeDelta: Math.max((Math.max(...lats) - Math.min(...lats)) * 1.8, 0.02),
-      longitudeDelta: Math.max((Math.max(...lngs) - Math.min(...lngs)) * 1.8, 0.02),
-    };
-  };
-
-  const resetMapToMarker = () => {
-    const region = computeMapRegion();
-    if (region) miniMapRef.current?.animateToRegion(region, 400);
-  };
   const { photos } = useStepPhotos(step.id);
   const roadtripSettings = useRoadtripSettings(step.roadtripId);
 
@@ -175,9 +133,22 @@ export default function EditStepScreen({ route, navigation }) {
     setDtPickerVisible(true);
   };
 
-  const fmtBtn = (d, t) => {
-    const s = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
-    return t ? `${s}  ·  ${t}` : s;
+  const fmtDateField = (d) => {
+    if (!d) return '--/--';
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+  };
+
+  const fmtTimeField = (t) => {
+    if (!t) return '--:--';
+    if (typeof t === 'string') {
+      const hhmm = t.match(/^(\d{2}:\d{2})/);
+      if (hhmm?.[1]) return hhmm[1];
+    }
+    const parsed = new Date(t);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+    return '--:--';
   };
 
   const handleSubmit = async () => {
@@ -280,86 +251,40 @@ export default function EditStepScreen({ route, navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="always">
-
-        {/* ─── Mini-carte ──────────────────────────────────────────────────── */}
-        {(() => {
-          const region = computeMapRegion();
-          if (!region) return null;
-          const stepCoord = latitude && longitude
-            ? { latitude: parseFloat(latitude), longitude: parseFloat(longitude) }
-            : null;
-          return (
-            <View style={styles.mapCard}>
-              <MapView
-                ref={miniMapRef}
-                style={StyleSheet.absoluteFill}
-                initialRegion={region}
-                scrollEnabled={true}
-                zoomEnabled={true}
-                rotateEnabled={false}
-                pitchEnabled={false}
-                showsUserLocation={false}
-                showsCompass={false}
-                showsMyLocationButton={false}
-              >
-                {stepCoord && (
-                  <Marker coordinate={stepCoord} anchor={{ x: 0.5, y: 0.5 }} />
-                )}
-                {mapAccommodations.filter(a => a.latitude != null && a.longitude != null).map((a) => {
-                  const accomEmoji = a.type === 'CAMPING' ? '🏕️' : a.type === 'PARKING' ? '🅿️' : a.type === 'OTHER' ? '🏪' : '🏨';
-                  return (
-                    <Marker
-                      key={a.id}
-                      coordinate={{ latitude: parseFloat(a.latitude), longitude: parseFloat(a.longitude) }}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                      <View style={styles.markerAccom}>
-                        <Text style={styles.markerEmoji}>{accomEmoji}</Text>
-                      </View>
-                    </Marker>
-                  );
-                })}
-                {mapActivities.filter(a => a.latitude != null && a.longitude != null).map((a) => {
-                  const emoji = a.type === 'RESTAURANT' ? '🍽️' : a.type === 'TRANSPORT' ? '🚌' : a.type === 'ACTIVITY' ? '🎯' : a.type === 'SUPERMARKET' ? '🛒' : a.type === 'HIKING' ? '🥾' : '📌';
-                  return (
-                    <Marker
-                      key={a.id}
-                      coordinate={{ latitude: parseFloat(a.latitude), longitude: parseFloat(a.longitude) }}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                      <View style={styles.markerActivity}>
-                        <Text style={styles.markerEmoji}>{emoji}</Text>
-                      </View>
-                    </Marker>
-                  );
-                })}
-              </MapView>
-              <TouchableOpacity style={styles.mapResetBtn} onPress={resetMapToMarker}>
-                <MaterialIcons name="my-location" size={20} color="#1a73e8" />
-              </TouchableOpacity>
-            </View>
-          );
-        })()}
-
         {/* ─── Arrivée / Départ ────────────────────────────────────────────── */}
         <View style={styles.row}>
           <View style={[styles.inputGroup, { flex: 1 }]}>
             <Text style={styles.label}>Arrivée</Text>
-            <TouchableOpacity style={styles.dateBtn} onPress={() => openDtPicker('start')}>
-              <Text style={styles.dateBtnText}>{fmtBtn(startDate, arrivalTime)}</Text>
-            </TouchableOpacity>
+            <View style={styles.dateSplitRow}>
+              <Text style={styles.dateSplitLabel}>Date :</Text>
+              <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
+                <Text style={styles.dateSplitValue}>{fmtDateField(startDate)}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.dateSplitRow}>
+              <Text style={styles.dateSplitLabel}>Heure :</Text>
+              <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
+                <Text style={styles.dateSplitValue}>{fmtTimeField(arrivalTime)}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+
           <View style={{ width: SPACING.md }} />
+
           <View style={[styles.inputGroup, { flex: 1 }]}>
             <Text style={styles.label}>Départ</Text>
-            <TouchableOpacity
-              style={[styles.dateBtn, !endDate && styles.dateBtnEmpty]}
-              onPress={() => openDtPicker('end')}
-            >
-              <Text style={[styles.dateBtnText, !endDate && { color: COLORS.textDim }]}>
-                {endDate ? fmtBtn(endDate, departureTime) : '+ Ajouter'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.dateSplitRow}>
+              <Text style={styles.dateSplitLabel}>Date :</Text>
+              <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
+                <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtDateField(endDate)}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.dateSplitRow}>
+              <Text style={styles.dateSplitLabel}>Heure :</Text>
+              <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
+                <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtTimeField(departureTime)}</Text>
+              </TouchableOpacity>
+            </View>
             {endDate && (
               <TouchableOpacity onPress={() => { setEndDate(null); setDepartureTime(null); }} style={styles.clearBtn}>
                 <Text style={styles.clearBtnText}>✕ effacer</Text>
@@ -424,8 +349,8 @@ export default function EditStepScreen({ route, navigation }) {
           longitude={longitude ? parseFloat(longitude) : null}
           allowedTypes={roadtripSettings?.suggestionPlaceTypes}
           radius={roadtripSettings?.suggestionRadius}
-          stepStartDate={step.startDate ?? null}
-          stepEndDate={step.endDate ?? null}
+          stepStartDate={startDate ? toLocalDateString(startDate) : null}
+          stepEndDate={endDate ? toLocalDateString(endDate) : null}
         />
 
         {/* ─── Activités ───────────────────────────────────────────────────── */}
@@ -437,8 +362,8 @@ export default function EditStepScreen({ route, navigation }) {
           longitude={longitude ? parseFloat(longitude) : null}
           allowedTypes={roadtripSettings?.suggestionPlaceTypes}
           radius={roadtripSettings?.suggestionRadius}
-          stepStartDate={step.startDate ?? null}
-          stepEndDate={step.endDate ?? null}
+          stepStartDate={startDate ? toLocalDateString(startDate) : null}
+          stepEndDate={endDate ? toLocalDateString(endDate) : null}
         />
 
         {/* ─── Suppression ─────────────────────────────────────────────── */}
@@ -495,36 +420,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
   header: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
   locationWrapper: { paddingHorizontal: SPACING.lg },
-  mapCard: {
-    marginBottom: SPACING.lg,
-    height: 200,
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  mapResetBtn: {
-    position: 'absolute',
-    bottom: SPACING.sm,
-    right: SPACING.sm,
-    width: 28, height: 28, borderRadius: 3,
-    backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 2, elevation: 4,
-  },
-  markerAccom: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: '#1a6b4a',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#fff',
-  },
-  markerActivity: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: '#2d4a6b',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#fff',
-  },
-  markerEmoji: { fontSize: 15 },
   scroll: { padding: SPACING.lg, paddingBottom: SPACING.xl * 2 },
   inputGroup: { marginBottom: SPACING.lg },
   row: { flexDirection: 'row', marginBottom: SPACING.lg },
@@ -560,6 +455,33 @@ const styles = StyleSheet.create({
   },
   dateBtnEmpty: { borderStyle: 'dashed' },
   dateBtnText: { color: COLORS.text, fontSize: 14, textAlign: 'center' },
+  dateSplitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+  },
+  dateSplitLabel: {
+    width: 52,
+    color: COLORS.textDim,
+    fontSize: 13,
+  },
+  dateSplitBtn: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    minHeight: 38,
+    justifyContent: 'center',
+  },
+  dateSplitValue: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   clearBtn: { marginTop: 4, alignSelf: 'flex-start' },
   clearBtnText: { color: COLORS.textDim, fontSize: 12 },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

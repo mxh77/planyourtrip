@@ -1,87 +1,129 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList,
+  ActivityIndicator, Keyboard,
+} from 'react-native';
 import { COLORS, RADIUS, SPACING } from '../theme';
-
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+import API_URL from '../api/config';
+import { useAuthStore } from '../store/authStore';
 
 /**
- * Champ d'autocomplétion Google Places.
- * Le dropdown N'est PAS rendu ici — il est délégué au parent via onDropdownChange
- * pour être affiché dans le Modal parent existant (aucun nouveau Modal ouvert
- * → le clavier ne disparaît pas).
- *
+ * Champ d'autocomplétion Google Places via le backend proxy.
  * Props :
- *   - label             : string
- *   - initialValue      : string
- *   - onSelect          : ({ location, latitude, longitude }) => void
- *   - onDropdownChange  : (dropdown | null) => void
- *     dropdown = { items, position: { top, left, width }, onSelectItem }
+ *   - label         : string
+ *   - initialValue  : string
+ *   - onSelect      : ({ location, latitude, longitude }) => void
  */
 export default function LocationPicker({ label = 'Lieu (optionnel)', initialValue = '', onSelect }) {
-  const ref = useRef(null);
-  const [hasText, setHasText] = useState(!!initialValue);
-  const [instanceKey, setInstanceKey] = useState(0);
+  const [input, setInput] = useState(initialValue);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const token = useAuthStore((s) => s.token);
 
-  useEffect(() => {
-    if (initialValue) {
-      ref.current?.setAddressText(initialValue);
+  const searchPlaces = useCallback(async (query) => {
+    if (!query || query.length < 2) {
+      setSuggestions([]);
+      return;
     }
-  }, [instanceKey]);
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/places/autocomplete?input=${encodeURIComponent(query)}&language=fr`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setSuggestions(Array.isArray(data) ? data : data.predictions || []);
+      setShowDropdown(true);
+    } catch (e) {
+      console.log('[LocationPicker] Erreur autocomplete:', e.message);
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const handleChangeText = (text) => {
+    setInput(text);
+    
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (!text || text.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      searchPlaces(text);
+    }, 300);
+  };
+
+  const handleSelectSuggestion = async (prediction) => {
+    setInput(prediction.description || prediction.mainText || '');
+    setShowDropdown(false);
+    Keyboard.dismiss();
+
+    // Récupérer les détails (lat/lng) via le backend avec placeId
+    try {
+      const res = await fetch(`${API_URL}/api/places/${encodeURIComponent(prediction.placeId)}?language=fr`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const lat = data.lat ?? null;
+      const lng = data.lng ?? null;
+      onSelect?.({ location: prediction.description || prediction.mainText || '', latitude: lat, longitude: lng });
+    } catch (e) {
+      console.log('[LocationPicker] Erreur details:', e.message);
+      onSelect?.({ location: prediction.description || prediction.mainText || '', latitude: null, longitude: null });
+    }
+  };
 
   const handleClear = () => {
-    setHasText(false);
-    setInstanceKey(k => k + 1);
+    setInput('');
+    setSuggestions([]);
+    setShowDropdown(false);
     onSelect?.({ location: '', latitude: null, longitude: null });
   };
 
   return (
     <View style={styles.group}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <GooglePlacesAutocomplete
-        key={instanceKey}
-        ref={ref}
-        placeholder="Adresse ou lieu…"
-        minLength={2}
-        fetchDetails
-        enablePoweredByContainer={false}
-        language="fr"
-        query={{ key: API_KEY, language: 'fr' }}
-        textInputProps={{
-          defaultValue: initialValue,
-          placeholderTextColor: COLORS.textDim,
-          selectionColor: COLORS.accent,
-          onChangeText: (t) => setHasText(t.length > 0),
-        }}
-        onPress={(data, details = null) => {
-          setHasText(true);
-          const location = data.description;
-          const latitude = details?.geometry?.location?.lat ?? null;
-          const longitude = details?.geometry?.location?.lng ?? null;
-          onSelect?.({ location, latitude, longitude });
-        }}
-        renderRightButton={() =>
-          hasText ? (
-            <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
-              <Text style={styles.clearBtnText}>✕</Text>
+      
+      <View style={styles.inputWrapper}>
+        <TextInput
+          style={styles.input}
+          placeholder="Adresse ou lieu…"
+          placeholderTextColor={COLORS.textDim}
+          value={input}
+          onChangeText={handleChangeText}
+          onFocus={() => input && setSuggestions.length > 0 && setShowDropdown(true)}
+        />
+        
+        {loading && <ActivityIndicator size="small" color={COLORS.accent} style={styles.loader} />}
+        
+        {input && !loading && (
+          <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
+            <Text style={styles.clearBtnText}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {showDropdown && suggestions.length > 0 && (
+        <FlatList
+          data={suggestions}
+          keyExtractor={(item, i) => `${item.place_id || i}`}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.suggRow}
+              onPress={() => handleSelectSuggestion(item)}
+            >
+              <Text style={styles.description}>{item.description}</Text>
             </TouchableOpacity>
-          ) : null
-        }
-        styles={{
-          container: { flex: 0 },
-          textInputContainer: styles.inputContainer,
-          textInput: styles.input,
-          listView: styles.listView,
-          row: styles.suggRow,
-          description: styles.description,
-          separator: styles.separator,
-          poweredContainer: { display: 'none' },
-        }}
-        listViewDisplayed="auto"
-        keepResultsAfterBlur={false}
-        debounce={300}
-        flatListProps={{ nestedScrollEnabled: true }}
-      />
+          )}
+          scrollEnabled={false}
+          style={styles.listView}
+        />
+      )}
     </View>
   );
 }
@@ -99,10 +141,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
     marginTop: SPACING.sm,
   },
-  inputContainer: {
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    paddingHorizontal: 0,
+  inputWrapper: {
+    position: 'relative',
   },
   input: {
     backgroundColor: COLORS.bg,

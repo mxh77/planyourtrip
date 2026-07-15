@@ -9,6 +9,7 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
+import { useRoadtripStore } from '../store/roadtripStore';
 import API_URL from '../api/config';
 import { log, warn } from '../services/logger';
 import { LogsViewer } from '../components/LogsViewer';
@@ -16,7 +17,7 @@ import { LogsViewer } from '../components/LogsViewer';
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
-const SHEET_COLLAPSED = 150;
+const SHEET_COLLAPSED = 180;
 const SHEET_FULL = SCREEN_H - 200;
 
 const ORDER_COLORS = [
@@ -45,48 +46,60 @@ function formatDate(d, opts = { day: 'numeric', month: 'short' }) {
     ...(opts.minute && { minute: opts.minute }),
     ...(opts.year && { year: opts.year }),
   };
-  return hasTime 
+  return hasTime
     ? date.toLocaleString('fr-FR', formatOpts)
     : date.toLocaleDateString('fr-FR', formatOpts);
 }
 
+function formatTime(t) {
+  if (!t) return null;
+  if (typeof t === 'string') {
+    const hhmm = t.match(/^(\d{2}:\d{2})/);
+    if (hhmm?.[1]) return hhmm[1];
+  }
+  const parsed = new Date(t);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  return null;
+}
 // Décoder polyline (format Google Directions)
 function decodePolyline(encoded) {
   const poly = [];
   let index = 0, lat = 0, lng = 0;
-  
+
   while (index < encoded.length) {
     let result = 0;
     let shift = 0;
     let byte;
-    
+
     do {
       byte = encoded.charCodeAt(index++) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
-    
+
     const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
     lat += dlat;
-    
+
     result = 0;
     shift = 0;
-    
+
     do {
       byte = encoded.charCodeAt(index++) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
-    
+
     const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
     lng += dlng;
-    
+
     poly.push({
       latitude: lat / 1e5,
       longitude: lng / 1e5,
     });
   }
-  
+
   return poly;
 }
 
@@ -121,100 +134,111 @@ function computeRegion(steps) {
 const StepCard = React.memo(function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
   const nights = durationDays(step.startDate, step.endDate);
   const hasAccom = !!step.accommodation;
-  const hasActivities = step.activities?.length > 0;
 
   return (
     <View style={[styles.stepCard, isActive && styles.stepCardActive]}>
       <TouchableOpacity
         onPress={onPress}
-        style={{ flex: 1, flexDirection: 'row' }}
+        style={{ flex: 1 }}
         activeOpacity={0.7}
       >
-        {/* Timeline dot */}
-        <View style={styles.timelineCol}>
-          <View style={[styles.timelineDot, { backgroundColor: color }]} />
-          <View style={styles.timelineLine} />
-        </View>
+        {/* Timeline + Content */}
+        <View style={{ flexDirection: 'row', flex: 1 }}>
+          {/* Timeline dot */}
+          <View style={styles.timelineCol}>
+            <View style={[styles.timelineDot, { backgroundColor: color }]} />
+            <View style={styles.timelineLine} />
+          </View>
 
-        {/* Content */}
-        <View style={styles.stepContent}>
-          <View style={styles.stepTopRow}>
-            <Text style={[styles.stepName, isActive && styles.stepNameActive]} numberOfLines={1}>
-              {step.name}
-            </Text>
-            {step.type && step.type !== 'STAGE' && (
-              <Text style={styles.stepType}>{step.type === 'DEPARTURE' ? 'DÉPART' : step.type === 'STOP' ? 'STOP' : step.type}</Text>
+          {/* Content */}
+          <View style={styles.stepContent}>
+            {/* Ligne 1: Nom + Distance/Temps trajet (space-between) */}
+            <View style={styles.stepTopRow}>
+              <Text style={[styles.stepName, isActive && styles.stepNameActive]} numberOfLines={1}>
+                {step.name}
+              </Text>
+              {(step.distanceFromPrev || 0) > 0 && (
+                <Text style={styles.stepTrajet} numberOfLines={1}>
+                  🚐 {step.distanceFromPrev || 0}km{(step.durationFromPrev || 0) > 0 ? ` • ${(step.durationFromPrev || 0) >= 60 ? `${Math.floor((step.durationFromPrev || 0) / 60)}h${String(Math.round((step.durationFromPrev || 0) % 60)).padStart(2, '0')}` : `${Math.round(step.durationFromPrev || 0)}min`}` : ''}
+                </Text>
+              )}
+            </View>
+
+            {/* Ligne 2: Adresse */}
+            <Text style={styles.stepLocation} numberOfLines={1}>{step.location}</Text>
+
+            {/* Ligne 3: Date arrivée | Date départ | Nb Nuits (row) */}
+            <View style={styles.stepMeta}>
+              {/* Date/Heure arrivée */}
+              {step.startDate && (
+                <Text style={[styles.stepMetaText, { flex: 1 }]} numberOfLines={1}>
+                  📍 {formatDate(step.startDate)} {step.arrivalTime ? `• ${formatTime(step.arrivalTime)}` : ''}
+                </Text>
+              )}
+
+              {/* Date/Heure départ */}
+              {step.endDate && (
+                <Text style={[styles.stepMetaText, { flex: 1 }]} numberOfLines={1}>
+                  ↗️ {formatDate(step.endDate)} {step.departureTime ? `• ${formatTime(step.departureTime)}` : ''}
+                </Text>
+              )}
+
+              {/* Nb Nuits */}
+              {nights > 0 && (
+                <Text style={[styles.stepMetaText, { flex: 0.6 }]} numberOfLines={1}>
+                  🌙 {nights}n
+                </Text>
+              )}
+            </View>
+
+            {/* Ligne 4: Hébergement */}
+            {hasAccom && (
+              <View style={styles.tagRow}>
+                <Text style={styles.tagAccom} numberOfLines={1}>
+                  {ACCOM_ICONS[step.accommodation.type] || '🏕️'} {step.accommodation.name}
+                </Text>
+              </View>
             )}
           </View>
-          <Text style={styles.stepLocation} numberOfLines={1}>{step.location}</Text>
-          {(step.distanceFromPrev || 0) > 0 && (
-            <Text style={styles.stepTrajet}>
-              🚐 {step.distanceFromPrev || 0} km{(step.durationFromPrev || 0) > 0 ? ` • ${(step.durationFromPrev || 0) >= 60 ? `${Math.floor((step.durationFromPrev || 0) / 60)}h${String(Math.round((step.durationFromPrev || 0) % 60)).padStart(2, '0')}` : `${Math.round(step.durationFromPrev || 0)}min`}` : ''}
-            </Text>
-          )}
-          {(step.startDate || step.endDate || nights > 0) ? (
-            <View style={styles.stepMeta}>
-              {step.startDate && (
-                <Text style={styles.stepMetaText}>
-                  📅 {formatDate(step.startDate)}{step.endDate ? ` → ${formatDate(step.endDate)}` : ''}
-                </Text>
-              )}
-              {step.endDate && !step.startDate && (
-                <Text style={styles.stepMetaText}>
-                  📅 → {formatDate(step.endDate)}
-                </Text>
-              )}
-              {nights > 0 && <Text style={styles.stepMetaText}>🌙 {nights} nuit{nights > 1 ? 's' : ''}</Text>}
-            </View>
-          ) : null}
-          {hasAccom && (
-            <View style={styles.tagRow}>
-              <Text style={styles.tagAccom}>
-                {ACCOM_ICONS[step.accommodation.type] || '🏕️'} {step.accommodation.name}
-              </Text>
-            </View>
-          )}
-          {hasActivities && (
-            <View style={styles.tagRow}>
-              {step.activities.slice(0, 2).map((a, i) => (
-                <Text key={i} style={styles.tagActivity}>🥾 {a.name}</Text>
-              ))}
-              {step.activities.length > 2 && (
-                <Text style={styles.tagMore}>+{step.activities.length - 2}</Text>
-              )}
-            </View>
-          )}
         </View>
-
-        {/* Travel time */}
-        {(step.distanceFromPrev || 0) > 0 && (
-          <View style={styles.travelCol}>
-            <Text style={styles.travelTime}>
-              {(step.durationFromPrev || 0) >= 60
-                ? `${Math.floor((step.durationFromPrev || 0) / 60)}h${String(Math.round((step.durationFromPrev || 0) % 60)).padStart(2, '0')}`
-                : `${Math.round(step.durationFromPrev || 0)} min`}
-            </Text>
-            <Text style={styles.travelDist}>{Math.round(step.distanceFromPrev || 0)} km</Text>
-          </View>
-        )}
       </TouchableOpacity>
 
-      {/* Bouton info détail */}
+      {/* Bouton Edition */}
       <TouchableOpacity
         onPress={onDetailPress}
         style={styles.stepDetailBtn}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={styles.stepDetailBtnText}>ℹ️</Text>
+        <Text style={styles.stepDetailBtnText}>✎</Text>
       </TouchableOpacity>
     </View>
   );
 });  // React.memo(StepCard)
 
 // ─── Detail card pour l'étape active (mode collapsed) ────────────────────────
-function CurrentStepBar({ step, index, color, onPress }) {
+function CurrentStepBar({ step, index, color, onPress, isOverview = false, roadtrip = null, totalDays = 0 }) {
+  if (isOverview && roadtrip) {
+    // Affichage en mode vue globale du roadtrip
+    return (
+      <TouchableOpacity style={styles.currentBar} onPress={onPress} activeOpacity={0.7}>
+        <View style={[styles.currentDot, { backgroundColor: '#8b5cf6' }]}>
+          <Text style={styles.currentDotText}>🗺️</Text>
+        </View>
+        <View style={styles.currentInfo}>
+          <Text style={styles.currentName}>{roadtrip.title}</Text>
+          <Text style={styles.currentMeta}>
+            📍 Vue d'ensemble • {totalDays} jour{totalDays > 1 ? 's' : ''}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  // Affichage normal : détail d'une étape
+  if (!step) return null;
+
   const nights = durationDays(step.startDate, step.endDate);
-  
+
   // Formatter les dates avec heures si disponibles
   const formatDateTime = (dateStr) => {
     if (!dateStr) return '';
@@ -230,7 +254,7 @@ function CurrentStepBar({ step, index, color, onPress }) {
     }
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
-  
+
   return (
     <TouchableOpacity style={styles.currentBar} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.currentDot, { backgroundColor: color }]}>
@@ -248,6 +272,11 @@ function CurrentStepBar({ step, index, color, onPress }) {
             ? `${nights || 0} nuit${(nights || 0) > 1 ? 's' : ''} · ${step.startDate ? formatDateTime(step.startDate) : ''} → ${formatDateTime(step.endDate)}`
             : step.startDate ? formatDateTime(step.startDate) : 'Date non définie'}
         </Text>
+        {(step.arrivalTime || step.departureTime) && (
+          <Text style={styles.currentMeta}>
+            🕒 {formatTime(step.arrivalTime) ?? '--:--'}{step.arrivalTime && step.departureTime ? ' → ' : ''}{formatTime(step.departureTime) ?? ''}
+          </Text>
+        )}
       </View>
       {step.accommodation?.status === 'BOOKED' && (
         <View style={styles.currentBadge}><Text style={styles.currentBadgeText}>🏕️ ✅</Text></View>
@@ -293,9 +322,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Clés stables pour les arrays PowerSync — évite que le useMemo se re-déclenche
   // à chaque sync PowerSync qui retourne une nouvelle référence avec les mêmes données.
-  // IMPORTANT: n'inclure que les champs qui affectent l'affichage structurel (pas updatedAt/distances)
+  // Inclure les champs visibles/éditables d'une étape pour refléter immédiatement les sauvegardes.
   const psStepsKey = useMemo(
-    () => psSteps.map(s => `${s.id}:${s.order}:${s.name}`).join(','),
+    () => psSteps.map(s => `${s.id}:${s.order}:${s.name ?? ''}:${s.location ?? ''}:${s.startDate ?? ''}:${s.endDate ?? ''}:${s.arrivalTime ?? ''}:${s.departureTime ?? ''}:${s.notes ?? ''}:${s.latitude ?? ''}:${s.longitude ?? ''}:${s.photoUrl ?? ''}`).join(','),
     [psSteps]
   );
   const psAccKey = useMemo(
@@ -310,11 +339,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // Transformer les steps PowerSync en format utilisable
   const transformedSteps = useMemo(() => {
     if (psSteps.length === 0) return [];
-    
+
     const result = psSteps.map((step, idx) => {
       const stepAccommodations = psAccommodations.filter(a => a.stepId === step.id);
       const stepActivities = psActivities.filter(a => a.stepId === step.id);
-      
+
       // 🎯 PRIORITE 1 : Utiliser les distances du cache (vraies distances Google Routes)
       if (distancesMapRef.current[step.id]) {
         const { distance, duration } = distancesMapRef.current[step.id];
@@ -326,7 +355,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           activities: stepActivities,
         };
       }
-      
+
       // FALLBACK : pas encore de distances en cache
       return {
         ...step,
@@ -337,7 +366,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       };
     });
     return result;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [psStepsKey, psAccKey, psActKey, id, polylinesLoaded, distancesVersion]);  // Clés stables = pas de boucle PowerSync
 
   // États
@@ -354,6 +383,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [loadingFromAPI, setLoadingFromAPI] = useState(false);
   const [showLogs, setShowLogs] = useState(false);  // Pour afficher le viewer de logs
   const [refreshingRoutes, setRefreshingRoutes] = useState(false);
+  const [searchResultMarker, setSearchResultMarker] = useState(null);  // Marqueur de résultat de recherche
+  const [showSearchResultModal, setShowSearchResultModal] = useState(false);  // Modal d'options
   // Note: polylinesLoaded est déclaré plus haut (avant le useMemo transformedSteps)
   const shouldRefreshRef = useRef(false);  // Ref pour éviter infinite loop sur refreshingRoutes
   const [refreshCounter, setRefreshCounter] = useState(0);  // Trigger pour le useEffect directions
@@ -380,7 +411,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // Réinitialiser les states quand on change de roadtrip
   useEffect(() => {
     console.log('[RoadtripDetail] 🔄 Roadtrip id:', id);
-    setSelectedIndex(0);
+    setSelectedIndex(-1);  // -1 = vue globale du roadtrip
     setSheetExpanded(false);
     setShowDetail(false);
     setActiveOverlays({});
@@ -399,6 +430,16 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   useEffect(() => {
     setSteps(transformedSteps);
   }, [transformedSteps]);
+
+  // Au démarrage (quand les étapes sont chargées), zoomer sur tout le roadtrip
+  useEffect(() => {
+    if (steps.length > 0 && selectedIndex === -1 && mapRef.current) {
+      const region = computeRoadtripRegion(steps, psAccommodations, psActivities);
+      if (region) {
+        mapRef.current.animateToRegion(region, 300);
+      }
+    }
+  }, [steps.length, selectedIndex, psAccommodations, psActivities, computeRoadtripRegion]);
 
   // (Désactivé : PowerSync synce maintenant correctement, pas besoin de fallback API)
   // Si besoin futur (mode offline), on peut restaurer avec une meilleure logique
@@ -423,11 +464,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         if (res.ok) {
           const data = await res.json();
           const stepsWithPolylines = data.steps || [];
-          
+
           // Construire les routes depuis les polylines sauvegardées
           const routesFromDB = [];
           const distancesMap = {}; // Map stepId -> { distance, duration }
-          
+
           for (let i = 0; i < stepsWithPolylines.length - 1; i++) {
             const current = stepsWithPolylines[i];
             const next = stepsWithPolylines[i + 1];  // L'étape SUIVANTE
@@ -453,7 +494,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           if (routesFromDB.length > 0) {
             polylinesRef.current = routesFromDB;
             setRoutes(routesFromDB);
-            
+
             // Recalculer les distances manquantes (distance=0 en DB) via Google API
             const token = useAuthStore.getState().token;
             for (let i = 0; i < stepsWithPolylines.length - 1; i++) {
@@ -489,14 +530,14 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                       body: JSON.stringify({ routeDistanceMeters: distM, routeDurationSeconds: durS }),
                     });
-                    console.log('[Directions] ✓ Distance recalculée pour route', i, ':', Math.round(distM/1000), 'km');
+                    console.log('[Directions] ✓ Distance recalculée pour route', i, ':', Math.round(distM / 1000), 'km');
                   }
                 } catch (e) {
                   console.log('[Directions] Erreur recalcul distance route', i, e.message);
                 }
               }
             }
-            
+
             distancesMapRef.current = distancesMap;
             setDistancesVersion(v => v + 1);
             setPolylinesLoaded(true);
@@ -555,17 +596,30 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       },
       onPanResponderRelease: (_, gs) => {
         const isExpanded = sheetExpandedRef.current;
-        // Swipe vers le haut (dy < -40) → ouvrir ; vers le bas (dy > 40) → fermer
-        const shouldExpand = gs.dy < -40;
-        const toValue = shouldExpand ? SHEET_FULL : SHEET_COLLAPSED;
-        Animated.spring(sheetAnim, {
-          toValue,
-          useNativeDriver: false,
-          tension: 65,
-          friction: 11,
-        }).start();
-        sheetExpandedRef.current = shouldExpand;
-        setSheetExpanded(shouldExpand);
+        // Si le mouvement est très petit (< 10px), on considère ça comme un clic → toggle
+        if (Math.abs(gs.dy) < 10) {
+          const toValue = isExpanded ? SHEET_COLLAPSED : SHEET_FULL;
+          Animated.spring(sheetAnim, {
+            toValue,
+            useNativeDriver: false,
+            tension: 65,
+            friction: 11,
+          }).start();
+          sheetExpandedRef.current = !isExpanded;
+          setSheetExpanded(!isExpanded);
+        } else {
+          // Sinon, on suit la logique du swipe : vers le haut (dy < -40) → ouvrir ; vers le bas (dy > 40) → fermer
+          const shouldExpand = gs.dy < -40;
+          const toValue = shouldExpand ? SHEET_FULL : SHEET_COLLAPSED;
+          Animated.spring(sheetAnim, {
+            toValue,
+            useNativeDriver: false,
+            tension: 65,
+            friction: 11,
+          }).start();
+          sheetExpandedRef.current = shouldExpand;
+          setSheetExpanded(shouldExpand);
+        }
       },
     })
   ).current;
@@ -577,13 +631,13 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       const needsRefresh = shouldRefreshRef.current;
       shouldRefreshRef.current = false;  // Reset immédiatement
       log('DIRECTIONS', `loadRoutes: needsRefresh=${needsRefresh}`);
-      
+
       // 🎯 GARDE ABSOLUE : si le premier useEffect gère les polylines, on ne touche à rien
       if (!needsRefresh && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
         log('DIRECTIONS', '[SKIP] Premier useEffect gère les polylines');
         return;
       }
-      
+
       // 🎯 Si les directions ont déjà été calculées et pas de refresh, skip
       if (directionsCalculatedRef.current && !needsRefresh) {
         console.log('[Directions] ✓ Directions déjà calculées, skip');
@@ -592,12 +646,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         }
         return;
       }
-      
+
       if (steps.length < 2) return;
-      
+
       const newRoutes = [];
       const polylinesToSave = {}; // { stepIndex: encodedPolyline }
-      
+
       // Étape 1: Charger les polylines existantes depuis la BD
       if (!needsRefresh) {
         const distancesFromBD = {}; // 🎯 Cache les distances existantes
@@ -612,7 +666,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 color: ORDER_COLORS[i % ORDER_COLORS.length],
               });
               console.log('[Directions] ✓ Chargé depuis BD: route', i);
-              
+
               // 🎯 Remplir le cache avec les distances existantes
               if (current.routeDistanceMeters && current.routeDurationSeconds) {
                 distancesFromBD[next.id] = {
@@ -626,14 +680,14 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             }
           }
         }
-        
+
         // 🎯 Mettre à jour le cache avec les distances existantes
         if (Object.keys(distancesFromBD).length > 0) {
           console.log('[Directions] ✅ Distances chargées depuis BD:', Object.keys(distancesFromBD).length, 'steps');
           distancesMapRef.current = { ...distancesMapRef.current, ...distancesFromBD };
           setDistancesVersion(v => v + 1);
         }
-        
+
         if (newRoutes.length === steps.length - 1) {
           console.log('[Directions] Toutes les routes chargées depuis BD');
           if (!needsRefresh && polylinesRef.current.length > 0) {
@@ -645,7 +699,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           return;
         }
       }
-      
+
       // Étape 2: Recalculer les routes manquantes (ou toutes si refreshing)
       // 🎯 AUSSI recalculer les routes avec distance = 0
       const routesNeedingRecalc = [];
@@ -658,9 +712,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           routesNeedingRecalc.push(i);
         }
       }
-      
+
       log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${routesNeedingRecalc.join(', ')}`);
-      
+
       if (routesNeedingRecalc.length === 0) {
         log('DIRECTIONS', '✓ Toutes les routes OK (polyline + distance > 0)');
         if (!needsRefresh && polylinesRef.current.length > 0) {
@@ -672,13 +726,13 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         directionsCalculatedRef.current = true;
         return;
       }
-      
+
       try {
         const token = useAuthStore.getState().token;
         for (const i of routesNeedingRecalc) {
           const current = steps[i];
           const next = steps[i + 1];
-          
+
           if (!current.latitude || !current.longitude || !next.latitude || !next.longitude) {
             console.log('[Directions] Route', i, ': coordonnées manquantes');
             newRoutes.push({
@@ -690,12 +744,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             });
             continue;
           }
-          
+
           let coordinates = null;
           let encodedPolyline = null;
           let routeDistanceMeters = 0;
           let routeDurationSeconds = 0;
-          
+
           try {
             const response = await fetch(`${API_URL}/api/routes/compute`, {
               method: 'POST',
@@ -709,7 +763,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 alternatives: false,
               }),
             });
-            
+
             const data = await response.json();
             if (!data.routes?.[0]?.polyline?.encodedPolyline) {
               console.log('[Directions] Route', i, 'réponse API:', response.status, JSON.stringify(data));
@@ -717,29 +771,29 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             if (data.routes?.[0]?.polyline?.encodedPolyline) {
               encodedPolyline = data.routes[0].polyline.encodedPolyline;
               coordinates = decodePolyline(encodedPolyline);
-              
+
               // Extraire les vraies distances/durées depuis routes[0] directement
               // (le fieldMask du backend expose routes.distanceMeters, pas routes.legs)
               const route = data.routes[0];
               routeDistanceMeters = route.distanceMeters || 0;
               const durRaw = route.duration;
               routeDurationSeconds = typeof durRaw === 'string' ? parseInt(durRaw) : (durRaw?.seconds ? parseInt(durRaw.seconds) : 0);
-              
+
               // Sauvegarder les données complètes
               polylinesToSave[i] = {
                 polyline: encodedPolyline,
                 distance: routeDistanceMeters,
                 duration: routeDurationSeconds,
               };
-              
-              console.log('[Directions] Route', i, '✓ Backend API:', 
-                `${Math.round(routeDistanceMeters/1000)}km / ${Math.round(routeDurationSeconds/60)}min`, 
+
+              console.log('[Directions] Route', i, '✓ Backend API:',
+                `${Math.round(routeDistanceMeters / 1000)}km / ${Math.round(routeDurationSeconds / 60)}min`,
                 coordinates.length, 'points');
             }
           } catch (err) {
             console.log('[Directions] Route', i, 'erreur API:', err.message);
           }
-          
+
           // Fallback
           if (!coordinates) {
             coordinates = [
@@ -747,13 +801,13 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) },
             ];
           }
-          
+
           newRoutes.push({
             coordinates,
             color: ORDER_COLORS[i % ORDER_COLORS.length],
           });
         }
-        
+
         console.log('[Directions] Final:', newRoutes.length, 'routes, à sauvegarder:', Object.keys(polylinesToSave).length);
         // 🎯 Ne jamais écraser les polylines du premier useEffect sauf si refresh explicite
         if (!needsRefresh && polylinesRef.current.length > 0) {
@@ -763,7 +817,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           polylinesRef.current = newRoutes;
           setRoutes(newRoutes);
         }
-        
+
         // Enrichir les distances dans le cache (pas via setSteps pour éviter overwrite)
         const distancesFromAPI = {};
         for (const [idx, routeData] of Object.entries(polylinesToSave)) {
@@ -776,14 +830,14 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             };
           }
         }
-        
+
         // 🎯 Mettre à jour le cache des distances au lieu de setSteps
         if (Object.keys(distancesFromAPI).length > 0) {
           console.log('[Directions] Mise à jour cache distances:', Object.keys(distancesFromAPI).length, 'steps');
           distancesMapRef.current = { ...distancesMapRef.current, ...distancesFromAPI };
           setDistancesVersion(v => v + 1);  // 🎯 Trigger re-render avec les nouvelles distances
         }
-        
+
         // Étape 3: Sauvegarder les polylines + distances + durations en BD (via PATCH pour éviter upsert)
         if (Object.keys(polylinesToSave).length > 0) {
           const token = useAuthStore.getState().token;
@@ -795,8 +849,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             }
             const step = steps[stepIdx];
             const stepId = step.id;
-            console.log('[Directions] Save route pour step', stepIdx, 
-              `(${Math.round(routeData.distance/1000)}km / ${Math.round(routeData.duration/60)}min)`);
+            console.log('[Directions] Save route pour step', stepIdx,
+              `(${Math.round(routeData.distance / 1000)}km / ${Math.round(routeData.duration / 60)}min)`);
             try {
               const response = await fetch(`${API_URL}/api/steps/${stepId}`, {
                 method: 'PATCH',
@@ -824,11 +878,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       } catch (err) {
         console.error('[Directions] Erreur:', err);
       }
-      
+
       // 🎯 Marker que le calcul des directions est terminé
       directionsCalculatedRef.current = true;
     };
-    
+
     loadRoutes();
   }, [stepsLength, refreshCounter]);
 
@@ -862,55 +916,214 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     setSheetExpanded(!sheetExpanded);
   }, [sheetExpanded, sheetAnim]);
 
+  // Calculer la région qui englobe une étape et tous ses items (hébergements + activités)
+  const computeStepRegion = useCallback((step, accomList, activityList) => {
+    if (!step) return null;
+
+    const allPoints = [];
+
+    // Ajouter l'étape elle-même
+    if (step.latitude && step.longitude) {
+      allPoints.push({
+        lat: parseFloat(step.latitude),
+        lng: parseFloat(step.longitude),
+      });
+    }
+
+    // Ajouter tous les hébergements de cette étape
+    accomList
+      .filter(a => a.stepId === step.id && a.latitude && a.longitude)
+      .forEach(a => {
+        allPoints.push({
+          lat: parseFloat(a.latitude),
+          lng: parseFloat(a.longitude),
+        });
+      });
+
+    // Ajouter toutes les activités de cette étape
+    activityList
+      .filter(a => a.stepId === step.id && a.latitude && a.longitude)
+      .forEach(a => {
+        allPoints.push({
+          lat: parseFloat(a.latitude),
+          lng: parseFloat(a.longitude),
+        });
+      });
+
+    // S'il n'y a pas de points, retourner null
+    if (!allPoints.length) return null;
+
+    // Calculer les limites
+    const lats = allPoints.map(p => p.lat);
+    const lngs = allPoints.map(p => p.lng);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+
+    // Calculer le centre et les deltas
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    let latDelta = Math.max(maxLat - minLat + 0.05, 0.08);
+    const lngDelta = Math.max(maxLng - minLng + 0.05, 0.08);
+
+    // Ajouter du padding en bas pour compenser la hauteur du volet fermé
+    // Le volet fermé occupe SHEET_COLLAPSED px, donc on doit exclure cette zone de la visibilité
+    const heightRatio = SHEET_COLLAPSED / SCREEN_H;
+    const bottomPadding = latDelta * heightRatio;
+    latDelta += bottomPadding;
+
+    // Décaler le centre vers le haut pour que les marqueurs ne soient pas cachés
+    const adjustedCenterLat = centerLat + (bottomPadding / 2);
+
+    return {
+      latitude: adjustedCenterLat,
+      longitude: centerLng,
+      latitudeDelta: latDelta,
+      longitudeDelta: lngDelta,
+    };
+  }, []);
+
+  // Calculer la région qui englobe tout le roadtrip (toutes les étapes + tous les items)
+  const computeRoadtripRegion = useCallback((stepList, accomList, activityList) => {
+    if (!stepList.length) return null;
+
+    const allPoints = [];
+
+    // Ajouter toutes les étapes
+    stepList.forEach(step => {
+      if (step.latitude && step.longitude) {
+        allPoints.push({
+          lat: parseFloat(step.latitude),
+          lng: parseFloat(step.longitude),
+        });
+      }
+    });
+
+    // Ajouter tous les hébergements
+    accomList.forEach(a => {
+      if (a.latitude && a.longitude) {
+        allPoints.push({
+          lat: parseFloat(a.latitude),
+          lng: parseFloat(a.longitude),
+        });
+      }
+    });
+
+    // Ajouter toutes les activités
+    activityList.forEach(a => {
+      if (a.latitude && a.longitude) {
+        allPoints.push({
+          lat: parseFloat(a.latitude),
+          lng: parseFloat(a.longitude),
+        });
+      }
+    });
+
+    // S'il n'y a pas de points, retourner null
+    if (!allPoints.length) return null;
+
+    // Calculer les limites
+    const lats = allPoints.map(p => p.lat);
+    const lngs = allPoints.map(p => p.lng);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+
+    // Calculer le centre et les deltas
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    let latDelta = Math.max(maxLat - minLat + 0.1, 0.15);
+    const lngDelta = Math.max(maxLng - minLng + 0.1, 0.15);
+
+    // Ajouter du padding en bas pour compenser la hauteur du volet fermé
+    const heightRatio = SHEET_COLLAPSED / SCREEN_H;
+    const bottomPadding = latDelta * heightRatio;
+    latDelta += bottomPadding;
+
+    const adjustedCenterLat = centerLat + (bottomPadding / 2);
+
+    return {
+      latitude: adjustedCenterLat,
+      longitude: centerLng,
+      latitudeDelta: latDelta,
+      longitudeDelta: lngDelta,
+    };
+  }, []);
+
   const openDetail = useCallback((index) => {
     setSelectedIndex(index);
-    setShowDetail(true);
-  }, []);
+    
+    // Fermer le volet avec animation
+    Animated.spring(sheetAnim, {
+      toValue: SHEET_COLLAPSED,
+      useNativeDriver: false,
+      tension: 65,
+      friction: 11,
+    }).start();
+    setSheetExpanded(false);
+    
+    // Zoomer sur la carte : englober l'étape ET tous ses items
+    if (steps[index] && mapRef.current) {
+      const region = computeStepRegion(steps[index], psAccommodations, psActivities);
+      if (region) {
+        mapRef.current.animateToRegion(region, 300);
+      }
+    }
+  }, [steps, sheetAnim, psAccommodations, psActivities, computeStepRegion]);
+
+  const openEditStep = useCallback((index) => {
+    const step = steps[index];
+    if (!step) return;
+    navigation.navigate('EditStep', { step });
+  }, [navigation, steps]);
 
   const toggleOverlay = useCallback((key) => {
     setActiveOverlays(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  // Mapping des types Google Places vers nos enums AccomType / ActivityType
+  const mapGoogleTypesToAccomType = (types = []) => {
+    if (types.includes('campground') || types.includes('rv_park')) return 'CAMPING';
+    if (types.includes('parking')) return 'PARKING';
+    if (types.includes('lodging') || types.includes('hotel') || types.includes('motel') || types.includes('resort_hotel') || types.includes('guest_house') || types.includes('bed_and_breakfast')) return 'HOTEL';
+    return 'OTHER';
+  };
+
+  const mapGoogleTypesToActivityType = (types = []) => {
+    if (types.some(t => ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery'].includes(t))) return 'RESTAURANT';
+    if (types.some(t => ['supermarket', 'grocery_or_supermarket', 'convenience_store'].includes(t))) return 'SUPERMARKET';
+    if (types.some(t => ['hiking_area', 'park', 'natural_feature', 'national_park'].includes(t))) return 'HIKING';
+    if (types.some(t => ['gas_station', 'car_rental', 'airport', 'train_station', 'bus_station', 'transit_station', 'subway_station'].includes(t))) return 'TRANSPORT';
+    if (types.some(t => ['tourist_attraction', 'museum', 'amusement_park', 'zoo', 'point_of_interest', 'establishment'].includes(t))) return 'ACTIVITY';
+    return 'OTHER';
+  };
+
   // Recherche Google Places avec throttle
   const searchPlaces = useCallback(async (query) => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    
+
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         console.log('[Places] Searching for:', query);
-        const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': GOOGLE_API_KEY,
-          },
-          body: JSON.stringify({
-            input: query,
-            languageCode: 'fr',
-          }),
+        const token = useAuthStore.getState().token;
+        const response = await fetch(`${API_URL}/api/places/autocomplete?input=${encodeURIComponent(query)}&language=fr`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
         console.log('[Places] Response:', data);
-        const predictions = data.suggestions || [];
-        
-        // Parser la structure : suggestions[] contient placePrediction{}
-        const formatted = predictions.map(p => {
-          const pp = p.placePrediction || {};
-          const structured = pp.structuredFormat || {};
-          const mainText = structured.mainText?.text || '';
-          const secondaryText = structured.secondaryText?.text || '';
-          
-          console.log('[Places] Extracted:', { mainText, secondaryText, placeId: pp.placeId });
-          
-          return {
-            mainText,
-            secondaryText,
-            placeId: pp.placeId,
-            place: pp.place,
-            // location sera fetch séparément si besoin
-          };
-        }).slice(0, 8);
-        
+        const predictions = Array.isArray(data) ? data : data.predictions || [];
+
+        // Parser la structure predictions Google Autocomplete
+        const formatted = predictions.map(p => ({
+          description: p.description || p.mainText || '',
+          placeId: p.place_id,
+          mainText: p.main_text || '',
+          secondaryText: p.secondary_text || '',
+          types: p.types || [],
+        })).slice(0, 8);
+
         console.log('[Places] Formatted suggestions:', formatted);
         setSuggestions(formatted);
       } catch (err) {
@@ -921,276 +1134,463 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   }, []);
 
   const region = computeRegion(steps);
-  const selectedStep = steps[selectedIndex];
-  const color = ORDER_COLORS[selectedIndex % ORDER_COLORS.length];
+  const selectedStep = selectedIndex >= 0 ? steps[selectedIndex] : null;
+  const color = selectedIndex >= 0 ? ORDER_COLORS[selectedIndex % ORDER_COLORS.length] : '#8b5cf6';
+  
+  // Calculer le nombre total de jours du roadtrip
+  const totalDays = useMemo(() => {
+    if (!steps.length) return 0;
+    const firstStep = steps[0];
+    const lastStep = steps[steps.length - 1];
+    if (!firstStep?.startDate || !lastStep?.endDate) return 0;
+    return durationDays(firstStep.startDate, lastStep.endDate);
+  }, [steps]);
 
   try {
     return (
       <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="light-content" />
 
-      {/* ─── SEARCH (sous la nav native) ───────────────────────────────── */}
-      <View style={styles.headerContainer}>
-        {/* Search + Zone on same row */}
-        <View style={styles.searchArea}>
-          <View style={styles.searchBar}>
-            <TextInput
-              ref={searchInputRef}
-              placeholder="Rechercher un lieu…"
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              value={searchQuery}
-              onChangeText={(text) => {
-                setSearchQuery(text);
-                if (text.length > 2) {
-                  searchPlaces(text);
-                } else {
-                  setSuggestions([]);
-                }
-              }}
-              style={styles.textInput}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => { setSearchQuery(''); setSuggestions([]); }}>
-                <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <TouchableOpacity
-            onPress={() => setShowSearchArea(!showSearchArea)}
-            style={[styles.zoneBtn, showSearchArea && styles.zoneBtnActive]}
-          >
-            <Text style={[styles.zoneBtnText, showSearchArea && styles.zoneBtnTextActive]}>🔍 Zone</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Dropdown suggestions - OUTSIDE searchArea, absolutely positioned */}
-        {suggestions.length > 0 && (
-          <View style={styles.suggestionsDropdown}>
-            <ScrollView scrollEnabled={suggestions.length > 5} style={{ maxHeight: 280 }}>
-              {suggestions.map((place, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={async () => {
-                    // Fetch details pour avoir lat/lng
-                    try {
-                      const detailsResponse = await fetch(
-                        `https://places.googleapis.com/v1/${place.place}`,
-                        {
-                          headers: {
-                            'X-Goog-Api-Key': GOOGLE_API_KEY,
-                            'X-Goog-FieldMask': 'location,displayName,formattedAddress',
-                          },
-                        }
-                      );
-                      const details = await detailsResponse.json();
-                      console.log('[Places] Full details response:', details);
-                      
-                      const lat = details.location?.latitude;
-                      const lng = details.location?.longitude;
-                      console.log('[Places] Got location:', { lat, lng });
-                      
-                      if (lat != null && lng != null && mapRef.current) {
-                        mapRef.current.animateToRegion({
-                          latitude: lat,
-                          longitude: lng,
-                          latitudeDelta: 0.05,
-                          longitudeDelta: 0.05,
-                        }, 500);
-                      }
-                    } catch (err) {
-                      console.error('[Places] Error fetching details:', err);
-                    }
-                    
-                    setSearchQuery('');
+        {/* ─── SEARCH (sous la nav native) ───────────────────────────────── */}
+        <View style={styles.headerContainer}>
+          {/* Search + Zone on same row */}
+          <View style={styles.searchArea}>
+            <View style={styles.searchBar}>
+              <TextInput
+                ref={searchInputRef}
+                placeholder="Rechercher un lieu…"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  if (text.length > 2) {
+                    searchPlaces(text);
+                  } else {
                     setSuggestions([]);
-                  }}
-                  style={styles.suggestionRow}
-                >
-                  <Text style={styles.suggestionMainText} numberOfLines={1}>{place.mainText}</Text>
-                  <Text style={styles.suggestionSubText} numberOfLines={1}>{place.secondaryText}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-      </View>
-
-      {/* ─── MAP (flex: 1 to fill remaining space) ───────────────────────── */}
-      <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={StyleSheet.absoluteFill}
-          initialRegion={region}
-          provider={PROVIDER_GOOGLE}
-          customMapStyle={DARK_MAP_STYLE}
-        >
-          {/* Afficher les itinéraires */}
-          {routes.map((route, idx) => (
-            <Polyline
-              key={`route-${idx}`}
-              coordinates={route.coordinates}
-              strokeColor={route.color}
-              strokeWidth={4}
-              lineCap="round"
-              lineJoin="round"
-            />
-          ))}
-          
-          {/* Afficher les marqueurs */}
-          {steps.map((s, i) => {
-            if (!s.latitude || !s.longitude) {
-              return null;
-            }
-            return (
-              <Marker
-                key={s.id}
-                coordinate={{ latitude: parseFloat(s.latitude), longitude: parseFloat(s.longitude) }}
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
-                <View style={[styles.marker, { backgroundColor: ORDER_COLORS[i % ORDER_COLORS.length] }]}>
-                  <Text style={styles.markerText}>{i + 1}</Text>
-                </View>
-              </Marker>
-            );
-          })}
-        </MapView>
-
-        {/* ─── OVERLAY BUTTONS (absolute within map) ─────────────────────── */}
-        <View style={[styles.overlayCol, { top: '45%' }]}>
-          {OVERLAY_ITEMS.map(item => (
-            <TouchableOpacity
-              key={item.key}
-              onPress={() => toggleOverlay(item.key)}
-              style={[styles.ovBtn, activeOverlays[item.key] && styles.ovBtnActive]}
-            >
-              <Text style={styles.ovBtnIcon}>{item.icon}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* ─── BOTTOM SHEET ──────────────────────────────────────────────── */}
-      <Animated.View style={[styles.sheet, { height: sheetAnim }]} pointerEvents="box-none">
-        {/* Handle — tap ET swipe pour toggle */}
-        <View
-          style={styles.sheetHandle}
-          {...handlePanResponder.panHandlers}
-        >
-          <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 12 }}>
-            <View style={styles.handleBar} />
-          </TouchableOpacity>
-        </View>
-        {sheetExpanded && (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity 
-                onPress={() => {
-                  log('REFRESH', '🔄 Bouton refresh cliqué');
-                  setRefreshingRoutes(true);
+                  }
                 }}
-                style={{ padding: 8 }}
-              >
-                <Text style={{ fontSize: 18 }}>🔄</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => setShowLogs(true)}
-                style={{ padding: 8 }}
-              >
-                <Text style={{ fontSize: 18 }}>📋</Text>
-              </TouchableOpacity>
+                style={styles.textInput}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => { setSearchQuery(''); setSuggestions([]); }}>
+                  <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }}>✕</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.sheetCloseText}>✕</Text>
+
+            <TouchableOpacity
+              onPress={() => setShowSearchArea(!showSearchArea)}
+              style={[styles.zoneBtn, showSearchArea && styles.zoneBtnActive]}
+            >
+              <Text style={[styles.zoneBtnText, showSearchArea && styles.zoneBtnTextActive]}>🔍 Zone</Text>
             </TouchableOpacity>
           </View>
-        )}
 
-        <View style={styles.sheetContent} pointerEvents={sheetExpanded ? 'auto' : 'none'}>
-          {!sheetExpanded && selectedStep ? (
-            <CurrentStepBar
-              step={selectedStep}
-              index={selectedIndex}
-              color={color}
-              onPress={() => openDetail(selectedIndex)}
-            />
-          ) : sheetExpanded ? (
-            <View style={styles.sheetFull} pointerEvents="auto">
-              {/* En-tête */}
-              <View style={styles.sheetFullHeader}>
-                <Text style={styles.sheetStepCount}>
-                  {steps.length} étapes · {roadtrip.distance} km
-                </Text>
-              </View>
+          {/* Dropdown suggestions - OUTSIDE searchArea, absolutely positioned */}
+          {suggestions.length > 0 && (
+            <View style={styles.suggestionsDropdown}>
+              <ScrollView scrollEnabled={suggestions.length > 5} style={{ maxHeight: 280 }}>
+                {suggestions.map((place, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={async () => {
+                      // Fetch details (lat/lng) via le backend avec placeId
+                      try {
+                        const token = useAuthStore.getState().token;
+                        const detailsResponse = await fetch(
+                          `${API_URL}/api/places/${encodeURIComponent(place.placeId)}?language=fr`,
+                          { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        const details = await detailsResponse.json();
+                        console.log('[Places] Full details response:', details);
 
-              {/* Liste */}
-              <ScrollView
-                ref={stepListRef}
-                style={styles.stepList}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-                scrollEnabled={sheetExpanded}
-                pointerEvents="auto"
-              >
-                {steps.map((s, i) => (
-                  <StepCard
-                    key={s.id}
-                    step={s}
-                    index={i}
-                    isActive={i === selectedIndex}
-                    color={ORDER_COLORS[i % ORDER_COLORS.length]}
-                    onPress={() => {
-                      setSelectedIndex(i);
-                      // Fermer le volet
-                      setSheetExpanded(false);
-                      const toValue = SHEET_COLLAPSED;
-                      Animated.spring(sheetAnim, {
-                        toValue,
-                        useNativeDriver: false,
-                        tension: 65,
-                        friction: 11,
-                      }).start();
-                      // Centrer la carte sur l'étape
-                      if (s.latitude && s.longitude) {
-                        mapRef.current?.animateToRegion({
-                          latitude: parseFloat(s.latitude),
-                          longitude: parseFloat(s.longitude),
-                          latitudeDelta: 0.1,
-                          longitudeDelta: 0.1,
-                        }, 500);
+                        const lat = details.lat;
+                        const lng = details.lng;
+                        console.log('[Places] Got location:', { lat, lng });
+
+                        if (lat != null && lng != null) {
+                          // Stocker le marqueur de résultat de recherche (avec les types Google pour la détection auto)
+                          setSearchResultMarker({
+                            latitude: lat,
+                            longitude: lng,
+                            title: place.mainText,
+                            description: place.secondaryText || place.description,
+                            types: (details.types && details.types.length > 0) ? details.types : (place.types || []),
+                            fullPlace: place,
+                          });
+
+                          // Zoomer sur le marqueur (le modal s'ouvrira au clic sur le marqueur)
+                          if (mapRef.current) {
+                            mapRef.current.animateToRegion({
+                              latitude: lat,
+                              longitude: lng,
+                              latitudeDelta: 0.05,
+                              longitudeDelta: 0.05,
+                            }, 500);
+                          }
+                        }
+                      } catch (err) {
+                        console.error('[Places] Error fetching details:', err);
                       }
+
+                      setSearchQuery('');
+                      setSuggestions([]);
                     }}
-                    onDetailPress={() => openDetail(i)}
-                  />
+                    style={styles.suggestionRow}
+                  >
+                    <Text style={styles.suggestionMainText} numberOfLines={1}>{place.mainText}</Text>
+                    <Text style={styles.suggestionSubText} numberOfLines={1}>{place.secondaryText}</Text>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
-          ) : null}
+          )}
         </View>
-      </Animated.View>
 
-      {/* ─── STEP DETAIL MODAL ─────────────────────────────────────────── */}
-      <Modal
-        visible={showDetail}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowDetail(false)}
-      >
-        {selectedStep && <StepDetailModal
-          step={selectedStep}
-          index={selectedIndex}
-          color={color}
-          onClose={() => setShowDetail(false)}
-          onNext={() => {
-            const next = Math.min(selectedIndex + 1, steps.length - 1);
-            setSelectedIndex(next);
-          }}
-        />}
-      </Modal>
+        {/* ─── MAP (flex: 1 to fill remaining space) ───────────────────────── */}
+        <View style={styles.mapContainer}>
+          <MapView
+            ref={mapRef}
+            style={StyleSheet.absoluteFill}
+            initialRegion={region}
+            provider={PROVIDER_GOOGLE}
+            mapType="standard"
+          >
+            {/* Afficher les itinéraires */}
+            {routes.map((route, idx) => (
+              <Polyline
+                key={`route-${idx}`}
+                coordinates={route.coordinates}
+                strokeColor={route.color}
+                strokeWidth={4}
+                lineCap="round"
+                lineJoin="round"
+              />
+            ))}
 
-      {/* LogsViewer Modal */}
-      <LogsViewer visible={showLogs} onClose={() => setShowLogs(false)} />
-    </View>
+            {/* Afficher les marqueurs */}
+            {steps.map((s, i) => {
+              if (!s.latitude || !s.longitude) {
+                return null;
+              }
+              return (
+                <Marker
+                  key={s.id}
+                  coordinate={{ latitude: parseFloat(s.latitude), longitude: parseFloat(s.longitude) }}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                >
+                  <View style={[styles.marker, { backgroundColor: ORDER_COLORS[i % ORDER_COLORS.length] }]}>
+                    <Text style={styles.markerText}>{i + 1}</Text>
+                  </View>
+                </Marker>
+              );
+            })}
+
+            {/* Marqueurs pour les hébergements — masqués en vue globale */}
+            {selectedIndex >= 0 && psAccommodations
+              .filter(a => a.latitude && a.longitude)
+              .map(accom => (
+                <Marker
+                  key={`accom-${accom.id}`}
+                  coordinate={{ latitude: parseFloat(accom.latitude), longitude: parseFloat(accom.longitude) }}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                >
+                  <View style={styles.accomMarker}>
+                    <Text style={styles.accomMarkerText}>
+                      {ACCOM_ICONS[accom.type] || ACCOM_ICONS.OTHER}
+                    </Text>
+                  </View>
+                </Marker>
+              ))}
+
+            {/* Marqueurs pour les activités — masqués en vue globale */}
+            {selectedIndex >= 0 && psActivities
+              .filter(a => a.latitude && a.longitude)
+              .map(activity => (
+                <Marker
+                  key={`activity-${activity.id}`}
+                  coordinate={{ latitude: parseFloat(activity.latitude), longitude: parseFloat(activity.longitude) }}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                >
+                  <View style={styles.activityMarker}>
+                    <Text style={styles.activityMarkerText}>
+                      {ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS.OTHER}
+                    </Text>
+                  </View>
+                </Marker>
+              ))}
+
+            {/* Marqueur de résultat de recherche */}
+            {searchResultMarker && (
+              <Marker
+                key="search-result"
+                coordinate={{ latitude: searchResultMarker.latitude, longitude: searchResultMarker.longitude }}
+                anchor={{ x: 0.5, y: 1 }}
+                onPress={() => setShowSearchResultModal(true)}
+              >
+                <View style={styles.searchResultMarker}>
+                  <Text style={styles.searchResultMarkerText}>📍</Text>
+                </View>
+              </Marker>
+            )}
+          </MapView>
+
+          {/* ─── OVERLAY BUTTONS (absolute within map) ─────────────────────── */}
+          <View style={[styles.overlayCol, { top: 12 }]}>
+            {/* Bouton vue globale — visible seulement quand une étape est sélectionnée */}
+            {selectedIndex >= 0 && (
+              <TouchableOpacity
+                key="global-view"
+                onPress={() => {
+                  setSelectedIndex(-1);
+                  const region = computeRoadtripRegion(steps, psAccommodations, psActivities);
+                  if (region && mapRef.current) {
+                    mapRef.current.animateToRegion(region, 300);
+                  }
+                }}
+                style={[styles.ovBtn, styles.ovBtnGlobal]}
+              >
+                <Text style={styles.ovBtnIcon}>🗺️</Text>
+              </TouchableOpacity>
+            )}
+            {OVERLAY_ITEMS.map(item => (
+              <TouchableOpacity
+                key={item.key}
+                onPress={() => toggleOverlay(item.key)}
+                style={[styles.ovBtn, activeOverlays[item.key] && styles.ovBtnActive]}
+              >
+                <Text style={styles.ovBtnIcon}>{item.icon}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* ─── BOTTOM SHEET ──────────────────────────────────────────────── */}
+        <Animated.View style={[styles.sheet, { height: sheetAnim }]} pointerEvents="box-none">
+          {/* Handle — tap ET swipe pour toggle */}
+          <View
+            style={styles.sheetHandle}
+            {...handlePanResponder.panHandlers}
+          >
+            <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 12 }}>
+              <View style={styles.handleBar} />
+            </TouchableOpacity>
+          </View>
+          {sheetExpanded && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    log('REFRESH', '🔄 Bouton refresh cliqué');
+                    setRefreshingRoutes(true);
+                  }}
+                  style={{ padding: 8 }}
+                >
+                  <Text style={{ fontSize: 18 }}>🔄</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowLogs(true)}
+                  style={{ padding: 8 }}
+                >
+                  <Text style={{ fontSize: 18 }}>📋</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={styles.sheetCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={styles.sheetContent} pointerEvents="auto">
+            {!sheetExpanded && selectedIndex === -1 ? (
+              // Mode vue globale du roadtrip
+              <CurrentStepBar 
+                isOverview={true}
+                roadtrip={roadtrip}
+                totalDays={totalDays}
+                onPress={() => {
+                  // Clic sur la vue globale → ouvrir le volet complet
+                  const toValue = SHEET_FULL;
+                  Animated.spring(sheetAnim, {
+                    toValue,
+                    useNativeDriver: false,
+                    tension: 65,
+                    friction: 11,
+                  }).start();
+                  setSheetExpanded(true);
+                }}
+              />
+            ) : !sheetExpanded && selectedStep ? (
+              // Mode détail d'une étape (volet fermé)
+              <StepCard
+                step={selectedStep}
+                index={selectedIndex}
+                isActive={true}
+                color={color}
+                onPress={() => openDetail(selectedIndex)}
+                onDetailPress={() => openEditStep(selectedIndex)}
+              />
+            ) : sheetExpanded ? (
+              // Mode liste d'étapes (volet ouvert)
+              <View style={styles.sheetFull} pointerEvents="auto">
+                {/* En-tête */}
+                <View style={styles.sheetFullHeader}>
+                  <Text style={styles.sheetStepCount}>
+                    {steps.length} étapes · {roadtrip.distance} km
+                  </Text>
+                </View>
+
+                {/* Liste */}
+                <ScrollView
+                  ref={stepListRef}
+                  style={styles.stepList}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+                  scrollEnabled={sheetExpanded}
+                  pointerEvents="auto"
+                >
+                  {steps.map((s, i) => (
+                    <StepCard
+                      key={s.id}
+                      step={s}
+                      index={i}
+                      isActive={i === selectedIndex}
+                      color={ORDER_COLORS[i % ORDER_COLORS.length]}
+                      onPress={() => openDetail(i)}
+                      onDetailPress={() => openEditStep(i)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+          </View>
+        </Animated.View>
+
+        {/* ─── SEARCH RESULT MODAL ──────────────────────────────────────────── */}
+        {showSearchResultModal && searchResultMarker && (
+          <View style={styles.searchResultModalOverlay}>
+            <View style={styles.searchResultModalContent}>
+              <View style={styles.searchResultHeader}>
+                <Text style={styles.searchResultTitle}>{searchResultMarker.title}</Text>
+                <TouchableOpacity onPress={() => {
+                  setShowSearchResultModal(false);
+                }}>
+                  <Text style={styles.searchResultClose}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              {searchResultMarker.description && (
+                <Text style={styles.searchResultSubtitle}>{searchResultMarker.description}</Text>
+              )}
+              <View style={styles.searchResultDivider} />
+              <Text style={styles.searchResultActionTitle}>Ajouter à votre voyage</Text>
+              <TouchableOpacity
+                style={styles.searchResultAction}
+                onPress={async () => {
+                  // Ajouter comme étape
+                  await useRoadtripStore.getState().createStep({
+                    roadtripId: roadtrip.id,
+                    name: searchResultMarker.title,
+                    location: searchResultMarker.description,
+                    latitude: searchResultMarker.latitude,
+                    longitude: searchResultMarker.longitude,
+                    order: steps.length,
+                  });
+                  setShowSearchResultModal(false);
+                  setSearchResultMarker(null);
+                  setSearchQuery('');
+                }}
+              >
+                <Text style={styles.searchResultActionIcon}>📍</Text>
+                <Text style={styles.searchResultActionText}>Ajouter comme étape</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.searchResultAction}
+                onPress={async () => {
+                  // Ajouter comme hébergement
+                  const currentStep = steps[selectedIndex];
+                  if (!currentStep) {
+                    Alert.alert('Aucune étape sélectionnée', 'Sélectionnez d’abord une étape sur la carte ou dans la liste avant d’ajouter un hébergement.');
+                    return;
+                  }
+                  try {
+                    await useRoadtripStore.getState().createAccommodation({
+                      stepId: currentStep.id,
+                      roadtripId: roadtrip.id,
+                      name: searchResultMarker.title,
+                      address: searchResultMarker.description,
+                      latitude: searchResultMarker.latitude,
+                      longitude: searchResultMarker.longitude,
+                      type: mapGoogleTypesToAccomType(searchResultMarker.types),
+                    });
+                    setShowSearchResultModal(false);
+                    setSearchResultMarker(null);
+                    setSearchQuery('');
+                  } catch (err) {
+                    console.error('[SearchResult] Error creating accommodation:', err);
+                    Alert.alert('Erreur', 'Impossible d’ajouter cet hébergement.');
+                  }
+                }}
+              >
+                <Text style={styles.searchResultActionIcon}>🏨</Text>
+                <Text style={styles.searchResultActionText}>Ajouter comme hébergement</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.searchResultAction}
+                onPress={async () => {
+                  // Ajouter comme activité
+                  const currentStep = steps[selectedIndex];
+                  if (!currentStep) {
+                    Alert.alert('Aucune étape sélectionnée', 'Sélectionnez d’abord une étape sur la carte ou dans la liste avant d’ajouter une activité.');
+                    return;
+                  }
+                  try {
+                    await useRoadtripStore.getState().createActivity({
+                      stepId: currentStep.id,
+                      roadtripId: roadtrip.id,
+                      name: searchResultMarker.title,
+                      location: searchResultMarker.description,
+                      latitude: searchResultMarker.latitude,
+                      longitude: searchResultMarker.longitude,
+                      type: mapGoogleTypesToActivityType(searchResultMarker.types),
+                    });
+                    setShowSearchResultModal(false);
+                    setSearchResultMarker(null);
+                    setSearchQuery('');
+                  } catch (err) {
+                    console.error('[SearchResult] Error creating activity:', err);
+                    Alert.alert('Erreur', 'Impossible d’ajouter cette activité.');
+                  }
+                }}
+              >
+                <Text style={styles.searchResultActionIcon}>🎯</Text>
+                <Text style={styles.searchResultActionText}>Ajouter comme activité</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ─── STEP DETAIL MODAL ─────────────────────────────────────────── */}
+        <Modal
+          visible={showDetail}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowDetail(false)}
+        >
+          {selectedStep && <StepDetailModal
+            step={selectedStep}
+            index={selectedIndex}
+            color={color}
+            onClose={() => setShowDetail(false)}
+            onNext={() => {
+              const next = Math.min(selectedIndex + 1, steps.length - 1);
+              setSelectedIndex(next);
+            }}
+          />}
+        </Modal>
+
+        {/* LogsViewer Modal */}
+        <LogsViewer visible={showLogs} onClose={() => setShowLogs(false)} />
+      </View>
     );
   } catch (err) {
     console.error('❌ [RoadtripDetail] ERREUR RENDER:', err);
@@ -1210,6 +1610,37 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
   const nights = durationDays(step.startDate, step.endDate);
   const insets = useSafeAreaInsets();
 
+  const formatDayMonth = (dateStr) => {
+    if (!dateStr) return '--/--';
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    if (Number.isNaN(date.getTime())) return '--/--';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
+  };
+
+  const formatHourMinute = (timeValue, fallbackDateStr) => {
+    if (timeValue) {
+      if (typeof timeValue === 'string') {
+        const hhmm = timeValue.match(/^(\d{2}:\d{2})/);
+        if (hhmm?.[1]) return hhmm[1];
+      }
+      const parsed = new Date(timeValue);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      }
+    }
+
+    if (fallbackDateStr && typeof fallbackDateStr === 'string' && fallbackDateStr.includes('T')) {
+      const date = new Date(fallbackDateStr);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      }
+    }
+
+    return '--:--';
+  };
+
   return (
     <SafeAreaView style={styles.detailContainer}>
       {/* Header */}
@@ -1224,31 +1655,6 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
       </View>
 
       <ScrollView style={styles.detailBody} contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
-        {/* Mini-carte */}
-        <View style={styles.detailMap}>
-          <MapView
-            style={StyleSheet.absoluteFill}
-            initialRegion={{
-              latitude: step.latitude || 46.2,
-              longitude: step.longitude || 6.1,
-              latitudeDelta: 0.5,
-              longitudeDelta: 0.5,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            provider={PROVIDER_GOOGLE}
-            customMapStyle={DARK_MAP_STYLE}
-          >
-            {step.latitude && step.longitude && (
-              <Marker coordinate={{ latitude: step.latitude, longitude: step.longitude }}>
-                <View style={[styles.marker, { backgroundColor: color }]}>
-                  <Text style={styles.markerText}>{ACTIVITY_ICONS[step.type] || '📌'}</Text>
-                </View>
-              </Marker>
-            )}
-          </MapView>
-        </View>
-
         {/* Adresse */}
         <View style={styles.detailSection}>
           <View style={styles.addressBox}>
@@ -1261,11 +1667,25 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
         <View style={styles.datesRow}>
           <View style={styles.dateBox}>
             <Text style={styles.dateLabel}>ARRIVÉE</Text>
-            <Text style={styles.dateValue}>{step.startDate ? formatDate(step.startDate, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'}</Text>
+            <View style={styles.dateDetailRow}>
+              <Text style={styles.dateDetailLabel}>Date :</Text>
+              <Text style={styles.dateDetailValue}>{formatDayMonth(step.startDate)}</Text>
+            </View>
+            <View style={styles.dateDetailRow}>
+              <Text style={styles.dateDetailLabel}>Heure :</Text>
+              <Text style={styles.dateDetailValue}>{formatHourMinute(step.arrivalTime, step.startDate)}</Text>
+            </View>
           </View>
           <View style={styles.dateBox}>
             <Text style={styles.dateLabel}>DÉPART</Text>
-            <Text style={styles.dateValue}>{step.endDate ? formatDate(step.endDate, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'}</Text>
+            <View style={styles.dateDetailRow}>
+              <Text style={styles.dateDetailLabel}>Date :</Text>
+              <Text style={styles.dateDetailValue}>{formatDayMonth(step.endDate)}</Text>
+            </View>
+            <View style={styles.dateDetailRow}>
+              <Text style={styles.dateDetailLabel}>Heure :</Text>
+              <Text style={styles.dateDetailValue}>{formatHourMinute(step.departureTime, step.endDate)}</Text>
+            </View>
           </View>
         </View>
 
@@ -1519,6 +1939,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245,158,11,0.2)',
     borderColor: 'rgba(245,158,11,0.3)',
   },
+  ovBtnGlobal: {
+    backgroundColor: 'rgba(139,92,246,0.25)',
+    borderColor: 'rgba(139,92,246,0.4)',
+  },
   ovBtnIcon: { fontSize: 16 },
 
   // Map markers
@@ -1537,6 +1961,60 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   markerText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // Search result marker
+  searchResultMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  searchResultMarkerText: { fontSize: 24 },
+
+  // Accommodation marker
+  accomMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(59, 130, 246, 0.9)',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  accomMarkerText: { fontSize: 20 },
+
+  // Activity marker
+  activityMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(34, 197, 94, 0.9)',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  activityMarkerText: { fontSize: 20 },
 
   // Bottom sheet
   sheet: {
@@ -1606,7 +2084,7 @@ const styles = StyleSheet.create({
   // Step cards
   stepCard: {
     flexDirection: 'row', alignItems: 'stretch',
-    paddingVertical: 10, paddingHorizontal: 4,
+    paddingVertical: 8, paddingHorizontal: 4,
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)',
   },
   stepCardActive: {
@@ -1614,23 +2092,23 @@ const styles = StyleSheet.create({
     borderRadius: 8, marginHorizontal: -4, paddingHorizontal: 8,
     borderBottomColor: 'transparent',
   },
-  timelineCol: { width: 20, alignItems: 'center', paddingTop: 4 },
+  timelineCol: { width: 20, alignItems: 'center', paddingTop: 2 },
   timelineDot: { width: 10, height: 10, borderRadius: 5 },
   timelineLine: { flex: 1, width: 1.5, backgroundColor: 'rgba(255,255,255,0.06)', marginTop: 2 },
   stepContent: { flex: 1, marginLeft: 10 },
-  stepTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  stepName: { fontSize: 16, fontWeight: '600', color: '#fff', flex: 1 },
+  stepTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  stepName: { fontSize: 15, fontWeight: '600', color: '#fff', flex: 1 },
   stepNameActive: { color: '#f59e0b' },
   stepType: {
     fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.4)',
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4,
     paddingHorizontal: 5, paddingVertical: 1,
   },
-  stepLocation: { fontSize: 14, color: 'rgba(255,255,255,0.35)', marginTop: 2 },
-  stepTrajet: { fontSize: 13, color: '#4ade80', marginTop: 3, fontWeight: '500' },
-  stepMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, marginTop: 2 },
-  stepMetaText: { fontSize: 13, color: 'rgba(255,255,255,0.45)' },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 3 },
+  stepLocation: { fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 1 },
+  stepTrajet: { fontSize: 12, color: '#4ade80', fontWeight: '500', flexShrink: 1 },
+  stepMeta: { flexDirection: 'row', gap: 8, marginTop: 1, alignItems: 'center' },
+  stepMetaText: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 },
   tagAccom: {
     fontSize: 11, paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4,
     backgroundColor: 'rgba(34,197,94,0.1)', color: '#4ade80',
@@ -1675,7 +2153,7 @@ const styles = StyleSheet.create({
   detailEditText: { color: '#fff', fontSize: 16 },
   detailBody: { flex: 1, padding: SPACING.md },
   detailMap: { height: 100, borderRadius: 12, overflow: 'hidden', marginBottom: SPACING.md },
-  
+
   // Adresse
   addressBox: {
     backgroundColor: 'rgba(255,255,255,0.04)',
@@ -1687,7 +2165,7 @@ const styles = StyleSheet.create({
   },
   addressIcon: { fontSize: 18, marginTop: 2 },
   addressText: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 18 },
-  
+
   // Dates
   datesRow: {
     flexDirection: 'row',
@@ -1708,8 +2186,23 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     marginBottom: 4,
   },
+  dateDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  dateDetailLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  dateDetailValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
   dateValue: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  
+
   // Trajet
   trajetBox: {
     backgroundColor: 'rgba(34,197,94,0.06)',
@@ -1745,7 +2238,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   routeBadgeText: { fontSize: 10, fontWeight: '600', color: '#4ade80' },
-  
+
   detailSection: { marginBottom: SPACING.md + 4 },
   sectionLabel: {
     fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
@@ -1808,6 +2301,75 @@ const styles = StyleSheet.create({
     backgroundColor: '#f59e0b', alignItems: 'center',
   },
   actionPrimaryText: { fontSize: 13, fontWeight: '700', color: '#1a1a26' },
+
+  // Search result modal
+  searchResultModalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
+    zIndex: 100,
+  },
+  searchResultModalContent: {
+    backgroundColor: '#1a1a26',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: SPACING.md,
+    maxHeight: '70%',
+  },
+  searchResultHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  searchResultTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    flex: 1,
+  },
+  searchResultClose: {
+    fontSize: 24,
+    color: 'rgba(255,255,255,0.5)',
+    padding: 8,
+  },
+  searchResultSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: SPACING.sm,
+  },
+  searchResultDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: SPACING.sm,
+  },
+  searchResultActionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: SPACING.sm,
+  },
+  searchResultAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.sm,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  searchResultActionIcon: {
+    fontSize: 24,
+  },
+  searchResultActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    flex: 1,
+  },
 });
 
 // ─── Google Maps dark style ──────────────────────────────────────────────────

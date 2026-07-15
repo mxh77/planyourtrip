@@ -101,6 +101,8 @@ async function main() {
             longitude: wp.lng,
             startDate: wp.checkin ? new Date(wp.checkin) : null,
             endDate: wp.checkout ? new Date(wp.checkout) : null,
+            arrivalTime: wp.arrivalTime || null,
+            departureTime: wp.departureTime || null,
             order: i,
             routeDistanceMeters: distanceFromPrev * 1000, // Convertir en mètres
             routeDurationSeconds: durationFromPrev * 60, // Convertir en secondes

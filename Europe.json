@@ -10,6 +10,8 @@
       "nights": 0,
       "checkin": null,
       "checkout": "2026-07-31",
+      "departureTime": "14:00",
+      "arrivalTime": null,
       "notes": "Camping car : GY-212-ER",
       "campings": [],
       "trails": null,
@@ -24,6 +26,8 @@
       "nights": 1,
       "checkin": "2026-07-31",
       "checkout": "2026-08-01",
+      "departureTime": "09:00",
+      "arrivalTime": "18:30",
       "notes": null,
       "campings": [
         {
@@ -120,6 +124,8 @@
       "nights": 1,
       "checkin": "2026-08-01",
       "checkout": "2026-08-02",
+      "departureTime": "09:00",
+      "arrivalTime": "13:00",
       "notes": "Lac de Brienz / Bateau",
       "campings": [
         {
@@ -254,6 +260,8 @@
       "nights": 0,
       "checkin": "2026-08-02",
       "checkout": "2026-08-02",
+      "departureTime": "14:00",
+      "arrivalTime": "10:00",
       "notes": "Meiringen",
       "campings": [],
       "trails": [
@@ -317,6 +325,8 @@
       "nights": 2,
       "checkin": "2026-08-02",
       "checkout": "2026-08-04",
+      "departureTime": "09:00",
+      "arrivalTime": "18:00",
       "notes": null,
       "campings": [
         {
@@ -414,6 +424,8 @@
       "nights": 0,
       "checkin": "2026-08-04",
       "checkout": "2026-08-04",
+      "departureTime": "16:00",
+      "arrivalTime": "11:30",
       "notes": "Sonogno ou randos le long de la rivière",
       "campings": null,
       "trails": null,
@@ -428,6 +440,8 @@
       "nights": 1,
       "checkin": "2026-08-04",
       "checkout": "2026-08-05",
+      "departureTime": "12:00",
+      "arrivalTime": "17:30",
       "notes": null,
       "campings": [
         {
@@ -551,6 +565,8 @@
       "nights": 0,
       "checkin": "2026-08-05",
       "checkout": "2026-08-05",
+      "departureTime": "17:00",
+      "arrivalTime": "14:30",
       "notes": null,
       "campings": [
         {
@@ -588,6 +604,8 @@
       "nights": 2,
       "checkin": "2026-08-05",
       "checkout": "2026-08-07",
+      "departureTime": "15:00",
+      "arrivalTime": "18:00",
       "notes": "Monte Baldo par téléphérique : 10h30\nParking Retelino\n\nChateau + Ville",
       "campings": [
         {
@@ -666,6 +684,8 @@
       "nights": 5,
       "checkin": "2026-08-07",
       "checkout": "2026-08-12",
+      "departureTime": "10:00",
+      "arrivalTime": "12:00",
       "notes": "Booking number: 36289385\nBooking number: 36289397\n\n1er jour : Seceda ou ALpi Di Siusi\n2ème jour : Tre CIme (10h30). Parking réservé\n3eme jour : Lac de brayes\n4eme jour : Lagazuoi : parking. Telepherique aller. Redescente galleries guerre\n5eme jour : rando autour du camping\n",
       "campings": [
         {
@@ -832,6 +852,8 @@
       "nights": 4,
       "checkin": "2026-08-12",
       "checkout": "2026-08-16",
+      "departureTime": "09:30",
+      "arrivalTime": "15:30",
       "notes": null,
       "campings": [
         {
@@ -904,6 +926,8 @@
       "nights": 2,
       "checkin": "2026-08-16",
       "checkout": "2026-08-18",
+      "departureTime": "09:30",
+      "arrivalTime": "14:00",
       "notes": null,
       "campings": [
         {
@@ -1003,6 +1027,8 @@
       "nights": 1,
       "checkin": "2026-08-18",
       "checkout": "2026-08-19",
+      "departureTime": "16:00",
+      "arrivalTime": "15:30",
       "notes": null,
       "campings": null,
       "trails": null,
@@ -1039,6 +1065,8 @@
       "nights": 1,
       "checkin": "2026-08-19",
       "checkout": "2026-08-20",
+      "departureTime": "09:30",
+      "arrivalTime": "19:00",
       "notes": "Chateau 20 : 11:45",
       "campings": [
         {
@@ -1134,6 +1162,8 @@
       "nights": 1,
       "checkin": "2026-08-20",
       "checkout": "2026-08-21",
+      "departureTime": "09:30",
+      "arrivalTime": "13:00",
       "notes": null,
       "campings": [],
       "trails": null,
@@ -1174,6 +1204,8 @@
       "nights": 2,
       "checkin": "2026-08-21",
       "checkout": "2026-08-23",
+      "departureTime": "16:00",
+      "arrivalTime": "12:00",
       "notes": null,
       "campings": [
         {
@@ -1248,6 +1280,8 @@
       "nights": 1,
       "checkin": "2026-08-23",
       "checkout": "2026-08-24",
+      "departureTime": null,
+      "arrivalTime": "20:30",
       "notes": null,
       "campings": null,
       "trails": null,
@@ -1262,6 +1296,8 @@
       "nights": 0,
       "checkin": "2026-08-24",
       "checkout": "2026-08-24",
+      "departureTime": null,
+      "arrivalTime": null,
       "notes": null,
       "campings": null,
       "trails": null,

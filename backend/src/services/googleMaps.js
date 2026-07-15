@@ -64,41 +64,98 @@ async function searchText({ query, location, radius = 30000, language = 'fr' }) 
   return resp.data.results.map(normalizePlaceResult);
 }
 
-// ── Place Autocomplete ────────────────────────────────────────────────────────
+// ── Place Autocomplete (NEW API v1) ──────────────────────────────────────────
 
 async function autocomplete({ input, sessionToken, location, radius = 50000, language = 'fr', types = '' }) {
   checkKey();
-  const params = { input, language, key: KEY() };
-  if (sessionToken) params.sessiontoken = sessionToken;
-  if (types)        params.types        = types;
+  
+  const body = {
+    input,
+    languageCode: language === 'fr' ? 'fr' : 'en',
+  };
+  
+  if (sessionToken) body.sessionToken = sessionToken;
+  
   if (location) {
-    params.location = `${location.lat},${location.lng}`;
-    params.radius   = radius;
+    body.locationBias = {
+      circle: {
+        center: { latitude: location.lat, longitude: location.lng },
+        radius: radius,
+      },
+    };
   }
-  const url  = `${BASE}/place/autocomplete/json`;
-  const resp = await axios.get(url, { params });
-  const err  = gmError(resp.data, url);
-  if (err) throw err;
-  return resp.data.predictions;
+
+  const url = 'https://places.googleapis.com/v1/places:autocomplete';
+  
+  try {
+    const resp = await axios.post(url, body, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': KEY(),
+      },
+    });
+    
+    // Transformer les suggestions en format compatible (mainText, secondaryText)
+    return (resp.data.suggestions || []).map(sugg => {
+      const pp = sugg.placePrediction || {};
+      const structured = pp.structuredFormat || {};
+      return {
+        place_id: pp.placeId,
+        description: pp.mainText?.text || '',
+        main_text: structured.mainText?.text || '',
+        secondary_text: structured.secondaryText?.text || '',
+        types: pp.types || [],
+      };
+    });
+  } catch (err) {
+    if (err.response?.status === 403 || err.response?.status === 401) {
+      throw Object.assign(
+        new Error('Clé API Google refusée ou non activée pour ce service.'),
+        { status: 502, googleStatus: 'REQUEST_DENIED', url }
+      );
+    }
+    throw err;
+  }
 }
 
 // ── Place Details ─────────────────────────────────────────────────────────────
 
 async function getPlaceDetails({ placeId, sessionToken, language = 'fr' }) {
   checkKey();
-  const fields = [
-    'place_id','name','formatted_address','geometry','rating',
-    'user_ratings_total','opening_hours','website','international_phone_number',
-    'photos','reviews','price_level','types','url','vicinity',
-  ].join(',');
-  const params = { place_id: placeId, fields, language, key: KEY() };
-  if (sessionToken) params.sessiontoken = sessionToken;
-
-  const url  = `${BASE}/place/details/json`;
-  const resp = await axios.get(url, { params });
-  const err  = gmError(resp.data, url);
-  if (err) throw err;
-  return normalizeDetails(resp.data.result);
+  
+  // Places API v1 utilise GET avec field masking en header
+  // placeId doit être préfixé par "places/", le champ coords s'appelle "location" (pas "geometry")
+  const resourceName = `places/${placeId}`;
+  const url = `https://places.googleapis.com/v1/${resourceName}`;
+  
+  try {
+    const resp = await axios.get(url, {
+      headers: {
+        'X-Goog-Api-Key': KEY(),
+        'X-Goog-FieldMask': 'displayName,formattedAddress,location,types',
+      },
+    });
+    
+    const place = resp.data;
+    
+    return {
+      placeId,
+      name: place.displayName?.text || '',
+      address: place.formattedAddress || '',
+      lat: place.location?.latitude,
+      lng: place.location?.longitude,
+      types: place.types || [],
+    };
+  } catch (err) {
+    console.error('[getPlaceDetails] Error:', JSON.stringify(err.response?.data || err.message, null, 2));
+    if (err.response?.status === 403 || err.response?.status === 401) {
+      throw Object.assign(
+        new Error('Clé API Google refusée ou non activée pour ce service.'),
+        { status: 502, googleStatus: 'REQUEST_DENIED', url }
+      );
+    }
+    throw err;
+  }
 }
 
 // ── Geocoding ─────────────────────────────────────────────────────────────────
