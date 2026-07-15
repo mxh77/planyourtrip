@@ -115,6 +115,16 @@ else
   echo -e "${GREEN}✓ Prebuild terminé${RESET}"
 fi
 
+# ─── Patch AndroidManifest : autoriser le trafic HTTP (cleartext) ──────────
+MANIFEST="$FRONTEND_DIR/android/app/src/main/AndroidManifest.xml"
+if ! grep -q 'usesCleartextTraffic' "$MANIFEST" 2>/dev/null; then
+  echo -e "\n${YELLOW}[Patch]${RESET} Activation du trafic HTTP (cleartext)..."
+  sed -i 's|<application |<application android:usesCleartextTraffic="true" |' "$MANIFEST"
+  echo -e "${GREEN}✓ usesCleartextTraffic ajouté${RESET}"
+else
+  echo -e "${GREEN}✓ usesCleartextTraffic déjà présent${RESET}"
+fi
+
 # ─── Copie keystore + config Gradle ──────────────────────────────────────────
 echo -e "\n${YELLOW}[2/4]${RESET} Configuration signing..."
 cp "$ROOT_DIR/planyourtrip.keystore" "$FRONTEND_DIR/android/app/"

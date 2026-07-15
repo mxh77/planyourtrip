@@ -63,7 +63,7 @@ export default function LoginScreen({ navigation }) {
           {/* Logo */}
           <View style={styles.logoSection}>
             <Text style={styles.logoTitle}>PlanYour</Text>
-            <Text style={styles.logoAccent}>Ride</Text>
+            <Text style={styles.logoAccent}>Trip</Text>
           </View>
 
           {/* Tabs */}
