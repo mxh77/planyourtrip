@@ -7,6 +7,8 @@ import {
 import { useQuery } from '@powersync/react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING } from '../theme';
+import { useAuthStore } from '../store/authStore';
+import API_URL from '../api/config';
 import LocationPicker from './LocationPicker';
 import DateTimePickerModal from './DateTimePickerModal';
 import {
@@ -16,10 +18,6 @@ import {
 } from '../powersync/localWrite';
 import { validateActivityDates } from '../utils/dateValidation';
 
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
-const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
-const SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText';
-const A_FIELD_MASK = 'places.id,places.displayName,places.rating,places.photos,places.formattedAddress,places.location';
 const ACT_DEF_RADIUS = 1000;
 const LODGING_TYPES_A = ['hotel', 'motel', 'campground', 'rv_park', 'bed_and_breakfast', 'hostel'];
 const ACTIVITY_NEARBY = ['restaurant', 'cafe', 'museum', 'park', 'cultural_center', 'supermarket', 'grocery_store', 'hiking_area', 'transit_station'];
@@ -40,42 +38,74 @@ function fmtDistance(km) {
 }
 
 async function fetchNearbyActivities(lat, lng, types, radius) {
-  if (!types || types.length === 0 || !API_KEY) return [];
-  const resp = await fetch(NEARBY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': API_KEY, 'X-Goog-FieldMask': A_FIELD_MASK },
-    body: JSON.stringify({ includedTypes: types, maxResultCount: 8, locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } }, languageCode: 'fr' }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
-  return data.places ?? [];
+  if (!types || types.length === 0) return [];
+  try {
+    const token = useAuthStore.getState().token;
+    const resp = await fetch(`${API_URL}/api/places/searchNearby`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        lat,
+        lng,
+        radius,
+        includedTypes: types,
+        maxResultCount: 8,
+        languageCode: 'fr'
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
+    return data.places ?? [];
+  } catch (err) {
+    console.error('[fetchNearbyActivities] Erreur:', err.message);
+    return [];
+  }
 }
 
 async function searchActivitiesByText(query, lat, lng, radius) {
-  if (!query.trim() || !API_KEY) return [];
-  const body = {
-    textQuery: query,
-    languageCode: 'fr',
-    maxResultCount: 20,
-  };
-  if (lat && lng) {
-    body.locationBias = { circle: { center: { latitude: lat, longitude: lng }, radius: radius ?? 50000 } };
+  if (!query.trim()) return [];
+  try {
+    const token = useAuthStore.getState().token;
+    const body = {
+      textQuery: query,
+      languageCode: 'fr',
+      maxResultCount: 20,
+    };
+    if (lat && lng) {
+      body.locationBias = {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: radius ?? 50000
+        }
+      };
+    }
+    const resp = await fetch(`${API_URL}/api/places/searchText`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
+    const places = data.places ?? [];
+    
+    // Filtre client-side
+    if (lat && lng) {
+      const maxKm = (radius ?? 50000) / 1000;
+      return places.filter(p =>
+        p.location?.latitude == null || calcDistance(lat, lng, p.location.latitude, p.location.longitude) <= maxKm
+      );
+    }
+    return places;
+  } catch (err) {
+    console.error('[searchActivitiesByText] Erreur:', err.message);
+    return [];
   }
-  const resp = await fetch(SEARCH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': API_KEY, 'X-Goog-FieldMask': A_FIELD_MASK },
-    body: JSON.stringify(body),
-  });
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
-  const places = data.places ?? [];
-  if (lat && lng) {
-    const maxKm = (radius ?? 50000) / 1000;
-    return places.filter(p =>
-      p.location?.latitude == null || calcDistance(lat, lng, p.location.latitude, p.location.longitude) <= maxKm
-    );
-  }
-  return places;
 }
 
 const ACTIVITY_TYPES = [

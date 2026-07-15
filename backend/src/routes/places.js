@@ -3,8 +3,71 @@
  */
 const express = require('express');
 const gm      = require('../services/googleMaps');
+const { log, error } = require('../services/logger');
 
 const router = express.Router();
+
+// ─── NEW Google Places API v1 (utilisé par le frontend mobile/web) ────────────
+
+// POST /api/places/searchNearby
+// Body: { lat, lng, radius, includedTypes: [String], maxResultCount, languageCode }
+router.post('/searchNearby', async (req, res, next) => {
+  try {
+    const { lat, lng, radius = 5000, includedTypes = [], maxResultCount = 6, languageCode = 'fr' } = req.body;
+    if (!lat || !lng) return res.status(400).json({ error: 'lat et lng requis' });
+
+    log('PLACES', `🔹 Recherche nearby: ${lat},${lng} rayon=${radius}m types=${includedTypes.join(',')}`, {
+      radius,
+      includedTypes,
+      maxResultCount,
+    });
+
+    const places = await gm.searchNearbyV1({
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
+      radius: parseInt(radius),
+      includedTypes,
+      maxResultCount: parseInt(maxResultCount),
+      languageCode,
+    });
+    
+    log('PLACES', `✅ Trouvé ${places.length} lieux`);
+    res.json({ places });
+  } catch (e) { 
+    error('PLACES', 'Erreur searchNearby', e);
+    next(e); 
+  }
+});
+
+// POST /api/places/searchText
+// Body: { textQuery, includedType, maxResultCount, languageCode, locationBias }
+router.post('/searchText', async (req, res, next) => {
+  try {
+    const { textQuery, includedType, maxResultCount = 20, languageCode = 'fr', locationBias } = req.body;
+    if (!textQuery) return res.status(400).json({ error: 'textQuery requis' });
+
+    log('PLACES', `🔹 Recherche texte: "${textQuery}" type=${includedType}`, {
+      maxResultCount,
+      hasLocationBias: !!locationBias,
+    });
+
+    const places = await gm.searchTextV1({
+      textQuery,
+      includedType,
+      maxResultCount: parseInt(maxResultCount),
+      languageCode,
+      locationBias,
+    });
+    
+    log('PLACES', `✅ Trouvé ${places.length} lieux pour "${textQuery}"`);
+    res.json({ places });
+  } catch (e) { 
+    error('PLACES', 'Erreur searchText', e);
+    next(e); 
+  }
+});
+
+// ─── Legacy Google Places API (anciennes routes) ────────────────────────────
 
 // GET /api/places/autocomplete?input=&lat=&lng=&types=
 router.get('/autocomplete', async (req, res, next) => {

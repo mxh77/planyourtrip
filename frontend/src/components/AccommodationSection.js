@@ -7,6 +7,8 @@ import {
 import { useQuery } from '@powersync/react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING } from '../theme';
+import { useAuthStore } from '../store/authStore';
+import API_URL from '../api/config';
 import LocationPicker from './LocationPicker';
 import DateTimePickerModal from './DateTimePickerModal';
 import {
@@ -16,10 +18,6 @@ import {
 } from '../powersync/localWrite';
 import { validateAccommodationDates } from '../utils/dateValidation';
 
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
-const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby';
-const SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText';
-const N_FIELD_MASK = 'places.id,places.displayName,places.rating,places.photos,places.formattedAddress,places.location';
 const DEF_RADIUS = 5000;
 const LODGING_NEARBY = ['hotel', 'motel', 'campground', 'bed_and_breakfast', 'hostel', 'parking'];
 
@@ -38,46 +36,75 @@ function fmtDistance(km) {
 }
 
 async function fetchNearbyLodging(lat, lng, types, radius) {
-  if (!types || types.length === 0 || !API_KEY) return [];
-  const resp = await fetch(NEARBY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': API_KEY, 'X-Goog-FieldMask': N_FIELD_MASK },
-    body: JSON.stringify({ includedTypes: types, maxResultCount: 6, locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } }, languageCode: 'fr' }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
-  return data.places ?? [];
+  if (!types || types.length === 0) return [];
+  try {
+    const token = useAuthStore.getState().token;
+    const resp = await fetch(`${API_URL}/api/places/searchNearby`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        lat,
+        lng,
+        radius,
+        includedTypes: types,
+        maxResultCount: 6,
+        languageCode: 'fr'
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
+    return data.places ?? [];
+  } catch (err) {
+    console.error('[fetchNearbyLodging] Erreur:', err.message);
+    return [];
+  }
 }
 
 async function searchLodgingByText(query, lat, lng, radius) {
-  if (!query.trim() || !API_KEY) return [];
-  const body = {
-    textQuery: query,
-    includedType: 'lodging',
-    languageCode: 'fr',
-    maxResultCount: 20,
-  };
-  if (lat && lng) {
-    // Text Search n'accepte pas locationRestriction.circle — on utilise locationBias
-    // Le filtre strict est appliqué côté client après réception
-    body.locationBias = { circle: { center: { latitude: lat, longitude: lng }, radius: radius ?? 50000 } };
+  if (!query.trim()) return [];
+  try {
+    const token = useAuthStore.getState().token;
+    const body = {
+      textQuery: query,
+      includedType: 'lodging',
+      maxResultCount: 20,
+      languageCode: 'fr',
+    };
+    if (lat && lng) {
+      body.locationBias = {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: radius ?? 50000
+        }
+      };
+    }
+    const resp = await fetch(`${API_URL}/api/places/searchText`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
+    const places = data.places ?? [];
+    
+    // Filtre client-side : le backend peut retourner des résultats hors rayon
+    if (lat && lng) {
+      const maxKm = (radius ?? 50000) / 1000;
+      return places.filter(p =>
+        p.location?.latitude == null || calcDistance(lat, lng, p.location.latitude, p.location.longitude) <= maxKm
+      );
+    }
+    return places;
+  } catch (err) {
+    console.error('[searchLodgingByText] Erreur:', err.message);
+    return [];
   }
-  const resp = await fetch(SEARCH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': API_KEY, 'X-Goog-FieldMask': N_FIELD_MASK },
-    body: JSON.stringify(body),
-  });
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data?.error?.message ?? `HTTP ${resp.status}`);
-  const places = data.places ?? [];
-  // Filtre client-side : l'API peut retourner des résultats hors rayon malgré locationRestriction
-  if (lat && lng) {
-    const maxKm = (radius ?? 50000) / 1000;
-    return places.filter(p =>
-      p.location?.latitude == null || calcDistance(lat, lng, p.location.latitude, p.location.longitude) <= maxKm
-    );
-  }
-  return places;
 }
 
 // ─── Helpers date/heure ──────────────────────────────────────────────────────

@@ -27,7 +27,7 @@ const park4nightRouter  = require("./routes-rp/park4night");
 const preferencesRouter = require("./routes-rp/preferences");
 const documentsRouter   = require("./routes-rp/documents");
 const todosRouter        = require("./routes-rp/todos");
-
+const debugRoutes = require('./routes/debug');
 
 
 const app = express();
@@ -87,6 +87,7 @@ app.use("/api/park4night",  park4nightRouter);
 app.use("/api/preferences", preferencesRouter);
 app.use("/api/todos",        todosRouter);
 app.use("/api/documents",   documentsRouter);
+app.use('/api/debug', debugRoutes);
 
 
 // 404 handler

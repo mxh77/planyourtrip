@@ -10,11 +10,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import API_URL from '../api/config';
+import { log, warn } from '../services/logger';
+import { LogsViewer } from '../components/LogsViewer';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-
-// ─── Récupération de la clé API Google ─────────────────────────────────────
-const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const SHEET_COLLAPSED = 150;
@@ -119,13 +118,7 @@ function computeRegion(steps) {
 
 // ─── Données mock pour prototype ─────────────────────────────────────────────
 // ─── StepCard (compact pour la liste) ────────────────────────────────────────
-function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
-  console.log(`[StepCard] Rendu step ${index}:`, { 
-    name: step?.name,
-    hasActivities: !!step?.activities?.length,
-    activities: step?.activities,
-    accommodation: step?.accommodation
-  });
+const StepCard = React.memo(function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
   const nights = durationDays(step.startDate, step.endDate);
   const hasAccom = !!step.accommodation;
   const hasActivities = step.activities?.length > 0;
@@ -216,7 +209,7 @@ function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
       </TouchableOpacity>
     </View>
   );
-}
+});  // React.memo(StepCard)
 
 // ─── Detail card pour l'étape active (mode collapsed) ────────────────────────
 function CurrentStepBar({ step, index, color, onPress }) {
@@ -296,15 +289,27 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // 🎯 Ref pour cache les distances enrichies (doit être avant transformedSteps qui l'utilise)
   const distancesMapRef = useRef({});
   const [distancesVersion, setDistancesVersion] = useState(0);  // 🎯 Counter pour trigger re-render du cache
+  const [polylinesLoaded, setPolylinesLoaded] = useState(false);  // Doit être AVANT le useMemo qui l'utilise
+
+  // Clés stables pour les arrays PowerSync — évite que le useMemo se re-déclenche
+  // à chaque sync PowerSync qui retourne une nouvelle référence avec les mêmes données.
+  // IMPORTANT: n'inclure que les champs qui affectent l'affichage structurel (pas updatedAt/distances)
+  const psStepsKey = useMemo(
+    () => psSteps.map(s => `${s.id}:${s.order}:${s.name}`).join(','),
+    [psSteps]
+  );
+  const psAccKey = useMemo(
+    () => psAccommodations.map(a => `${a.id}:${a.updatedAt || ''}`).join(','),
+    [psAccommodations]
+  );
+  const psActKey = useMemo(
+    () => psActivities.map(a => `${a.id}:${a.updatedAt || ''}`).join(','),
+    [psActivities]
+  );
 
   // Transformer les steps PowerSync en format utilisable
   const transformedSteps = useMemo(() => {
-    console.log('[transformedSteps] ⚙️ DEBUT useMemo, distancesVersion:', distancesVersion);  // 🎯 DEBUG
-    console.log('[transformedSteps] Recalcul avec psSteps:', psSteps?.length, 'polylinesLoaded:', polylinesLoaded, 'cachedDistances:', Object.keys(distancesMapRef.current).length);
-    if (psSteps.length === 0) {
-      console.log('[transformedSteps] psSteps vides → utilise BD');
-      return [];
-    }
+    if (psSteps.length === 0) return [];
     
     const result = psSteps.map((step, idx) => {
       const stepAccommodations = psAccommodations.filter(a => a.stepId === step.id);
@@ -313,7 +318,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       // 🎯 PRIORITE 1 : Utiliser les distances du cache (vraies distances Google Routes)
       if (distancesMapRef.current[step.id]) {
         const { distance, duration } = distancesMapRef.current[step.id];
-        console.log('[transformedSteps] Step', idx, `${step.name}: ${distance}km du cache`);
         return {
           ...step,
           distanceFromPrev: distance,
@@ -323,19 +327,18 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         };
       }
       
-      // 🎯 FALLBACK : Pas de vraies distances encore (cache vide) → affiche 0 (pas de Haversine!)
-      console.warn('[transformedSteps] Step', idx, `${step.name}: PAS DE DISTANCE EN CACHE — attente calcul Google Routes API`);
+      // FALLBACK : pas encore de distances en cache
       return {
         ...step,
-        distanceFromPrev: 0,  // ← Force 0, pas de Haversine
+        distanceFromPrev: 0,
         durationFromPrev: 0,
         accommodation: stepAccommodations.length > 0 ? { ...stepAccommodations[0], status: 'BOOKED' } : null,
         activities: stepActivities,
       };
     });
-    console.log('[transformedSteps] ✓', result.length, 'steps calculés');
     return result;
-  }, [psSteps, psAccommodations, psActivities, id, polylinesLoaded, distancesVersion]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [psStepsKey, psAccKey, psActKey, id, polylinesLoaded, distancesVersion]);  // Clés stables = pas de boucle PowerSync
 
   // États
   const [steps, setSteps] = useState([]);
@@ -349,8 +352,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [suggestions, setSuggestions] = useState([]);
   const [routes, setRoutes] = useState([]);  // Itinéraires entre étapes
   const [loadingFromAPI, setLoadingFromAPI] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);  // Pour afficher le viewer de logs
   const [refreshingRoutes, setRefreshingRoutes] = useState(false);
-  const [polylinesLoaded, setPolylinesLoaded] = useState(false);  // Track si polylines chargées
+  // Note: polylinesLoaded est déclaré plus haut (avant le useMemo transformedSteps)
   const shouldRefreshRef = useRef(false);  // Ref pour éviter infinite loop sur refreshingRoutes
   const [refreshCounter, setRefreshCounter] = useState(0);  // Trigger pour le useEffect directions
 
@@ -359,9 +363,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Mettre à jour la ref quand utilisateur clique 🔄 Refresh
   useEffect(() => {
-    console.log('[Refresh] useEffect refreshingRoutes:', refreshingRoutes);
+    log('REFRESH', `État refreshingRoutes: ${refreshingRoutes}`);
     if (refreshingRoutes) {
-      console.log('[Refresh] >>> REFRESH DÉCLENCHÉ <<<');
+      log('REFRESH', '🔄 >>> REFRESH DÉCLENCHÉ <<<');
       shouldRefreshRef.current = true;
       // Réinitialiser les flags pour forcer le rechargement complet
       polylinesFetchedRef.current = false;
@@ -393,7 +397,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Mettre à jour steps quand transformedSteps change
   useEffect(() => {
-    console.log('[RoadtripDetail] 📌 Mise à jour de steps, transformedSteps:', transformedSteps.length);
     setSteps(transformedSteps);
   }, [transformedSteps]);
 
@@ -460,29 +463,25 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 !current.routeDistanceMeters || current.routeDistanceMeters === 0 ||
                 !current.routeDurationSeconds || current.routeDurationSeconds === 0
               )) {
-                if (!GOOGLE_API_KEY || !current.latitude || !next.latitude) continue;
+                if (!current.latitude || !next.latitude) continue;
                 try {
-                  const resp = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+                  const resp = await fetch(`${API_URL}/api/routes/compute`, {
                     method: 'POST',
                     headers: {
-                      'X-Goog-Api-Key': GOOGLE_API_KEY,
-                      'X-Goog-FieldMask': 'routes.legs.distanceMeters,routes.legs.duration',
                       'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`,
                     },
                     body: JSON.stringify({
-                      origin: { location: { latLng: { latitude: parseFloat(current.latitude), longitude: parseFloat(current.longitude) } } },
-                      destination: { location: { latLng: { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) } } },
-                      travelMode: 'DRIVE',
+                      origin: { lat: parseFloat(current.latitude), lng: parseFloat(current.longitude) },
+                      destination: { lat: parseFloat(next.latitude), lng: parseFloat(next.longitude) },
+                      alternatives: false,
                     }),
                   });
                   const rdata = await resp.json();
-                  const leg = rdata.routes?.[0]?.legs?.[0];
-                  if (leg) {
-                    const distM = leg.distanceMeters || 0;
-                    // Duration est soit "3600s" (string) soit {seconds: "3600"} (objet)
-                    const durRaw = leg.duration;
-                    console.log('[Directions] durRaw:', JSON.stringify(durRaw), 'type:', typeof durRaw);
-                    const durS = typeof durRaw === 'string' ? parseInt(durRaw) : parseInt(durRaw?.seconds) || 0;
+                  const route = rdata.routes?.[0];
+                  if (route) {
+                    const distM = route.distanceMeters || 0;
+                    const durS = typeof route.duration === 'string' ? parseInt(route.duration) : (route.duration?.seconds ? parseInt(route.duration.seconds) : 0);
                     distancesMap[next.id] = { distance: Math.round(distM / 1000), duration: Math.round(durS / 60) };
                     // Persister en BD
                     await fetch(`${API_URL}/api/steps/${current.id}`, {
@@ -573,15 +572,15 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Charger les itinéraires : d'abord depuis la BD, puis recalculer si refreshing + SAUVEGARDER
   useEffect(() => {
-    console.log('[Directions2] useEffect déclenché, stepsLength:', stepsLength, 'refreshCounter:', refreshCounter, 'shouldRefresh:', shouldRefreshRef.current);
+    log('DIRECTIONS', `useEffect déclenché: stepsLength=${stepsLength}, refreshCounter=${refreshCounter}, shouldRefresh=${shouldRefreshRef.current}`);
     const loadRoutes = async () => {
       const needsRefresh = shouldRefreshRef.current;
       shouldRefreshRef.current = false;  // Reset immédiatement
-      console.log('[Directions2] loadRoutes, needsRefresh:', needsRefresh);
+      log('DIRECTIONS', `loadRoutes: needsRefresh=${needsRefresh}`);
       
       // 🎯 GARDE ABSOLUE : si le premier useEffect gère les polylines, on ne touche à rien
       if (!needsRefresh && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
-        console.log('[Directions] Premier useEffect gère les polylines, second useEffect skip total');
+        log('DIRECTIONS', '[SKIP] Premier useEffect gère les polylines');
         return;
       }
       
@@ -660,10 +659,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         }
       }
       
-      console.log('[Directions] Routes à recalculer:', routesNeedingRecalc.length, 'index:', routesNeedingRecalc.join(', '));
+      log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${routesNeedingRecalc.join(', ')}`);
       
       if (routesNeedingRecalc.length === 0) {
-        console.log('[Directions] ✓ Toutes les routes OK (polyline + distance > 0)');
+        log('DIRECTIONS', '✓ Toutes les routes OK (polyline + distance > 0)');
         if (!needsRefresh && polylinesRef.current.length > 0) {
           setRoutes(polylinesRef.current);
         } else {
@@ -674,13 +673,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         return;
       }
       
-      if (!GOOGLE_API_KEY) {
-        console.log('[Directions] Pas de API_KEY, fallback ligne droite');
-        setRefreshingRoutes(false);
-        return;
-      }
-      
       try {
+        const token = useAuthStore.getState().token;
         for (const i of routesNeedingRecalc) {
           const current = steps[i];
           const next = steps[i + 1];
@@ -703,21 +697,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           let routeDurationSeconds = 0;
           
           try {
-            const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
-            const body = {
-              origin: { location: { latLng: { latitude: parseFloat(current.latitude), longitude: parseFloat(current.longitude) } } },
-              destination: { location: { latLng: { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) } } },
-              travelMode: 'DRIVE',
-            };
-            
-            const response = await fetch(url, {
+            const response = await fetch(`${API_URL}/api/routes/compute`, {
               method: 'POST',
               headers: {
-                'X-Goog-Api-Key': GOOGLE_API_KEY,
-                'X-Goog-FieldMask': 'routes.polyline.encodedPolyline,routes.legs.distanceMeters,routes.legs.duration',
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
               },
-              body: JSON.stringify(body),
+              body: JSON.stringify({
+                origin: { lat: parseFloat(current.latitude), lng: parseFloat(current.longitude) },
+                destination: { lat: parseFloat(next.latitude), lng: parseFloat(next.longitude) },
+                alternatives: false,
+              }),
             });
             
             const data = await response.json();
@@ -728,13 +718,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               encodedPolyline = data.routes[0].polyline.encodedPolyline;
               coordinates = decodePolyline(encodedPolyline);
               
-              // Extraire les vraies distances/durées de Google Routes
-              if (data.routes[0].legs?.[0]) {
-                const leg = data.routes[0].legs[0];
-                routeDistanceMeters = leg.distanceMeters || parseInt(leg.distance?.value) || 0;
-                const durRaw = leg.duration;
-                routeDurationSeconds = typeof durRaw === 'string' ? parseInt(durRaw) : parseInt(durRaw?.seconds) || 0;
-              }
+              // Extraire les vraies distances/durées depuis routes[0] directement
+              // (le fieldMask du backend expose routes.distanceMeters, pas routes.legs)
+              const route = data.routes[0];
+              routeDistanceMeters = route.distanceMeters || 0;
+              const durRaw = route.duration;
+              routeDurationSeconds = typeof durRaw === 'string' ? parseInt(durRaw) : (durRaw?.seconds ? parseInt(durRaw.seconds) : 0);
               
               // Sauvegarder les données complètes
               polylinesToSave[i] = {
@@ -743,7 +732,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 duration: routeDurationSeconds,
               };
               
-              console.log('[Directions] Route', i, '✓ API:', 
+              console.log('[Directions] Route', i, '✓ Backend API:', 
                 `${Math.round(routeDistanceMeters/1000)}km / ${Math.round(routeDurationSeconds/60)}min`, 
                 coordinates.length, 'points');
             }
@@ -809,7 +798,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             console.log('[Directions] Save route pour step', stepIdx, 
               `(${Math.round(routeData.distance/1000)}km / ${Math.round(routeData.duration/60)}min)`);
             try {
-              const response = await fetch(`http://192.168.1.38:3111/api/steps/${stepId}`, {
+              const response = await fetch(`${API_URL}/api/steps/${stepId}`, {
                 method: 'PATCH',
                 headers: {
                   'Content-Type': 'application/json',
@@ -846,7 +835,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // Injecter titre + hamburger dans la barre de navigation native
   React.useLayoutEffect(() => {
     const apiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
-    console.log('[Places] API Key:', apiKey ? `CHARGÉE (${apiKey.slice(0, 8)}...)` : 'NON TROUVÉE — vérifie .env → EXPO_PUBLIC_GOOGLE_PLACES_API_KEY');
+    console.log('[Places] API Key:', apiKey ? `CHARGÉE (${apiKey.slice(0, 8)}...)` : 'NON TROUVÉE');
     navigation.setOptions({
       headerShown: true,
       headerTitle: roadtrip.title,
@@ -934,16 +923,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const region = computeRegion(steps);
   const selectedStep = steps[selectedIndex];
   const color = ORDER_COLORS[selectedIndex % ORDER_COLORS.length];
-
-  console.log('[RoadtripDetail] 📱 Rendu:', steps.length, 'steps, idx:', selectedIndex);
-  
-  // Vérifier la structure des premiers steps
-  if (steps.length > 0) {
-    if (steps[0]) {
-      const { routeEncodedPolyline, ...stepWithoutPolyline } = steps[0];
-      console.log('[StepStructure] First step:', JSON.stringify(stepWithoutPolyline, null, 2));
-    }
-  }
 
   try {
     return (
@@ -1104,15 +1083,23 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         </View>
         {sheetExpanded && (
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, alignItems: 'center' }}>
-            <TouchableOpacity 
-              onPress={() => {
-                console.log('[UI] Rafraîchir itinéraires');
-                setRefreshingRoutes(true);
-              }}
-              style={{ padding: 8 }}
-            >
-              <Text style={{ fontSize: 18 }}>🔄</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity 
+                onPress={() => {
+                  log('REFRESH', '🔄 Bouton refresh cliqué');
+                  setRefreshingRoutes(true);
+                }}
+                style={{ padding: 8 }}
+              >
+                <Text style={{ fontSize: 18 }}>🔄</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => setShowLogs(true)}
+                style={{ padding: 8 }}
+              >
+                <Text style={{ fontSize: 18 }}>📋</Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.sheetCloseText}>✕</Text>
             </TouchableOpacity>
@@ -1200,6 +1187,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           }}
         />}
       </Modal>
+
+      {/* LogsViewer Modal */}
+      <LogsViewer visible={showLogs} onClose={() => setShowLogs(false)} />
     </View>
     );
   } catch (err) {

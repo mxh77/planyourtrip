@@ -207,6 +207,92 @@ async function getElevation({ path, samples = 100 }) {
   }));
 }
 
+// ── New Google Places API v1 ─────────────────────────────────────────────────
+
+/**
+ * Recherche de lieux à proximité via la nouvelle API Google Places v1.
+ * @param {Object} opts - { lat, lng, radius, includedTypes: [String], maxResultCount, languageCode }
+ */
+async function searchNearbyV1({ lat, lng, radius = 5000, includedTypes = [], maxResultCount = 6, languageCode = 'fr' }) {
+  checkKey();
+  const url = 'https://places.googleapis.com/v1/places:searchNearby';
+  const body = {
+    locationRestriction: {
+      circle: {
+        center: { latitude: lat, longitude: lng },
+        radius,
+      },
+    },
+    includedTypes: includedTypes.length > 0 ? includedTypes : undefined,
+    maxResultCount,
+    languageCode,
+  };
+
+  try {
+    const resp = await axios.post(url, body, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': KEY(),
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.photos,places.formattedAddress,places.location',
+      },
+    });
+    
+    return (resp.data.places || []).map(p => ({
+      placeId:      p.id,
+      name:         p.displayName?.text || '',
+      address:      p.formattedAddress || '',
+      lat:          p.location?.latitude,
+      lng:          p.location?.longitude,
+      rating:       p.rating,
+      types:        [],
+      photos:       p.photos?.slice(0, 1).map(ph => ph.name) || [],
+    }));
+  } catch (err) {
+    const msg = err.response?.data?.error?.message || err.message;
+    throw Object.assign(new Error(`Google Places API v1 searchNearby: ${msg}`), { status: 502 });
+  }
+}
+
+/**
+ * Recherche textuelle via la nouvelle API Google Places v1.
+ * @param {Object} opts - { textQuery, includedType, maxResultCount, languageCode, locationBias }
+ */
+async function searchTextV1({ textQuery, includedType, maxResultCount = 20, languageCode = 'fr', locationBias }) {
+  checkKey();
+  const url = 'https://places.googleapis.com/v1/places:searchText';
+  const body = {
+    textQuery,
+    includedType: includedType || undefined,
+    maxResultCount,
+    languageCode,
+    locationBias: locationBias || undefined,
+  };
+
+  try {
+    const resp = await axios.post(url, body, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': KEY(),
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.photos,places.formattedAddress,places.location',
+      },
+    });
+    
+    return (resp.data.places || []).map(p => ({
+      placeId:      p.id,
+      name:         p.displayName?.text || '',
+      address:      p.formattedAddress || '',
+      lat:          p.location?.latitude,
+      lng:          p.location?.longitude,
+      rating:       p.rating,
+      types:        [],
+      photos:       p.photos?.slice(0, 1).map(ph => ph.name) || [],
+    }));
+  } catch (err) {
+    const msg = err.response?.data?.error?.message || err.message;
+    throw Object.assign(new Error(`Google Places API v1 searchText: ${msg}`), { status: 502 });
+  }
+}
+
 // ── Normalizers ───────────────────────────────────────────────────────────────
 
 function normalizePlaceResult(p) {
@@ -265,4 +351,6 @@ module.exports = {
   reverseGeocode,
   getDirections,
   getElevation,
+  searchNearbyV1,
+  searchTextV1,
 };

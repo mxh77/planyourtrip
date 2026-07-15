@@ -1,5 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const { log, error } = require('../services/logger');
 
 const router = express.Router();
 
@@ -12,13 +13,22 @@ const ROUTES_API_URL = 'https://routes.googleapis.com/directions/v2:computeRoute
  */
 router.post('/compute', auth, async (req, res) => {
   const { origin, destination, alternatives = false } = req.body;
+  const userId = req.user?.userId;
+
+  log('ROUTES', `🔹 Requête POST /api/routes/compute de l'utilisateur ${userId}`, {
+    origin,
+    destination,
+    alternatives,
+  });
 
   if (!origin?.lat || !origin?.lng || !destination?.lat || !destination?.lng) {
+    error('ROUTES', 'Coordonnées manquantes');
     return res.status(400).json({ error: 'origin et destination sont requis' });
   }
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
+    error('ROUTES', 'GOOGLE_MAPS_API_KEY non configurée');
     return res.status(503).json({ error: 'GOOGLE_MAPS_API_KEY non configurée' });
   }
 
@@ -44,12 +54,18 @@ router.post('/compute', auth, async (req, res) => {
 
     if (!response.ok) {
       const err = await response.text();
+      error('ROUTES', `Google API error ${response.status}`, { error: err });
       return res.status(response.status).json({ error: err });
     }
 
     const data = await response.json();
+    log('ROUTES', `✅ Réponse pour route ${origin.lat},${origin.lng} → ${destination.lat},${destination.lng}`, {
+      distanceMeters: data.routes?.[0]?.distanceMeters,
+      duration: data.routes?.[0]?.duration,
+    });
     return res.json(data);
   } catch (err) {
+    error('ROUTES', 'Exception lors de l\'appel API', err);
     return res.status(500).json({ error: err.message });
   }
 });
