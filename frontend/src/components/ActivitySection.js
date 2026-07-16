@@ -17,6 +17,7 @@ import {
   localDeleteActivity,
 } from '../powersync/localWrite';
 import { validateActivityDates } from '../utils/dateValidation';
+import DocumentSection from './DocumentSection';
 
 // ─── Helpers date/heure ──────────────────────────────────────────────────────
 function parseDtString(str) {
@@ -307,34 +308,39 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
               ACTIVITY_TYPES.find((t) => t.key === activity.type) ?? ACTIVITY_TYPES[3];
             const hasTime = activity.startTime || activity.endTime;
             return (
-              <TouchableOpacity key={activity.id} style={styles.row} onPress={() => openEdit(activity)} activeOpacity={0.75}>
-                <View style={styles.rowIconWrap}>
-                  <Text style={styles.rowIcon}>{typeConfig.icon}</Text>
-                </View>
-                <View style={styles.rowBody}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {activity.name}
-                  </Text>
-                  {hasTime ? (
-                    <Text style={styles.rowSub}>
-                      {displayDt(activity.startTime) ?? ''}
-                      {activity.startTime && activity.endTime ? ' → ' : ''}
-                      {displayDt(activity.endTime) ?? ''}
+              <View key={activity.id}>
+                <TouchableOpacity style={styles.row} onPress={() => openEdit(activity)} activeOpacity={0.75}>
+                  <View style={styles.rowIconWrap}>
+                    <Text style={styles.rowIcon}>{typeConfig.icon}</Text>
+                  </View>
+                  <View style={styles.rowBody}>
+                    <Text style={styles.rowTitle} numberOfLines={1}>
+                      {activity.name}
                     </Text>
-                  ) : null}
-                  {activity.location && activity.location !== activity.name ? (
-                    <Text style={styles.rowSub} numberOfLines={1}>
-                      📍 {activity.location}
-                    </Text>
-                  ) : null}
-                </View>
-                <TouchableOpacity
-                  onPress={() => handleDelete(activity)}
-                  style={styles.actionBtn}
-                >
-                  <MaterialIcons name="delete-outline" size={16} color={COLORS.error} />
+                    {hasTime ? (
+                      <Text style={styles.rowSub}>
+                        {displayDt(activity.startTime) ?? ''}
+                        {activity.startTime && activity.endTime ? ' → ' : ''}
+                        {displayDt(activity.endTime) ?? ''}
+                      </Text>
+                    ) : null}
+                    {activity.location && activity.location !== activity.name ? (
+                      <Text style={styles.rowSub} numberOfLines={1}>
+                        📍 {activity.location}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleDelete(activity)}
+                    style={styles.actionBtn}
+                  >
+                    <MaterialIcons name="delete-outline" size={16} color={COLORS.error} />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
+
+                {/* Documents rattachés à cette activité */}
+                <DocumentSection activityId={activity.id} roadtripId={roadtripId} />
+              </View>
             );
           })}
         </View>

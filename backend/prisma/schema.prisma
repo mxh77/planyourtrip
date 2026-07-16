@@ -28,6 +28,7 @@ model User {
   accommodations      Accommodation[]
   activities          Activity[]
   photos              Photo[]
+  documents           Document[]
   refreshTokens       RefreshToken[]
   memberships         RoadtripMember[]
   betaFeedbacks       BetaFeedback[]
@@ -207,6 +208,25 @@ model Photo {
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("photos")
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  url             String
+  storagePath     String?
+  originalName    String?
+  mimeType        String?
+  fileSize        Int?
+  name            String?
+  caption         String?
+  createdAt       DateTime @default(now())
+  userId          String
+  roadtripId      String?
+  accommodationId String?
+  activityId      String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
 }
 
 model RoadtripMember {

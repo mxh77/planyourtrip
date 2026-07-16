@@ -377,7 +377,13 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [showDetail, setShowDetail] = useState(false);
   const [activeOverlays, setActiveOverlays] = useState({});
   const [showSearchArea, setShowSearchArea] = useState(false);
-  const [roadtrip, setRoadtrip] = useState({ title: 'Europe', distance: 3610 });
+  // Charger le roadtrip depuis PowerSync (réactif)
+  const { data: psRoadtripRows } = useQuery(
+    'SELECT * FROM roadtrips WHERE id = ?',
+    [id]
+  );
+  const psRoadtrip = psRoadtripRows?.[0];
+  const [roadtrip, setRoadtrip] = useState({ title: psRoadtrip?.title ?? 'Europe', distance: 3610, id: psRoadtrip?.id ?? id });
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [routes, setRoutes] = useState([]);  // Itinéraires entre étapes
@@ -427,6 +433,13 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     polylinesLoadingRef.current = false;  // 🎯 Reset flag
     directionsCalculatedRef.current = false;  // 🎯 Reset le flag
   }, [id]);
+
+  // Mettre à jour le roadtrip quand les données PowerSync arrivent
+  useEffect(() => {
+    if (psRoadtrip) {
+      setRoadtrip(prev => ({ ...prev, ...psRoadtrip, id: psRoadtrip.id ?? id }));
+    }
+  }, [psRoadtrip, id]);
 
   // Mettre à jour steps quand transformedSteps change
   useEffect(() => {
@@ -1630,6 +1643,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   </View>
                 </TouchableOpacity>
               )}
+
+              {/* Infos générales */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('RoadtripGeneralInfo', { roadtripId: id });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>📋</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Infos générales</Text>
+                  <Text style={styles.menuItemDesc}>Modifier le titre et les dates</Text>
+                </View>
+              </TouchableOpacity>
 
               {/* Paramètres du roadtrip */}
               <TouchableOpacity

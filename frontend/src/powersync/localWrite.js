@@ -152,6 +152,20 @@ export async function localDeletePhoto(id) {
   await db.execute('DELETE FROM photos WHERE id = ?', [id]);
 }
 
+// ─── Documents ────────────────────────────────────────────────────────────────
+
+export async function localInsertDocument({ id, url, name, accommodationId, activityId, roadtripId, userId, createdAt }) {
+  await db.execute(
+    `INSERT INTO documents (id, url, name, originalName, mimeType, fileSize, accommodationId, activityId, roadtripId, userId, createdAt, isPending)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    [id, url, name ?? null, null, null, null, accommodationId ?? null, activityId ?? null, roadtripId ?? null, userId, createdAt ?? new Date().toISOString()]
+  );
+}
+
+export async function localDeleteDocument(id) {
+  await db.execute('DELETE FROM documents WHERE id = ?', [id]);
+}
+
 // ─── Accommodations ───────────────────────────────────────────────────────────
 
 export async function localCreateAccommodation({

@@ -186,6 +186,94 @@ export class AppConnector {
         continue;
       }
 
+      // ─── Documents : upload binaire offline-first ──────────────────────────
+      if (table === 'documents') {
+        if (op === 'PUT' && (opData.isPending === 1 || opData.isPending === '1')) {
+          try {
+            // Déterminer le type MIME et l'extension depuis l'URI ou le nom
+            const uri = opData.url || '';
+            const ext = uri.split('.').pop()?.toLowerCase() || 'bin';
+            const mimeMap = {
+              pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+              png: 'image/png', webp: 'image/webp', doc: 'application/msword',
+              docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              txt: 'text/plain', csv: 'text/csv',
+              xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            };
+            const mimeType = mimeMap[ext] || 'application/octet-stream';
+
+            const formData = new FormData();
+            formData.append('document', { uri, name: opData.name || `doc_${id}.${ext}`, type: mimeType });
+            formData.append('id', id);
+            formData.append('name', opData.name || `doc_${id}.${ext}`);
+            if (opData.accommodationId) formData.append('accommodationId', opData.accommodationId);
+            if (opData.activityId)      formData.append('activityId', opData.activityId);
+            if (opData.roadtripId)      formData.append('roadtripId', opData.roadtripId);
+
+            const docRes = await fetch(`${API_URL}/api/documents/upload`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+              body: formData,
+            });
+
+            if (docRes.ok) {
+              const uploaded = await docRes.json();
+              console.log(TAG, 'document uploaded OK:', id, uploaded.url);
+              await database.execute(
+                'UPDATE documents SET url = ?, isPending = 0 WHERE id = ?',
+                [uploaded.url, id]
+              );
+            } else if (docRes.status >= 500) {
+              console.warn(TAG, 'document upload 5xx → batch.cancel()', docRes.status, id);
+              await batch.cancel();
+              return;
+            } else {
+              console.warn(TAG, 'document upload', docRes.status, '→ isPending=0, skipping:', id);
+              await database.execute('UPDATE documents SET isPending = 0 WHERE id = ?', [id]);
+            }
+          } catch (e) {
+            const msg = e?.message || String(e);
+            console.error(TAG, 'document upload catch:', id, msg);
+            if (msg === 'Network request failed') {
+              try {
+                await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(3000) });
+                console.warn(TAG, 'document file gone (network OK), skipping:', id);
+                await database.execute('UPDATE documents SET isPending = 0 WHERE id = ?', [id]);
+              } catch {
+                console.warn(TAG, 'document upload network error → batch.cancel()');
+                await batch.cancel();
+                return;
+              }
+            } else {
+              console.warn(TAG, 'document file not accessible, skipping:', id);
+              await database.execute('UPDATE documents SET isPending = 0 WHERE id = ?', [id]);
+            }
+          }
+        } else if (op === 'DELETE') {
+          try {
+            const delRes = await fetch(`${API_URL}/api/documents/${id}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!delRes.ok && delRes.status !== 404) {
+              console.warn(TAG, 'document DELETE', delRes.status, '→ batch.cancel()', id);
+              await batch.cancel();
+              return;
+            }
+            console.log(TAG, 'document DELETE OK:', id);
+          } catch (e) {
+            const msg = e?.message || String(e);
+            console.error(TAG, 'document DELETE catch:', id, msg);
+            if (msg === 'Network request failed') {
+              await batch.cancel();
+              return;
+            }
+          }
+        }
+        // PUT avec isPending=0 : skip
+        continue;
+      }
+
       let method = op; // déclaré hors du try pour être accessible dans le catch
       try {
         // Si un step a un photoUrl local dans le CRUD log (content:// ou file://),

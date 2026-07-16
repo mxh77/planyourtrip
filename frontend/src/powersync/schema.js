@@ -96,6 +96,22 @@ const roadtrip_members = new Table({
   email: column.text,
 });
 
+const documents = new Table({
+  url: column.text,
+  storagePath: column.text,
+  originalName: column.text,
+  mimeType: column.text,
+  fileSize: column.integer,
+  name: column.text,
+  caption: column.text,
+  isPending: column.integer,
+  accommodationId: column.text,
+  activityId: column.text,
+  roadtripId: column.text,
+  userId: column.text,
+  createdAt: column.text,
+});
+
 export const AppSchema = new Schema({
   roadtrips,
   steps,
@@ -103,4 +119,5 @@ export const AppSchema = new Schema({
   activities,
   photos,
   roadtrip_members,
+  documents,
 });

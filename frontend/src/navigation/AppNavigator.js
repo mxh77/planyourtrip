@@ -15,6 +15,7 @@ import EditRoadtripScreen from '../screens/EditRoadtripScreen';
 import EditStepScreen from '../screens/EditStepScreen';
 import CollaboratorsScreen from '../screens/CollaboratorsScreen';
 import RoadtripSettingsScreen from '../screens/RoadtripSettingsScreen';
+import RoadtripGeneralInfoScreen from '../screens/RoadtripGeneralInfoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -93,6 +94,11 @@ export default function AppNavigator() {
               name="RoadtripSettings"
               component={RoadtripSettingsScreen}
               options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="RoadtripGeneralInfo"
+              component={RoadtripGeneralInfoScreen}
+              options={{ title: 'Infos générales', headerShown: true }}
             />
           </>
         )}

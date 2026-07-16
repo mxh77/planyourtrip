@@ -11,6 +11,7 @@ bucket_definitions:
       - SELECT * FROM accommodations WHERE "roadtripId" = bucket.roadtrip_id
       - SELECT * FROM activities WHERE "roadtripId" = bucket.roadtrip_id
       - SELECT * FROM photos WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM documents WHERE "roadtripId" = bucket.roadtrip_id
 
   shared_roadtrips:
     parameters:
@@ -23,3 +24,4 @@ bucket_definitions:
       - SELECT * FROM activities WHERE "roadtripId" = bucket.roadtrip_id
       - SELECT * FROM photos WHERE "roadtripId" = bucket.roadtrip_id
       - SELECT * FROM roadtrip_members WHERE "roadtripId" = bucket.roadtrip_id
+      - SELECT * FROM documents WHERE "roadtripId" = bucket.roadtrip_id

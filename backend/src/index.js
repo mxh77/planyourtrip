@@ -25,7 +25,7 @@ const trailsRouter      = require("./routes-rp/trails");
 const directionsRouter  = require("./routes-rp/directions");
 const park4nightRouter  = require("./routes-rp/park4night");
 const preferencesRouter = require("./routes-rp/preferences");
-const documentsRouter   = require("./routes-rp/documents");
+const documentsRouter   = require('./routes/documents');
 const todosRouter        = require("./routes-rp/todos");
 const debugRoutes = require('./routes/debug');
 

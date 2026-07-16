@@ -17,6 +17,7 @@ import {
   localDeleteAccommodation,
 } from '../powersync/localWrite';
 import { validateAccommodationDates } from '../utils/dateValidation';
+import DocumentSection from './DocumentSection';
 
 const DEF_RADIUS = 5000;
 const LODGING_NEARBY = ['hotel', 'motel', 'campground', 'bed_and_breakfast', 'hostel', 'parking'];
@@ -300,23 +301,28 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
       {accommodations.map((a) => {
         const cfg = ACCOM_TYPES.find((t) => t.key === a.type) ?? ACCOM_TYPES[0];
         return (
-          <TouchableOpacity key={a.id} style={styles.card} onPress={() => openEdit(a)} activeOpacity={0.75}>
-            <View style={styles.cardIconWrap}>
-              <Text style={styles.cardIconText}>{cfg.icon}</Text>
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.cardTitle} numberOfLines={1}>{a.name}</Text>
-              {a.address ? (
-                <Text style={styles.cardSub} numberOfLines={1}>{a.address}</Text>
-              ) : null}
-              {a.checkIn || a.checkOut ? (
-                <Text style={styles.cardSub}>{displayDt(a.checkIn) ?? '?'} → {displayDt(a.checkOut) ?? '?'}</Text>
-              ) : null}
-            </View>
-            <TouchableOpacity onPress={() => handleDelete(a.id)} style={styles.actionBtn}>
-              <MaterialIcons name="delete-outline" size={18} color={COLORS.error} />
+          <View key={a.id}>
+            <TouchableOpacity style={styles.card} onPress={() => openEdit(a)} activeOpacity={0.75}>
+              <View style={styles.cardIconWrap}>
+                <Text style={styles.cardIconText}>{cfg.icon}</Text>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={styles.cardTitle} numberOfLines={1}>{a.name}</Text>
+                {a.address ? (
+                  <Text style={styles.cardSub} numberOfLines={1}>{a.address}</Text>
+                ) : null}
+                {a.checkIn || a.checkOut ? (
+                  <Text style={styles.cardSub}>{displayDt(a.checkIn) ?? '?'} → {displayDt(a.checkOut) ?? '?'}</Text>
+                ) : null}
+              </View>
+              <TouchableOpacity onPress={() => handleDelete(a.id)} style={styles.actionBtn}>
+                <MaterialIcons name="delete-outline" size={18} color={COLORS.error} />
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
+
+            {/* Documents rattachés à cet hébergement */}
+            <DocumentSection accommodationId={a.id} roadtripId={roadtripId} />
+          </View>
         );
       })}
 
