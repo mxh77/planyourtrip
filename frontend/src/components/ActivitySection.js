@@ -158,10 +158,10 @@ const EMPTY_FORM = {
   notes: '',
 };
 
-export default function ActivitySection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate }) {
+export default function ActivitySection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, initialEditId }) {
   const { data: activities } = useQuery(
     stepId
-      ? 'SELECT * FROM activities WHERE stepId = ? ORDER BY "order" ASC'
+      ? 'SELECT * FROM activities WHERE stepId = ? ORDER BY startTime ASC'
       : 'SELECT * FROM activities WHERE 1=0',
     stepId ? [stepId] : []
   );
@@ -178,6 +178,15 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+
+  // Ouverture automatique d'un item en édition
+  useEffect(() => {
+    if (initialEditId && activities?.length > 0) {
+      const item = activities.find(a => a.id === initialEditId);
+      if (item) openEdit(item);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEditId, activities?.length]);
   const [dtPickerVisible, setDtPickerVisible] = useState(false);
   const [dtPickerTarget, setDtPickerTarget] = useState(null); // 'start' | 'end'
 
@@ -214,7 +223,11 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
   }, [searchQuery, tab, modalVisible]);
 
   const openCreate = () => {
-    setForm(EMPTY_FORM);
+    setForm({
+      ...EMPTY_FORM,
+      startTime: stepStartDate || '',
+      endTime: stepEndDate || '',
+    });
     setEditingId(null);
     setTab('manual');
     setNearbyPlaces([]);
@@ -230,8 +243,8 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
       location: a.location ?? '',
       latitude: a.latitude ?? null,
       longitude: a.longitude ?? null,
-      startTime: a.startTime ?? '',
-      endTime: a.endTime ?? '',
+      startTime: a.startTime || stepStartDate || '',
+      endTime: a.endTime || stepEndDate || '',
       notes: a.notes ?? '',
     });
     setEditingId(a.id);

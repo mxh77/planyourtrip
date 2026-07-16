@@ -37,7 +37,7 @@ const toLocalDateString = (d) => {
 };
 
 export default function EditStepScreen({ route, navigation }) {
-  const { step } = route.params;
+  const { step, initialEditAccommodationId, initialEditActivityId } = route.params;
 
   const [name, setName] = useState(step.name ?? '');
   const [startDate, setStartDate] = useState(parseDate(step.startDate) ?? new Date());
@@ -303,6 +303,7 @@ export default function EditStepScreen({ route, navigation }) {
           radius={roadtripSettings?.suggestionRadius}
           stepStartDate={startDate ? toLocalDateString(startDate) : null}
           stepEndDate={endDate ? toLocalDateString(endDate) : null}
+          initialEditId={initialEditAccommodationId}
         />
 
         {/* ─── Activités ───────────────────────────────────────────────────── */}
@@ -316,6 +317,7 @@ export default function EditStepScreen({ route, navigation }) {
           radius={roadtripSettings?.suggestionRadius}
           stepStartDate={startDate ? toLocalDateString(startDate) : null}
           stepEndDate={endDate ? toLocalDateString(endDate) : null}
+          initialEditId={initialEditActivityId}
         />
 
         {/* ─── Notes ───────────────────────────────────────────────────────── */}

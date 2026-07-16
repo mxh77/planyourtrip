@@ -4,6 +4,18 @@ const auth = require('../middleware/auth');
 const { getUserRoleViaStep } = require('../lib/roleHelpers');
 const { notifyRoadtripMembers } = require('../lib/notify');
 
+// Crée une Date dont l'heure UTC correspond à l'heure saisie (préserve "05:00" quels que soient le fuseau et la saison)
+function toUTCDate(str) {
+  if (!str) return null;
+  const [ymd, hhmm] = str.split(' ');
+  const [y, m, d] = ymd.split('-').map(Number);
+  if (hhmm) {
+    const [hh, mm] = hhmm.split(':').map(Number);
+    return new Date(Date.UTC(y, m - 1, d, hh, mm, 0, 0));
+  }
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+}
+
 router.use(auth);
 
 // POST /api/accommodations — écriture : EDITOR+
@@ -30,8 +42,8 @@ router.post('/', async (req, res) => {
       address: address || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
-      checkIn: checkIn ? new Date(checkIn) : null,
-      checkOut: checkOut ? new Date(checkOut) : null,
+      checkIn: checkIn ? toUTCDate(checkIn) : null,
+      checkOut: checkOut ? toUTCDate(checkOut) : null,
       bookingRef: bookingRef || null,
       bookingUrl: bookingUrl || null,
       pricePerNight: pricePerNight ?? null,
@@ -70,8 +82,8 @@ router.put('/:id', async (req, res) => {
       address: address || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
-      checkIn: checkIn ? new Date(checkIn) : null,
-      checkOut: checkOut ? new Date(checkOut) : null,
+      checkIn: checkIn ? toUTCDate(checkIn) : null,
+      checkOut: checkOut ? toUTCDate(checkOut) : null,
       bookingRef: bookingRef || null,
       bookingUrl: bookingUrl || null,
       pricePerNight: pricePerNight ?? null,
@@ -85,8 +97,8 @@ router.put('/:id', async (req, res) => {
       ...(address !== undefined && { address }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
-      ...(checkIn !== undefined && { checkIn: checkIn ? new Date(checkIn) : null }),
-      ...(checkOut !== undefined && { checkOut: checkOut ? new Date(checkOut) : null }),
+      ...(checkIn !== undefined && { checkIn: checkIn ? toUTCDate(checkIn) : null }),
+      ...(checkOut !== undefined && { checkOut: checkOut ? toUTCDate(checkOut) : null }),
       ...(bookingRef !== undefined && { bookingRef }),
       ...(bookingUrl !== undefined && { bookingUrl }),
       ...(pricePerNight !== undefined && { pricePerNight }),
@@ -124,8 +136,8 @@ router.patch('/:id', async (req, res) => {
       ...(address !== undefined && { address }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
-      ...(checkIn !== undefined && { checkIn: checkIn ? new Date(checkIn) : null }),
-      ...(checkOut !== undefined && { checkOut: checkOut ? new Date(checkOut) : null }),
+      ...(checkIn !== undefined && { checkIn: checkIn ? toUTCDate(checkIn) : null }),
+      ...(checkOut !== undefined && { checkOut: checkOut ? toUTCDate(checkOut) : null }),
       ...(bookingRef !== undefined && { bookingRef }),
       ...(bookingUrl !== undefined && { bookingUrl }),
       ...(pricePerNight !== undefined && { pricePerNight }),

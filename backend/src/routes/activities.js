@@ -4,6 +4,18 @@ const auth = require('../middleware/auth');
 const { getUserRoleViaStep } = require('../lib/roleHelpers');
 const { notifyRoadtripMembers } = require('../lib/notify');
 
+// Crée une Date dont l'heure UTC correspond à l'heure saisie (préserve "05:00" quels que soient le fuseau et la saison)
+function toUTCDate(str) {
+  if (!str) return null;
+  const [ymd, hhmm] = str.split(' ');
+  const [y, m, d] = ymd.split('-').map(Number);
+  if (hhmm) {
+    const [hh, mm] = hhmm.split(':').map(Number);
+    return new Date(Date.UTC(y, m - 1, d, hh, mm, 0, 0));
+  }
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+}
+
 router.use(auth);
 
 // GET /api/activities?stepId=
@@ -21,7 +33,7 @@ router.get('/', async (req, res) => {
 
   const activities = await prisma.activity.findMany({
     where: { stepId },
-    orderBy: { order: 'asc' },
+    orderBy: { startTime: 'asc' },
   });
 
   res.json(activities);
@@ -51,8 +63,8 @@ router.post('/', async (req, res) => {
       location: location || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
-      startTime: startTime ? new Date(startTime) : null,
-      endTime: endTime ? new Date(endTime) : null,
+      startTime: startTime ? toUTCDate(startTime) : null,
+      endTime: endTime ? toUTCDate(endTime) : null,
       bookingRef: bookingRef || null,
       bookingUrl: bookingUrl || null,
       cost: cost ?? null,
@@ -92,8 +104,8 @@ router.put('/:id', async (req, res) => {
       location: location || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
-      startTime: startTime ? new Date(startTime) : null,
-      endTime: endTime ? new Date(endTime) : null,
+      startTime: startTime ? toUTCDate(startTime) : null,
+      endTime: endTime ? toUTCDate(endTime) : null,
       bookingRef: bookingRef || null,
       bookingUrl: bookingUrl || null,
       cost: cost ?? null,
@@ -108,8 +120,8 @@ router.put('/:id', async (req, res) => {
       ...(location !== undefined && { location }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
-      ...(startTime !== undefined && { startTime: startTime ? new Date(startTime) : null }),
-      ...(endTime !== undefined && { endTime: endTime ? new Date(endTime) : null }),
+      ...(startTime !== undefined && { startTime: startTime ? toUTCDate(startTime) : null }),
+      ...(endTime !== undefined && { endTime: endTime ? toUTCDate(endTime) : null }),
       ...(bookingRef !== undefined && { bookingRef }),
       ...(bookingUrl !== undefined && { bookingUrl }),
       ...(cost !== undefined && { cost }),
@@ -148,8 +160,8 @@ router.patch('/:id', async (req, res) => {
       ...(location !== undefined && { location }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
-      ...(startTime !== undefined && { startTime: startTime ? new Date(startTime) : null }),
-      ...(endTime !== undefined && { endTime: endTime ? new Date(endTime) : null }),
+      ...(startTime !== undefined && { startTime: startTime ? toUTCDate(startTime) : null }),
+      ...(endTime !== undefined && { endTime: endTime ? toUTCDate(endTime) : null }),
       ...(bookingRef !== undefined && { bookingRef }),
       ...(bookingUrl !== undefined && { bookingUrl }),
       ...(cost !== undefined && { cost }),

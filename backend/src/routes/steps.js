@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
     orderBy: { order: 'asc' },
     include: {
       accommodations: true,
-      activities: { orderBy: { order: 'asc' } },
+      activities: { orderBy: { startTime: 'asc' } },
     },
   });
 
@@ -141,6 +141,7 @@ router.patch('/:id', async (req, res) => {
 
   const {
     name, location, latitude, longitude,
+    departureLatitude, departureLongitude, arrivalLatitude, arrivalLongitude,
     startDate, endDate, arrivalTime, departureTime, notes, photoUrl, order,
     routeDurationSeconds, routeDistanceMeters, routeEncodedPolyline,
   } = req.body;
@@ -152,6 +153,10 @@ router.patch('/:id', async (req, res) => {
       ...(location !== undefined && { location }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
+      ...(departureLatitude !== undefined && { departureLatitude }),
+      ...(departureLongitude !== undefined && { departureLongitude }),
+      ...(arrivalLatitude !== undefined && { arrivalLatitude }),
+      ...(arrivalLongitude !== undefined && { arrivalLongitude }),
       ...(startDate !== undefined && { startDate: startDate ? new Date(startDate) : null }),
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
       ...(arrivalTime !== undefined && { arrivalTime }),
@@ -163,7 +168,7 @@ router.patch('/:id', async (req, res) => {
       ...(routeDistanceMeters !== undefined && { routeDistanceMeters: routeDistanceMeters ?? null }),
       ...(routeEncodedPolyline !== undefined && { routeEncodedPolyline: routeEncodedPolyline ?? null }),
     },
-    include: { accommodations: true, activities: { orderBy: { order: 'asc' } } },
+    include: { accommodations: true, activities: { orderBy: { startTime: 'asc' } } },
   });
 
   res.json(updated);

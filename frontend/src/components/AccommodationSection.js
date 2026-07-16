@@ -156,7 +156,7 @@ const EMPTY_FORM = {
   notes: '',
 };
 
-export default function AccommodationSection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate }) {
+export default function AccommodationSection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, initialEditId }) {
   const { data: rows } = useQuery(
     stepId
       ? 'SELECT * FROM accommodations WHERE stepId = ? ORDER BY createdAt ASC'
@@ -170,6 +170,15 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState('manual');
+
+  // Ouverture automatique d'un item en édition
+  useEffect(() => {
+    if (initialEditId && accommodations.length > 0) {
+      const item = accommodations.find(a => a.id === initialEditId);
+      if (item) openEdit(item);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEditId, accommodations.length]);
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState(null);
@@ -213,7 +222,11 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
   }, [searchQuery, tab, modalVisible]);
 
   const openCreate = () => {
-    setForm(EMPTY_FORM);
+    setForm({
+      ...EMPTY_FORM,
+      checkIn: stepStartDate || '',
+      checkOut: stepEndDate || '',
+    });
     setEditingId(null);
     setTab('manual');
     setNearbyPlaces([]);
@@ -229,8 +242,8 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
       address: a.address ?? '',
       latitude: a.latitude ?? null,
       longitude: a.longitude ?? null,
-      checkIn: a.checkIn ?? '',
-      checkOut: a.checkOut ?? '',
+      checkIn: a.checkIn || stepStartDate || '',
+      checkOut: a.checkOut || stepEndDate || '',
       pricePerNight: a.pricePerNight != null ? String(a.pricePerNight) : '',
       notes: a.notes ?? '',
     });

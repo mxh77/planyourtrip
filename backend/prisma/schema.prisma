@@ -93,6 +93,10 @@ model Step {
   location      String?
   latitude      Float?
   longitude     Float?
+  departureLatitude  Float?
+  departureLongitude Float?
+  arrivalLatitude    Float?
+  arrivalLongitude   Float?
   startDate     DateTime?
   endDate       DateTime?
   arrivalTime   String?

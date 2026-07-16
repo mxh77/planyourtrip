@@ -74,7 +74,9 @@ export async function localCreateStep({
 export async function localUpdateStep(id, data) {
   const fields = [];
   const values = [];
-  const map = ['name','location','latitude','longitude','startDate','endDate',
+  const map = ['name','location','latitude','longitude',
+                'departureLatitude','departureLongitude','arrivalLatitude','arrivalLongitude',
+                'startDate','endDate',
                 'arrivalTime','departureTime','notes','photoUrl'];
   for (const key of map) {
     if (data[key] !== undefined) { fields.push(`${key} = ?`); values.push(data[key]); }

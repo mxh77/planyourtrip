@@ -82,7 +82,7 @@ router.get('/:id', async (req, res) => {
         orderBy: { order: 'asc' },
         include: {
           accommodations: true,
-          activities: { orderBy: { order: 'asc' } },
+          activities: { orderBy: { startTime: "asc" } },
         },
       },
       members: { include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
@@ -165,7 +165,7 @@ router.post('/:id/clone', checkMemberRole('VIEWER'), async (req, res) => {
         orderBy: { order: 'asc' },
         include: {
           accommodations: true,
-          activities: { orderBy: { order: 'asc' } },
+          activities: { orderBy: { startTime: "asc" } },
         },
       },
     },
@@ -241,7 +241,7 @@ router.post('/:id/clone', checkMemberRole('VIEWER'), async (req, res) => {
         orderBy: { order: 'asc' },
         include: {
           accommodations: true,
-          activities: { orderBy: { order: 'asc' } },
+          activities: { orderBy: { startTime: "asc" } },
         },
       },
     },

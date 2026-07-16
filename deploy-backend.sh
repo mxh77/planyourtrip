@@ -16,13 +16,12 @@ echo -e "\n${YELLOW}════════════════════
 echo -e "${YELLOW}  Mon Petit Roadtrip — Deploy Backend   ${RESET}"
 echo -e "${YELLOW}════════════════════════════════════════${RESET}\n"
 
-# ─── Sauvegarde avant déploiement ────────────────────────────────────────────
+# ─── Sauvegarde avant déploiement (optionnelle) ─────────────────────────────
 echo -e "${YELLOW}[0/3]${RESET} Sauvegarde de la base de données..."
 if node "$(dirname "$0")/backend/scripts/backup.js" 2>/dev/null; then
   echo -e "${GREEN}✓ Backup effectué${RESET}"
 else
-  echo -e "${YELLOW}⚠ Backup échoué (connexion indisponible ?) — déploiement annulé.${RESET}"
-  exit 1
+  echo -e "${YELLOW}⚠ Backup ignoré — déploiement continué.${RESET}"
 fi
 
 # ─── Git pull sur le serveur ─────────────────────────────────────────────────

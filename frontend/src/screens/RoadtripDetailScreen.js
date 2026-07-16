@@ -130,6 +130,22 @@ function computeRegion(steps) {
   };
 }
 
+// Coordonnées effectives de départ pour une étape (départ personnalisé sinon l'étape elle-même)
+function getStepDeparture(step) {
+  if (step.departureLatitude && step.departureLongitude) {
+    return { lat: parseFloat(step.departureLatitude), lng: parseFloat(step.departureLongitude) };
+  }
+  return { lat: parseFloat(step.latitude), lng: parseFloat(step.longitude) };
+}
+
+// Coordonnées effectives d'arrivée pour une étape (arrivée personnalisée sinon l'étape elle-même)
+function getStepArrival(step) {
+  if (step.arrivalLatitude && step.arrivalLongitude) {
+    return { lat: parseFloat(step.arrivalLatitude), lng: parseFloat(step.arrivalLongitude) };
+  }
+  return { lat: parseFloat(step.latitude), lng: parseFloat(step.longitude) };
+}
+
 // ─── Données mock pour prototype ─────────────────────────────────────────────
 // ─── StepCard (compact pour la liste) ────────────────────────────────────────
 const StepCard = React.memo(function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
@@ -325,7 +341,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // à chaque sync PowerSync qui retourne une nouvelle référence avec les mêmes données.
   // Inclure les champs visibles/éditables d'une étape pour refléter immédiatement les sauvegardes.
   const psStepsKey = useMemo(
-    () => psSteps.map(s => `${s.id}:${s.order}:${s.name ?? ''}:${s.location ?? ''}:${s.startDate ?? ''}:${s.endDate ?? ''}:${s.arrivalTime ?? ''}:${s.departureTime ?? ''}:${s.notes ?? ''}:${s.latitude ?? ''}:${s.longitude ?? ''}:${s.photoUrl ?? ''}`).join(','),
+    () => psSteps.map(s => `${s.id}:${s.order}:${s.name ?? ''}:${s.location ?? ''}:${s.startDate ?? ''}:${s.endDate ?? ''}:${s.arrivalTime ?? ''}:${s.departureTime ?? ''}:${s.notes ?? ''}:${s.latitude ?? ''}:${s.longitude ?? ''}:${s.photoUrl ?? ''}:${s.departureLatitude ?? ''}:${s.departureLongitude ?? ''}:${s.arrivalLatitude ?? ''}:${s.arrivalLongitude ?? ''}`).join(','),
     [psSteps]
   );
   const psAccKey = useMemo(
@@ -393,6 +409,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [searchResultMarker, setSearchResultMarker] = useState(null);  // Marqueur de résultat de recherche
   const [showSearchResultModal, setShowSearchResultModal] = useState(false);  // Modal d'options
+  const [menuMarker, setMenuMarker] = useState(null); // { item, type: 'accommodation'|'activity', stepId }
+  const [showMarkerMenu, setShowMarkerMenu] = useState(false);
   // Note: polylinesLoaded est déclaré plus haut (avant le useMemo transformedSteps)
   const shouldRefreshRef = useRef(false);  // Ref pour éviter infinite loop sur refreshingRoutes
   const [refreshCounter, setRefreshCounter] = useState(0);  // Trigger pour le useEffect directions
@@ -536,8 +554,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                       'Authorization': `Bearer ${token}`,
                     },
                     body: JSON.stringify({
-                      origin: { lat: parseFloat(current.latitude), lng: parseFloat(current.longitude) },
-                      destination: { lat: parseFloat(next.latitude), lng: parseFloat(next.longitude) },
+                      origin: getStepDeparture(current),
+                      destination: getStepArrival(next),
                       alternatives: false,
                     }),
                   });
@@ -758,10 +776,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
           if (!current.latitude || !current.longitude || !next.latitude || !next.longitude) {
             console.log('[Directions] Route', i, ': coordonnées manquantes');
+            const dep = getStepDeparture(current);
+            const arr = getStepArrival(next);
             newRoutes.push({
               coordinates: [
-                { latitude: parseFloat(current.latitude), longitude: parseFloat(current.longitude) },
-                { latitude: parseFloat(next.latitude), longitude: parseFloat(next.longitude) },
+                { latitude: dep.lat, longitude: dep.lng },
+                { latitude: arr.lat, longitude: arr.lng },
               ],
               color: ORDER_COLORS[i % ORDER_COLORS.length],
             });
@@ -781,8 +801,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 'Authorization': `Bearer ${token}`,
               },
               body: JSON.stringify({
-                origin: { lat: parseFloat(current.latitude), lng: parseFloat(current.longitude) },
-                destination: { lat: parseFloat(next.latitude), lng: parseFloat(next.longitude) },
+                origin: getStepDeparture(current),
+                destination: getStepArrival(next),
                 alternatives: false,
               }),
             });
@@ -1227,6 +1247,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             initialRegion={region}
             provider={PROVIDER_GOOGLE}
             mapType="standard"
+            onPoiClick={(e) => {
+              const { coordinate, name, placeId } = e.nativeEvent;
+              setSearchResultMarker({
+                title: name,
+                description: name,
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude,
+                placeId,
+              });
+              setShowSearchResultModal(true);
+            }}
           >
             {/* Afficher les itinéraires */}
             {routes.map((route, idx) => (
@@ -1266,6 +1297,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   key={`accom-${accom.id}`}
                   coordinate={{ latitude: parseFloat(accom.latitude), longitude: parseFloat(accom.longitude) }}
                   anchor={{ x: 0.5, y: 0.5 }}
+                  onPress={() => {
+                    setMenuMarker({ item: accom, type: 'accommodation', stepId: accom.stepId });
+                    setShowMarkerMenu(true);
+                  }}
                 >
                   <View style={styles.accomMarker}>
                     <Text style={styles.accomMarkerText}>
@@ -1283,6 +1318,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   key={`activity-${activity.id}`}
                   coordinate={{ latitude: parseFloat(activity.latitude), longitude: parseFloat(activity.longitude) }}
                   anchor={{ x: 0.5, y: 0.5 }}
+                  onPress={() => {
+                    setMenuMarker({ item: activity, type: 'activity', stepId: activity.stepId });
+                    setShowMarkerMenu(true);
+                  }}
                 >
                   <View style={styles.activityMarker}>
                     <Text style={styles.activityMarkerText}>
@@ -1348,6 +1387,39 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
           {/* ─── OVERLAY BUTTONS (absolute within map) ─────────────────────── */}
           <View style={[styles.overlayCol, { top: 12 }]}>
+            {/* Bouton zoom sur l'étape sélectionnée */}
+            {selectedIndex >= 0 && (
+              <TouchableOpacity
+                key="zoom-step"
+                onPress={() => {
+                  const step = steps[selectedIndex];
+                  if (!step || !mapRef.current) return;
+                  const coords = getStepCoordinates(step, psAccommodations, psActivities);
+                  if (coords.length > 0) {
+                    mapRef.current.fitToCoordinates(coords, {
+                      edgePadding: {
+                        top: 80,
+                        right: 40,
+                        bottom: SHEET_COLLAPSED + 20,
+                        left: 40,
+                      },
+                      animated: true,
+                    });
+                  } else if (step.latitude && step.longitude) {
+                    mapRef.current.animateToRegion({
+                      latitude: parseFloat(step.latitude),
+                      longitude: parseFloat(step.longitude),
+                      latitudeDelta: 0.05,
+                      longitudeDelta: 0.05,
+                    }, 400);
+                  }
+                }}
+                style={[styles.ovBtn, { backgroundColor: 'rgba(59,130,246,0.25)', borderColor: 'rgba(59,130,246,0.4)' }]}
+              >
+                <Text style={styles.ovBtnIcon}>🔍</Text>
+              </TouchableOpacity>
+            )}
+
             {/* Bouton vue globale — visible seulement quand une étape est sélectionnée */}
             {selectedIndex >= 0 && (
               <TouchableOpacity
@@ -1583,6 +1655,209 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               >
                 <Text style={styles.searchResultActionIcon}>🎯</Text>
                 <Text style={styles.searchResultActionText}>Ajouter comme activité</Text>
+              </TouchableOpacity>
+
+              <View style={styles.searchResultDivider} />
+              <TouchableOpacity style={styles.searchResultAction}
+                onPress={() => {
+                  setShowSearchResultModal(false);
+                  setSearchResultMarker(null);
+                  setSearchQuery('');
+                }}
+              >
+                <Text style={styles.searchResultActionIcon}>✕</Text>
+                <Text style={[styles.searchResultActionText, { color: 'rgba(255,255,255,0.4)' }]}>Supprimer le marqueur</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ─── MENU CONTEXTUEL MARQUEUR ────────────────────────────────── */}
+        {showMarkerMenu && menuMarker && (
+          <View style={styles.searchResultModalOverlay}>
+            <View style={styles.searchResultModalContent}>
+              <View style={styles.searchResultHeader}>
+                <Text style={styles.searchResultTitle}>{menuMarker.item.name}</Text>
+                <TouchableOpacity onPress={() => setShowMarkerMenu(false)}>
+                  <Text style={styles.searchResultClose}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.searchResultSubtitle}>
+                {menuMarker.type === 'accommodation' ? '🏨 Hébergement' : menuMarker.type === 'activity' ? '🎯 Activité' : '📍 Point d\'intérêt'}
+                {menuMarker.stepId ? ` — étape ${steps.findIndex(s => s.id === menuMarker.stepId) + 1}` : ''}
+              </Text>
+              <View style={styles.searchResultDivider} />
+
+              {/* Pour les POI : d'abord ajouter comme hébergement/activité */}
+              {menuMarker.type === 'poi' && (
+                <>
+                  <Text style={styles.searchResultActionTitle}>Ajouter au voyage</Text>
+                  <TouchableOpacity style={styles.searchResultAction}
+                    onPress={async () => {
+                      const currentStep = steps.find(s => s.id === menuMarker.stepId);
+                      if (!currentStep) {
+                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.');
+                        setShowMarkerMenu(false);
+                        return;
+                      }
+                      await useRoadtripStore.getState().createAccommodation({
+                        stepId: menuMarker.stepId,
+                        roadtripId: id,
+                        name: menuMarker.item.name,
+                        address: menuMarker.item.name,
+                        latitude: parseFloat(menuMarker.item.latitude),
+                        longitude: parseFloat(menuMarker.item.longitude),
+                        type: 'OTHER',
+                      });
+                      setShowMarkerMenu(false);
+                    }}
+                  >
+                    <Text style={styles.searchResultActionIcon}>🏨</Text>
+                    <Text style={styles.searchResultActionText}>Ajouter comme hébergement</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.searchResultAction}
+                    onPress={async () => {
+                      const currentStep = steps.find(s => s.id === menuMarker.stepId);
+                      if (!currentStep) {
+                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.');
+                        setShowMarkerMenu(false);
+                        return;
+                      }
+                      await useRoadtripStore.getState().createActivity({
+                        stepId: menuMarker.stepId,
+                        roadtripId: id,
+                        name: menuMarker.item.name,
+                        location: menuMarker.item.name,
+                        latitude: parseFloat(menuMarker.item.latitude),
+                        longitude: parseFloat(menuMarker.item.longitude),
+                        type: 'ACTIVITY',
+                      });
+                      setShowMarkerMenu(false);
+                    }}
+                  >
+                    <Text style={styles.searchResultActionIcon}>🎯</Text>
+                    <Text style={styles.searchResultActionText}>Ajouter comme activité</Text>
+                  </TouchableOpacity>
+                  <View style={styles.searchResultDivider} />
+                </>
+              )}
+
+              <Text style={styles.searchResultActionTitle}>Utiliser comme point de trajet</Text>
+
+              {/* Ouvrir l'étape associée — pour hébergement et activité */}
+              {menuMarker.type !== 'poi' && (
+                <TouchableOpacity style={styles.searchResultAction}
+                  onPress={() => {
+                    const stepObj = steps.find(s => s.id === menuMarker.stepId);
+                    if (stepObj) {
+                      setShowMarkerMenu(false);
+                      navigation.navigate('EditStep', {
+                        step: stepObj,
+                        [menuMarker.type === 'accommodation' ? 'initialEditAccommodationId' : 'initialEditActivityId']: menuMarker.item.id,
+                      });
+                    } else {
+                      setShowMarkerMenu(false);
+                    }
+                  }}
+                >
+                  <Text style={styles.searchResultActionIcon}>✎</Text>
+                  <Text style={styles.searchResultActionText}>
+                    {menuMarker.type === 'accommodation' ? "Modifier l'hébergement" : "Modifier l'activité"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Départ vers l'étape suivante */}
+              <TouchableOpacity style={styles.searchResultAction}
+                onPress={async () => {
+                  const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
+                  if (stepIndex < 0 || stepIndex >= steps.length - 1) {
+                    Alert.alert('Aucune étape suivante', 'Cette étape est la dernière du voyage.');
+                    setShowMarkerMenu(false);
+                    return;
+                  }
+                  await useRoadtripStore.getState().updateStep(menuMarker.stepId, {
+                    departureLatitude: parseFloat(menuMarker.item.latitude),
+                    departureLongitude: parseFloat(menuMarker.item.longitude),
+                  });
+                  // Mise à jour locale immédiate (pas d'attente PowerSync)
+                  setSteps(prev => prev.map(s =>
+                    s.id === menuMarker.stepId
+                      ? { ...s, departureLatitude: parseFloat(menuMarker.item.latitude), departureLongitude: parseFloat(menuMarker.item.longitude) }
+                      : s
+                  ));
+                  setShowMarkerMenu(false);
+                  shouldRefreshRef.current = true;
+                  polylinesFetchedRef.current = true;
+                  polylinesRef.current = [];
+                  polylinesLoadingRef.current = false;
+                  directionsCalculatedRef.current = false;
+                  setRefreshCounter(c => c + 1);
+                }}
+              >
+                <Text style={styles.searchResultActionIcon}>🚐</Text>
+                <Text style={styles.searchResultActionText}>Départ vers l'étape suivante</Text>
+              </TouchableOpacity>
+
+              {/* Arrivée depuis l'étape précédente */}
+              <TouchableOpacity style={styles.searchResultAction}
+                onPress={async () => {
+                  const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
+                  if (stepIndex <= 0) {
+                    Alert.alert('Aucune étape précédente', 'Cette étape est la première du voyage.');
+                    setShowMarkerMenu(false);
+                    return;
+                  }
+                  await useRoadtripStore.getState().updateStep(menuMarker.stepId, {
+                    arrivalLatitude: parseFloat(menuMarker.item.latitude),
+                    arrivalLongitude: parseFloat(menuMarker.item.longitude),
+                  });
+                  // Mise à jour locale immédiate
+                  setSteps(prev => prev.map(s =>
+                    s.id === menuMarker.stepId
+                      ? { ...s, arrivalLatitude: parseFloat(menuMarker.item.latitude), arrivalLongitude: parseFloat(menuMarker.item.longitude) }
+                      : s
+                  ));
+                  setShowMarkerMenu(false);
+                  shouldRefreshRef.current = true;
+                  polylinesFetchedRef.current = true;
+                  polylinesRef.current = [];
+                  polylinesLoadingRef.current = false;
+                  directionsCalculatedRef.current = false;
+                  setRefreshCounter(c => c + 1);
+                }}
+              >
+                <Text style={styles.searchResultActionIcon}>🏁</Text>
+                <Text style={styles.searchResultActionText}>Arrivée depuis l'étape précédente</Text>
+              </TouchableOpacity>
+
+              {/* Effacer les points personnalisés */}
+              <View style={styles.searchResultDivider} />
+              <TouchableOpacity style={styles.searchResultAction}
+                onPress={async () => {
+                  await useRoadtripStore.getState().updateStep(menuMarker.stepId, {
+                    departureLatitude: null,
+                    departureLongitude: null,
+                    arrivalLatitude: null,
+                    arrivalLongitude: null,
+                  });
+                  // Mise à jour locale immédiate
+                  setSteps(prev => prev.map(s =>
+                    s.id === menuMarker.stepId
+                      ? { ...s, departureLatitude: null, departureLongitude: null, arrivalLatitude: null, arrivalLongitude: null }
+                      : s
+                  ));
+                  setShowMarkerMenu(false);
+                  shouldRefreshRef.current = true;
+                  polylinesFetchedRef.current = true;
+                  polylinesRef.current = [];
+                  polylinesLoadingRef.current = false;
+                  directionsCalculatedRef.current = false;
+                  setRefreshCounter(c => c + 1);
+                }}
+              >
+                <Text style={styles.searchResultActionIcon}>🗑️</Text>
+                <Text style={[styles.searchResultActionText, { color: '#ef4444' }]}>Réinitialiser les points de trajet</Text>
               </TouchableOpacity>
             </View>
           </View>
