@@ -1,5 +1,5 @@
 #!/bin/bash
-# Déploie le backend local vers CT 111 (192.168.1.111)
+# Déploie le backend local vers CT 117 (192.168.1.117)
 # Usage : ./deploy-backend.sh
 
 set -e
@@ -8,8 +8,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RESET='\033[0m'
 
-SERVER="ct111"
-REMOTE_DIR="/opt/PlanYourTrip/backend"
+SERVER="ct117"
+REMOTE_DIR="/opt/planyourtrip/backend"
 LOCAL_DIR="$(cd "$(dirname "$0")/backend" && pwd)"
 
 echo -e "\n${YELLOW}════════════════════════════════════════${RESET}"
@@ -27,7 +27,7 @@ fi
 
 # ─── Git pull sur le serveur ─────────────────────────────────────────────────
 echo -e "${YELLOW}[1/3]${RESET} Git pull sur $SERVER..."
-ssh "$SERVER" "cd /opt/PlanYourTrip && git reset --hard HEAD && git clean -fd && git pull"
+ssh "$SERVER" "cd /opt/planyourtrip && git reset --hard HEAD && git clean -fd && git pull"
 echo -e "${GREEN}✓ Code mis à jour${RESET}"
 
 # ─── npm install si package.json a changé ────────────────────────────────────
@@ -50,4 +50,4 @@ else
   exit 1
 fi
 
-echo -e "\n${YELLOW}Logs en live :${RESET} ssh ct111 \"tail -f ~/.pm2/logs/planyourtrip-api-out.log\"\n"
+echo -e "\n${YELLOW}Logs en live :${RESET} ssh ct117 \"tail -f ~/.pm2/logs/planyourtrip-api-out.log\"\n"
