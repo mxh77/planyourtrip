@@ -18,6 +18,35 @@ import {
 } from '../powersync/localWrite';
 import { validateActivityDates } from '../utils/dateValidation';
 
+// ─── Helpers date/heure ──────────────────────────────────────────────────────
+function parseDtString(str) {
+  if (!str) return { date: new Date(), time: null };
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if (m) {
+    return {
+      date: new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]), 12, 0, 0),
+      time: `${m[4]}:${m[5]}`,
+    };
+  }
+  return { date: new Date(), time: null };
+}
+
+function formatDtString(date, time) {
+  const y = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return time ? `${y}-${mo}-${d} ${time}` : `${y}-${mo}-${d}`;
+}
+
+function displayDt(str) {
+  if (!str) return null;
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+  if (!m) return str;
+  const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]), 12, 0, 0);
+  const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+  return m[4] ? `${dateStr}  ·  ${m[4]}:${m[5]}` : dateStr;
+}
+
 const ACT_DEF_RADIUS = 1000;
 const LODGING_TYPES_A = ['hotel', 'motel', 'campground', 'rv_park', 'bed_and_breakfast', 'hostel'];
 const ACTIVITY_NEARBY = ['restaurant', 'cafe', 'museum', 'park', 'cultural_center', 'supermarket', 'grocery_store', 'hiking_area', 'transit_station'];
@@ -148,8 +177,8 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
-  const [timePickerVisible, setTimePickerVisible] = useState(false);
-  const [timePickerTarget, setTimePickerTarget] = useState(null); // 'start' | 'end'
+  const [dtPickerVisible, setDtPickerVisible] = useState(false);
+  const [dtPickerTarget, setDtPickerTarget] = useState(null); // 'start' | 'end'
 
   const hasCoords = !!(latitude && longitude);
 
@@ -288,9 +317,9 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
                   </Text>
                   {hasTime ? (
                     <Text style={styles.rowSub}>
-                      {activity.startTime ?? ''}
+                      {displayDt(activity.startTime) ?? ''}
                       {activity.startTime && activity.endTime ? ' → ' : ''}
-                      {activity.endTime ?? ''}
+                      {displayDt(activity.endTime) ?? ''}
                     </Text>
                   ) : null}
                   {activity.location && activity.location !== activity.name ? (
@@ -317,20 +346,21 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
       )}
 
       <DateTimePickerModal
-        visible={timePickerVisible}
-        date={new Date()}
-        time={timePickerTarget === 'start' ? (form.startTime || null) : (form.endTime || null)}
-        label={timePickerTarget === 'start' ? 'Heure de début' : 'Heure de fin'}
-        minDate={null}
-        onConfirm={({ time }) => {
-          if (timePickerTarget === 'start') {
-            setForm((f) => ({ ...f, startTime: time ?? '' }));
+        visible={dtPickerVisible}
+        date={dtPickerTarget === 'start' ? parseDtString(form.startTime).date : parseDtString(form.endTime).date}
+        time={dtPickerTarget === 'start' ? parseDtString(form.startTime).time : parseDtString(form.endTime).time}
+        label={dtPickerTarget === 'start' ? 'Date et heure de début' : 'Date et heure de fin'}
+        minDate={dtPickerTarget === 'end' ? parseDtString(form.startTime).date : null}
+        onConfirm={({ date, time }) => {
+          const str = formatDtString(date, time ?? '00:00');
+          if (dtPickerTarget === 'start') {
+            setForm((f) => ({ ...f, startTime: str }));
           } else {
-            setForm((f) => ({ ...f, endTime: time ?? '' }));
+            setForm((f) => ({ ...f, endTime: str }));
           }
-          setTimePickerVisible(false);
+          setDtPickerVisible(false);
         }}
-        onCancel={() => setTimePickerVisible(false)}
+        onCancel={() => setDtPickerVisible(false)}
       />
 
       {/* ─── Modal formulaire ─────────────────────────────────────────── */}
@@ -338,10 +368,10 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
         visible={modalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => { setTimePickerVisible(false); setModalVisible(false); }}
+        onRequestClose={() => { setDtPickerVisible(false); setModalVisible(false); }}
       >
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <Pressable style={styles.overlay} onPress={() => { setTimePickerVisible(false); setModalVisible(false); }}>
+        <Pressable style={styles.overlay} onPress={() => { setDtPickerVisible(false); setModalVisible(false); }}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.handle} />
             <Text style={styles.sheetTitle}>
@@ -570,12 +600,12 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
                   <Text style={styles.label}>Début</Text>
                   <TouchableOpacity
                     style={styles.dateBtn}
-                    onPress={() => { setTimePickerTarget('start'); setTimePickerVisible(true); }}
+                    onPress={() => { setDtPickerTarget('start'); setDtPickerVisible(true); }}
                   >
                     <Text style={form.startTime ? styles.dateBtnText : styles.dateBtnPlaceholder}>
-                      {form.startTime || '09:00'}
+                      {displayDt(form.startTime) || 'Date & heure'}
                     </Text>
-                    <MaterialIcons name="schedule" size={16} color={COLORS.textDim} />
+                    <MaterialIcons name="calendar-today" size={16} color={COLORS.textDim} />
                   </TouchableOpacity>
                 </View>
                 <View style={{ width: SPACING.sm }} />
@@ -583,18 +613,17 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
                   <Text style={styles.label}>Fin</Text>
                   <TouchableOpacity
                     style={styles.dateBtn}
-                    onPress={() => { setTimePickerTarget('end'); setTimePickerVisible(true); }}
+                    onPress={() => { setDtPickerTarget('end'); setDtPickerVisible(true); }}
                   >
                     <Text style={form.endTime ? styles.dateBtnText : styles.dateBtnPlaceholder}>
-                      {form.endTime || '12:00'}
+                      {displayDt(form.endTime) || 'Date & heure'}
                     </Text>
-                    <MaterialIcons name="schedule" size={16} color={COLORS.textDim} />
+                    <MaterialIcons name="calendar-today" size={16} color={COLORS.textDim} />
                   </TouchableOpacity>
                 </View>
               </View>
 
               {/* Notes */}
-              <Text style={styles.label}>Notes</Text>
               <TextInput
                 style={[styles.input, styles.inputMulti]}
                 value={form.notes}

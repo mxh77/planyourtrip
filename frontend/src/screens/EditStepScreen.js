@@ -252,46 +252,71 @@ export default function EditStepScreen({ route, navigation }) {
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="always">
         {/* ─── Arrivée / Départ ────────────────────────────────────────────── */}
-        <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Arrivée</Text>
-            <View style={styles.dateSplitRow}>
-              <Text style={styles.dateSplitLabel}>Date :</Text>
-              <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
-                <Text style={styles.dateSplitValue}>{fmtDateField(startDate)}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.dateSplitRow}>
-              <Text style={styles.dateSplitLabel}>Heure :</Text>
-              <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
-                <Text style={styles.dateSplitValue}>{fmtTimeField(arrivalTime)}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={{ width: SPACING.md }} />
-
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Départ</Text>
-            <View style={styles.dateSplitRow}>
-              <Text style={styles.dateSplitLabel}>Date :</Text>
-              <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
-                <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtDateField(endDate)}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.dateSplitRow}>
-              <Text style={styles.dateSplitLabel}>Heure :</Text>
-              <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
-                <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtTimeField(departureTime)}</Text>
-              </TouchableOpacity>
-            </View>
-            {endDate && (
-              <TouchableOpacity onPress={() => { setEndDate(null); setDepartureTime(null); }} style={styles.clearBtn}>
-                <Text style={styles.clearBtnText}>✕ effacer</Text>
-              </TouchableOpacity>
-            )}
+        {/* Arrivée */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Arrivée</Text>
+          <View style={styles.dateSplitRow}>
+            <Text style={styles.dateSplitLabel}>Date :</Text>
+            <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
+              <Text style={styles.dateSplitValue}>{fmtDateField(startDate)}</Text>
+            </TouchableOpacity>
+            <Text style={styles.dateSplitSep}> </Text>
+            <Text style={styles.dateSplitLabel}>Heure :</Text>
+            <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
+              <Text style={styles.dateSplitValue}>{fmtTimeField(arrivalTime)}</Text>
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* Départ */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Départ</Text>
+          <View style={styles.dateSplitRow}>
+            <Text style={styles.dateSplitLabel}>Date :</Text>
+            <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
+              <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtDateField(endDate)}</Text>
+            </TouchableOpacity>
+            <Text style={styles.dateSplitSep}> </Text>
+            <Text style={styles.dateSplitLabel}>Heure :</Text>
+            <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
+              <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtTimeField(departureTime)}</Text>
+            </TouchableOpacity>
+          </View>
+          {endDate && (
+            <TouchableOpacity onPress={() => { setEndDate(null); setDepartureTime(null); }} style={styles.clearBtn}>
+              <Text style={styles.clearBtnText}>✕ effacer</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* ─── Type d'arrêt (STOP uniquement) ──────────────────────────────── */}
+        {/* déplacé dans le header, entre Nom et LocationPicker */}
+
+        {/* ─── Hébergement ──────────────────────────────────────────────────── */}
+        <AccommodationSection
+          stepId={step.id}
+          roadtripId={step.roadtripId}
+          userId={userId}
+          latitude={latitude ? parseFloat(latitude) : null}
+          longitude={longitude ? parseFloat(longitude) : null}
+          allowedTypes={roadtripSettings?.suggestionPlaceTypes}
+          radius={roadtripSettings?.suggestionRadius}
+          stepStartDate={startDate ? toLocalDateString(startDate) : null}
+          stepEndDate={endDate ? toLocalDateString(endDate) : null}
+        />
+
+        {/* ─── Activités ───────────────────────────────────────────────────── */}
+        <ActivitySection
+          stepId={step.id}
+          roadtripId={step.roadtripId}
+          userId={userId}
+          latitude={latitude ? parseFloat(latitude) : null}
+          longitude={longitude ? parseFloat(longitude) : null}
+          allowedTypes={roadtripSettings?.suggestionPlaceTypes}
+          radius={roadtripSettings?.suggestionRadius}
+          stepStartDate={startDate ? toLocalDateString(startDate) : null}
+          stepEndDate={endDate ? toLocalDateString(endDate) : null}
+        />
 
         {/* ─── Notes ───────────────────────────────────────────────────────── */}
         <View style={styles.inputGroup}>
@@ -336,35 +361,6 @@ export default function EditStepScreen({ route, navigation }) {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* ─── Type d'arrêt (STOP uniquement) ──────────────────────────────── */}
-        {/* déplacé dans le header, entre Nom et LocationPicker */}
-
-        {/* ─── Hébergement ──────────────────────────────────────────────────── */}
-        <AccommodationSection
-          stepId={step.id}
-          roadtripId={step.roadtripId}
-          userId={userId}
-          latitude={latitude ? parseFloat(latitude) : null}
-          longitude={longitude ? parseFloat(longitude) : null}
-          allowedTypes={roadtripSettings?.suggestionPlaceTypes}
-          radius={roadtripSettings?.suggestionRadius}
-          stepStartDate={startDate ? toLocalDateString(startDate) : null}
-          stepEndDate={endDate ? toLocalDateString(endDate) : null}
-        />
-
-        {/* ─── Activités ───────────────────────────────────────────────────── */}
-        <ActivitySection
-          stepId={step.id}
-          roadtripId={step.roadtripId}
-          userId={userId}
-          latitude={latitude ? parseFloat(latitude) : null}
-          longitude={longitude ? parseFloat(longitude) : null}
-          allowedTypes={roadtripSettings?.suggestionPlaceTypes}
-          radius={roadtripSettings?.suggestionRadius}
-          stepStartDate={startDate ? toLocalDateString(startDate) : null}
-          stepEndDate={endDate ? toLocalDateString(endDate) : null}
-        />
 
         {/* ─── Suppression ─────────────────────────────────────────────── */}
         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
@@ -461,12 +457,16 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
   dateSplitLabel: {
-    width: 52,
+    width: 46,
     color: COLORS.textDim,
-    fontSize: 13,
+    fontSize: 12,
+  },
+  dateSplitSep: {
+    width: 6,
   },
   dateSplitBtn: {
     flex: 1,
+    minWidth: 60,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,

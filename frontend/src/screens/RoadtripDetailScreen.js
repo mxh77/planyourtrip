@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
   ScrollView, Animated, StatusBar, Alert, ActivityIndicator,
-  Modal, TextInput, Platform, PanResponder,
+  Modal, TextInput, Platform, PanResponder, Pressable,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -10,6 +10,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useRoadtripStore } from '../store/roadtripStore';
+import { useRoadtripRole } from '../hooks/useRoadtripRole';
 import API_URL from '../api/config';
 import { log, warn } from '../services/logger';
 import { LogsViewer } from '../components/LogsViewer';
@@ -30,7 +31,7 @@ const ACCOM_ICONS = {
 };
 
 const ACTIVITY_ICONS = {
-  ACTIVITY: '🎯', RESTAURANT: '🍽️', TRANSPORT: '🚌', OTHER: '📌',
+  ACTIVITY: '🎯', RESTAURANT: '🍽️', TRANSPORT: '🚌', HIKING: '🥾', SUPERMARKET: '🛒', OTHER: '📌',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -383,6 +384,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [loadingFromAPI, setLoadingFromAPI] = useState(false);
   const [showLogs, setShowLogs] = useState(false);  // Pour afficher le viewer de logs
   const [refreshingRoutes, setRefreshingRoutes] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [searchResultMarker, setSearchResultMarker] = useState(null);  // Marqueur de résultat de recherche
   const [showSearchResultModal, setShowSearchResultModal] = useState(false);  // Modal d'options
   // Note: polylinesLoaded est déclaré plus haut (avant le useMemo transformedSteps)
@@ -906,7 +908,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       headerStyle: { backgroundColor: 'rgba(26,26,38,1)' },
       headerTintColor: '#fff',
       headerRight: () => (
-        <TouchableOpacity style={{ marginRight: 12 }}>
+        <TouchableOpacity style={{ marginRight: 12 }} onPress={() => setMenuVisible(true)}>
           <Text style={{ fontSize: 18, color: '#fff' }}>☰</Text>
         </TouchableOpacity>
       ),
@@ -995,7 +997,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   const openDetail = useCallback((index) => {
     setSelectedIndex(index);
-    
+
     // Fermer le volet avec animation
     Animated.spring(sheetAnim, {
       toValue: SHEET_COLLAPSED,
@@ -1004,7 +1006,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       friction: 11,
     }).start();
     setSheetExpanded(false);
-    
+
     // Zoomer sur la carte : englober l'étape ET tous ses items
     // Utiliser fitToCoordinates avec edgePadding pour exclure la zone du volet fermé
     if (steps[index] && mapRef.current) {
@@ -1090,7 +1092,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const region = computeRegion(steps);
   const selectedStep = selectedIndex >= 0 ? steps[selectedIndex] : null;
   const color = selectedIndex >= 0 ? ORDER_COLORS[selectedIndex % ORDER_COLORS.length] : '#8b5cf6';
-  
+
+  // Rôle de l'utilisateur sur ce roadtrip
+  const { role: userRole, isOwner, canEdit } = useRoadtripRole(id);
+
   // Calculer le nombre total de jours du roadtrip
   const totalDays = useMemo(() => {
     if (!steps.length) return 0;
@@ -1405,7 +1410,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           <View style={styles.sheetContent} pointerEvents="auto">
             {!sheetExpanded && selectedIndex === -1 ? (
               // Mode vue globale du roadtrip
-              <CurrentStepBar 
+              <CurrentStepBar
                 isOverview={true}
                 roadtrip={roadtrip}
                 totalDays={totalDays}
@@ -1591,6 +1596,73 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
         {/* LogsViewer Modal */}
         <LogsViewer visible={showLogs} onClose={() => setShowLogs(false)} />
+
+        {/* ─── MENU HAMBURGER ──────────────────────────────────────────── */}
+        <Modal
+          visible={menuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable
+            style={styles.menuOverlay}
+            onPress={() => setMenuVisible(false)}
+          >
+            <View style={[styles.menuSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+              {/* Handle */}
+              <View style={styles.menuHandle} />
+
+              <Text style={styles.menuTitle}>{roadtrip.title}</Text>
+
+              {/* Partager — uniquement pour le propriétaire */}
+              {isOwner && (
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    navigation.navigate('Collaborators', { roadtripId: id });
+                  }}
+                >
+                  <Text style={styles.menuItemIcon}>👥</Text>
+                  <View style={styles.menuItemContent}>
+                    <Text style={styles.menuItemLabel}>Partager</Text>
+                    <Text style={styles.menuItemDesc}>Inviter des membres à collaborer</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              {/* Paramètres du roadtrip */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('RoadtripSettings', { roadtripId: id });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>⚙️</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Paramètres</Text>
+                  <Text style={styles.menuItemDesc}>Modifier le titre, dupliquer, supprimer</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Rôle actuel */}
+              <View style={styles.menuRoleRow}>
+                <Text style={styles.menuRoleLabel}>
+                  {isOwner ? '👑 Organisateur' : userRole === 'EDITOR' ? '✏️ Éditeur' : userRole === 'VIEWER' ? '👁 Lecteur' : ''}
+                </Text>
+              </View>
+
+              {/* Fermer */}
+              <TouchableOpacity
+                style={styles.menuCloseBtn}
+                onPress={() => setMenuVisible(false)}
+              >
+                <Text style={styles.menuCloseBtnText}>Fermer</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
       </View>
     );
   } catch (err) {
@@ -2409,6 +2481,84 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
     flex: 1,
+  },
+
+  // ─── Menu hamburger ─────────────────────────────────────────────────
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  menuSheet: {
+    backgroundColor: '#1a1a26',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.sm,
+  },
+  menuHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignSelf: 'center',
+    marginBottom: SPACING.md,
+  },
+  menuTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: SPACING.lg,
+    textAlign: 'center',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.sm,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  menuItemIcon: {
+    fontSize: 24,
+    width: 36,
+    textAlign: 'center',
+  },
+  menuItemContent: {
+    flex: 1,
+  },
+  menuItemLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  menuItemDesc: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 2,
+  },
+  menuRoleRow: {
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    marginTop: SPACING.xs,
+  },
+  menuRoleLabel: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.35)',
+  },
+  menuCloseBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    marginTop: SPACING.xs,
+  },
+  menuCloseBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.5)',
   },
 });
 
