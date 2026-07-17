@@ -72,14 +72,9 @@ export async function localCreateStep({
 }
 
 export async function localUpdateStep(id, data) {
-  const hasDep = data.departureLatitude !== undefined || data.arrivalLatitude !== undefined;
-  if (hasDep) {
-    console.log('[localUpdateStep] 📥 data partielle (dep/arr):', JSON.stringify({depLat:data.departureLatitude,depLng:data.departureLongitude,arrLat:data.arrivalLatitude,arrLng:data.arrivalLongitude}), 'id:', id.slice(0,12)+'...');
-  }
   const fields = [];
   const values = [];
   const map = ['name','location','latitude','longitude',
-                'departureLatitude','departureLongitude','arrivalLatitude','arrivalLongitude',
                 'startDate','endDate',
                 'arrivalTime','departureTime','notes','photoUrl'];
   for (const key of map) {
@@ -89,7 +84,6 @@ export async function localUpdateStep(id, data) {
   fields.push('updatedAt = ?');
   values.push(now(), id);
   const sql = `UPDATE steps SET ${fields.join(', ')} WHERE id = ?`;
-  if (hasDep) console.log('[localUpdateStep] SQL-dep:', sql.slice(0, 100));
   await db.execute(sql, values);
 }
 
@@ -126,7 +120,7 @@ export async function localCreateActivity({
 }
 
 export async function localUpdateActivity(id, data) {
-  const allowed = ['type', 'name', 'location', 'latitude', 'longitude', 'startTime', 'endTime', 'bookingRef', 'bookingUrl', 'cost', 'currency', 'notes', 'status', 'order'];
+  const allowed = ['type', 'name', 'location', 'latitude', 'longitude', 'isDeparture', 'isArrival', 'startTime', 'endTime', 'bookingRef', 'bookingUrl', 'cost', 'currency', 'notes', 'status', 'order'];
   const fields = [];
   const values = [];
   for (const key of allowed) {
@@ -202,7 +196,7 @@ export async function localCreateAccommodation({
 }
 
 export async function localUpdateAccommodation(id, data) {
-  const allowed = ['type', 'name', 'address', 'latitude', 'longitude', 'checkIn', 'checkOut', 'bookingRef', 'bookingUrl', 'pricePerNight', 'currency', 'notes', 'status'];
+  const allowed = ['type', 'name', 'address', 'latitude', 'longitude', 'isDeparture', 'isArrival', 'checkIn', 'checkOut', 'bookingRef', 'bookingUrl', 'pricePerNight', 'currency', 'notes', 'status'];
   const fields = [];
   const values = [];
   for (const key of allowed) {

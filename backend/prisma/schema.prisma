@@ -126,6 +126,8 @@ model Accommodation {
   address       String?
   latitude      Float?
   longitude     Float?
+  isDeparture   Boolean       @default(false)
+  isArrival     Boolean       @default(false)
   checkIn       DateTime?
   checkOut      DateTime?
   bookingRef    String?
@@ -159,6 +161,8 @@ model Activity {
   location   String?
   latitude   Float?
   longitude  Float?
+  isDeparture   Boolean       @default(false)
+  isArrival     Boolean       @default(false)
   startTime  DateTime?
   endTime    DateTime?
   bookingRef String?

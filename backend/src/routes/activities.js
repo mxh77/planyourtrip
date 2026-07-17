@@ -82,7 +82,7 @@ router.post('/', async (req, res) => {
 
 // PUT /api/activities/:id — upsert (EDITOR+, ID généré côté client)
 router.put('/:id', async (req, res) => {
-  const { stepId, type, name, location, latitude, longitude, startTime, endTime, bookingRef, bookingUrl, cost, currency, notes, status, order } = req.body;
+  const { stepId, type, name, location, latitude, longitude, isDeparture, isArrival, startTime, endTime, bookingRef, bookingUrl, cost, currency, notes, status, order } = req.body;
 
   if (!stepId) return res.status(400).json({ error: 'stepId is required' });
 
@@ -104,6 +104,8 @@ router.put('/:id', async (req, res) => {
       location: location || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
+      isDeparture: !!isDeparture ?? false,
+      isArrival: !!isArrival ?? false,
       startTime: startTime ? toUTCDate(startTime) : null,
       endTime: endTime ? toUTCDate(endTime) : null,
       bookingRef: bookingRef || null,
@@ -120,6 +122,8 @@ router.put('/:id', async (req, res) => {
       ...(location !== undefined && { location }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
+      ...(isDeparture !== undefined && { isDeparture: !!isDeparture }),
+      ...(isArrival !== undefined && { isArrival: !!isArrival }),
       ...(startTime !== undefined && { startTime: startTime ? toUTCDate(startTime) : null }),
       ...(endTime !== undefined && { endTime: endTime ? toUTCDate(endTime) : null }),
       ...(bookingRef !== undefined && { bookingRef }),
@@ -150,7 +154,7 @@ router.patch('/:id', async (req, res) => {
   if (!role) return res.status(403).json({ error: 'Access denied' });
   if (role === 'VIEWER') return res.status(403).json({ error: 'Role EDITOR required' });
 
-  const { type, name, location, latitude, longitude, startTime, endTime, bookingRef, bookingUrl, cost, currency, notes, status, order } = req.body;
+  const { type, name, location, latitude, longitude, isDeparture, isArrival, startTime, endTime, bookingRef, bookingUrl, cost, currency, notes, status, order } = req.body;
 
   const updated = await prisma.activity.update({
     where: { id: req.params.id },
@@ -160,6 +164,8 @@ router.patch('/:id', async (req, res) => {
       ...(location !== undefined && { location }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
+      ...(isDeparture !== undefined && { isDeparture: !!isDeparture }),
+      ...(isArrival !== undefined && { isArrival: !!isArrival }),
       ...(startTime !== undefined && { startTime: startTime ? toUTCDate(startTime) : null }),
       ...(endTime !== undefined && { endTime: endTime ? toUTCDate(endTime) : null }),
       ...(bookingRef !== undefined && { bookingRef }),

@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
   ScrollView, Animated, StatusBar, Alert, ActivityIndicator,
@@ -12,6 +11,7 @@ import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useRoadtripStore } from '../store/roadtripStore';
 import { useRoadtripRole } from '../hooks/useRoadtripRole';
+import { localUpdateAccommodation, localUpdateActivity } from '../powersync/localWrite';
 import API_URL from '../api/config';
 import { log, warn } from '../services/logger';
 import { LogsViewer } from '../components/LogsViewer';
@@ -131,23 +131,29 @@ function computeRegion(steps) {
   };
 }
 
-// Coordonnées effectives de départ pour une étape (départ personnalisé sinon l'étape elle-même)
-function getStepDeparture(step) {
-  if (step.departureLatitude && step.departureLongitude) {
-    console.log('[getStepDeparture] CUSTOM pour', step.name, ':', step.departureLatitude, step.departureLongitude);
-    return { lat: parseFloat(step.departureLatitude), lng: parseFloat(step.departureLongitude) };
+// Coordonnées effectives de départ pour une étape (item avec isDeparture sinon l'étape elle-même)
+function getStepDeparture(step, accommodations, activities) {
+  const depAcco = accommodations.find(a => a.stepId === step.id && a.isDeparture && a.latitude && a.longitude);
+  if (depAcco) {
+    return { lat: parseFloat(depAcco.latitude), lng: parseFloat(depAcco.longitude) };
   }
-  console.log('[getStepDeparture] DEFAULT pour', step.name, ':', step.latitude, step.longitude);
+  const depAct = activities.find(a => a.stepId === step.id && a.isDeparture && a.latitude && a.longitude);
+  if (depAct) {
+    return { lat: parseFloat(depAct.latitude), lng: parseFloat(depAct.longitude) };
+  }
   return { lat: parseFloat(step.latitude), lng: parseFloat(step.longitude) };
 }
 
-// Coordonnées effectives d'arrivée pour une étape (arrivée personnalisée sinon l'étape elle-même)
-function getStepArrival(step) {
-  if (step.arrivalLatitude && step.arrivalLongitude) {
-    console.log('[getStepArrival] CUSTOM pour', step.name, ':', step.arrivalLatitude, step.arrivalLongitude);
-    return { lat: parseFloat(step.arrivalLatitude), lng: parseFloat(step.arrivalLongitude) };
+// Coordonnées effectives d'arrivée pour une étape (item avec isArrival sinon l'étape elle-même)
+function getStepArrival(step, accommodations, activities) {
+  const arrAcco = accommodations.find(a => a.stepId === step.id && a.isArrival && a.latitude && a.longitude);
+  if (arrAcco) {
+    return { lat: parseFloat(arrAcco.latitude), lng: parseFloat(arrAcco.longitude) };
   }
-  console.log('[getStepArrival] DEFAULT pour', step.name, ':', step.latitude, step.longitude);
+  const arrAct = activities.find(a => a.stepId === step.id && a.isArrival && a.latitude && a.longitude);
+  if (arrAct) {
+    return { lat: parseFloat(arrAct.latitude), lng: parseFloat(arrAct.longitude) };
+  }
   return { lat: parseFloat(step.latitude), lng: parseFloat(step.longitude) };
 }
 
@@ -355,15 +361,15 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // à chaque sync PowerSync qui retourne une nouvelle référence avec les mêmes données.
   // Inclure les champs visibles/éditables d'une étape pour refléter immédiatement les sauvegardes.
   const psStepsKey = useMemo(
-    () => psSteps.map(s => `${s.id}:${s.order}:${s.name ?? ''}:${s.location ?? ''}:${s.startDate ?? ''}:${s.endDate ?? ''}:${s.arrivalTime ?? ''}:${s.departureTime ?? ''}:${s.notes ?? ''}:${s.latitude ?? ''}:${s.longitude ?? ''}:${s.photoUrl ?? ''}:${s.departureLatitude ?? ''}:${s.departureLongitude ?? ''}:${s.arrivalLatitude ?? ''}:${s.arrivalLongitude ?? ''}`).join(','),
+    () => psSteps.map(s => `${s.id}:${s.order}:${s.name ?? ''}:${s.location ?? ''}:${s.startDate ?? ''}:${s.endDate ?? ''}:${s.arrivalTime ?? ''}:${s.departureTime ?? ''}:${s.notes ?? ''}:${s.latitude ?? ''}:${s.longitude ?? ''}:${s.photoUrl ?? ''}`).join(','),
     [psSteps]
   );
   const psAccKey = useMemo(
-    () => psAccommodations.map(a => `${a.id}:${a.updatedAt || ''}`).join(','),
+    () => psAccommodations.map(a => `${a.id}:${a.isDeparture ? '1' : '0'}:${a.isArrival ? '1' : '0'}:${a.updatedAt || ''}`).join(','),
     [psAccommodations]
   );
   const psActKey = useMemo(
-    () => psActivities.map(a => `${a.id}:${a.updatedAt || ''}`).join(','),
+    () => psActivities.map(a => `${a.id}:${a.isDeparture ? '1' : '0'}:${a.isArrival ? '1' : '0'}:${a.updatedAt || ''}`).join(','),
     [psActivities]
   );
 
@@ -475,48 +481,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
   // Ref qui mémorise les surcharges de departure/arrival définies via le menu marqueur
   // Indépendante des re-renders, survit aux syncs PowerSync
-  const departureOverridesRef = useRef({});
-
   // Mettre à jour steps quand transformedSteps change
-  // IMPORTANT : appliquer les surcharges du menu marqueur qui survivent aux syncs PowerSync
   useEffect(() => {
-    console.log('[StepsSync] ▼ transformedSteps changé ▼');
-    transformedSteps.forEach((s, i) => {
-      console.log(`[StepsSync]   ${i} "${s.name}" depLat:${s.departureLatitude ?? 'null'} arrLat:${s.arrivalLatitude ?? 'null'}`);
-    });
-    setSteps(prev => {
-      const merged = transformedSteps.map(newStep => {
-        // 1. Appliquer les surcharges du marqueur (ref = survit aux syncs PowerSync)
-        const override = departureOverridesRef.current[newStep.id];
-        if (override) {
-          if (override.departureLatitude !== newStep.departureLatitude || override.arrivalLatitude !== newStep.arrivalLatitude) {
-            console.log(`[StepsSync] 🔄 OVERRIDE "${newStep.name}": PowerSync dep=${newStep.departureLatitude ?? 'null'} → OVERRIDE dep=${override.departureLatitude ?? 'null'}`);
-          }
-          return { ...newStep, ...override };
-        }
-        // 2. Sinon préserver les valeurs du state local (via le merge)
-        const oldStep = prev.find(s => s.id === newStep.id);
-        if (!oldStep) return newStep;
-        const depLat = oldStep.departureLatitude ?? newStep.departureLatitude ?? null;
-        const depLng = oldStep.departureLongitude ?? newStep.departureLongitude ?? null;
-        const arrLat = oldStep.arrivalLatitude ?? newStep.arrivalLatitude ?? null;
-        const arrLng = oldStep.arrivalLongitude ?? newStep.arrivalLongitude ?? null;
-        if (depLat !== newStep.departureLatitude || arrLat !== newStep.arrivalLatitude) {
-          console.log(`[StepsSync] 🔄 MERGE "${newStep.name}": PowerSync dep=${newStep.departureLatitude ?? 'null'} → MERGE dep=${depLat}`);
-        }
-        return { ...newStep, departureLatitude: depLat, departureLongitude: depLng, arrivalLatitude: arrLat, arrivalLongitude: arrLng };
-      });
-      return merged;
-    });
+    setSteps(transformedSteps);
   }, [transformedSteps]);
 
-  // 🔍 Logger l'état RÉELLEMENT commité (uniquement les steps avec override)
-  useEffect(() => {
-    const overriddenSteps = steps.filter(s => s.departureLatitude || s.arrivalLatitude);
-    if (overriddenSteps.length > 0) {
-      console.log(`[STEPS-CMTD] instance=${instanceIdRef.current} overrides:`, JSON.stringify(departureOverridesRef.current));
-    }
-  }, [steps]);
+  // Clé qui ne change que quand les FLAGS isDeparture/isArrival changent
+  const psDepArrKey = useMemo(
+    () => psAccommodations.map(a => `${a.id}:${a.isDeparture ? '1' : '0'}:${a.isArrival ? '1' : '0'}`).join(',') + '|' +
+             psActivities.map(a => `${a.id}:${a.isDeparture ? '1' : '0'}:${a.isArrival ? '1' : '0'}`).join(','),
+    [psAccommodations, psActivities]
+  );
 
   // 🔍 Logger les routes réellement commitées (vérifier le point de départ de route 2)
   useEffect(() => {
@@ -552,20 +527,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const polylinesLoadingRef = useRef(false);  // Flag pour éviter le recalcul pendant le chargement
   const polylinesRef = useRef([]);  // 🎯 Garder les polylines pour éviter qu'elles soient écrasées
   const directionsCalculatedRef = useRef(false);  // 🎯 Tracker que directions est fait
-
-  // 🎯 Forcer le recalcul des polylines à chaque retour sur l'écran (ex: EditStepScreen → retour)
-  useFocusEffect(
-    useCallback(() => {
-      console.log('[Focus] 📍 RoadtripDetailScreen a regagné le focus — force refresh polylines');
-      shouldRefreshRef.current = true;
-      polylinesFetchedRef.current = false;
-      polylinesRef.current = [];
-      polylinesLoadingRef.current = false;
-      directionsCalculatedRef.current = false;
-      setRefreshCounter(c => c + 1);
-    }, [id])
-  );
-
   useEffect(() => {
     if (polylinesFetchedRef.current || stepsLength === 0) return;
 
@@ -630,8 +591,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                       'Authorization': `Bearer ${token}`,
                     },
                     body: JSON.stringify({
-                      origin: getStepDeparture(current),
-                      destination: getStepArrival(next),
+                      origin: getStepDeparture(current, psAccommodations, psActivities),
+                      destination: getStepArrival(next, psAccommodations, psActivities),
                       alternatives: false,
                     }),
                   });
@@ -667,6 +628,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         console.log('[Directions] Erreur chargement polylines API:', err.message);
       } finally {
         polylinesLoadingRef.current = false;  // Débloquer le recalcul
+        directionsCalculatedRef.current = true;  // Marquer les directions comme calculées
+        // Forcer un re-render pour que le second useEffect (loadRoutes) puisse se déclencher
+        // Ne PAS mettre à jour lastDepArrKeyRef ici : il doit encore être à sa valeur d'origine
+        // pour que depArrChanged détecte la différence avec psDepArrKey chargé
+        setRefreshCounter(c => c + 1);
       }
     };
 
@@ -736,21 +702,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     })
   ).current;
 
+  // Dernière version des flags connue lors du dernier calcul des routes
+  // Initialisé à null pour que depArrChanged soit true au premier chargement
+  const lastDepArrKeyRef = useRef(null);
+
   // Charger les itinéraires : d'abord depuis la BD, puis recalculer si refreshing + SAUVEGARDER
   useEffect(() => {
-    log('DIRECTIONS', `useEffect déclenché: stepsLength=${stepsLength}, refreshCounter=${refreshCounter}, shouldRefresh=${shouldRefreshRef.current}`);
-    // Log les departures des steps (uniquement celles avec custom departure)
-    const customDeps = steps.filter(s => s.departureLatitude || s.arrivalLatitude);
-    if (customDeps.length > 0) {
-      console.log('[Directions] Custom dep/arr:', customDeps.map(s => `${s.name}: dep=${(+s.departureLatitude || 0).toFixed(4)} arr=${(+s.arrivalLatitude || 0).toFixed(4)}`).join(' | '));
-    }
+    const depArrChanged = directionsCalculatedRef.current && lastDepArrKeyRef.current !== psDepArrKey;
+    log('DIRECTIONS', `useEffect déclenché: stepsLength=${stepsLength}, refreshCounter=${refreshCounter}, shouldRefresh=${shouldRefreshRef.current}, depArrChanged=${depArrChanged}`);
     const loadRoutes = async () => {
-      const needsRefresh = shouldRefreshRef.current;
+      const needsRefresh = shouldRefreshRef.current || depArrChanged;
       shouldRefreshRef.current = false;  // Reset immédiatement
       log('DIRECTIONS', `loadRoutes: needsRefresh=${needsRefresh}`);
 
-      // 🎯 GARDE ABSOLUE : si le premier useEffect gère les polylines, on ne touche à rien
-      if (!needsRefresh && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
+      // 🎯 GARDE : skip si le premier useEffect charge les polylines, SAUF si les flags viennent de changer
+      if (!needsRefresh && !depArrChanged && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
         log('DIRECTIONS', '[SKIP] Premier useEffect gère les polylines');
         return;
       }
@@ -810,6 +776,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           } else {
             setRoutes(newRoutes);
           }
+          lastDepArrKeyRef.current = psDepArrKey;
           directionsCalculatedRef.current = true;
           return;
         }
@@ -838,6 +805,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           setRoutes(newRoutes);
         }
         setRefreshingRoutes(false);
+        lastDepArrKeyRef.current = psDepArrKey;
         directionsCalculatedRef.current = true;
         return;
       }
@@ -851,8 +819,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
           if (!current.latitude || !current.longitude || !next.latitude || !next.longitude) {
             console.log('[Directions] Route', i, ': coordonnées manquantes');
-            const dep = getStepDeparture(current);
-            const arr = getStepArrival(next);
+            const dep = getStepDeparture(current, psAccommodations, psActivities);
+            const arr = getStepArrival(next, psAccommodations, psActivities);
             newRoutes.push({
               coordinates: [
                 { latitude: dep.lat, longitude: dep.lng },
@@ -869,6 +837,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           let routeDurationSeconds = 0;
 
           try {
+            const origin = getStepDeparture(current, psAccommodations, psActivities);
+            const dest = getStepArrival(next, psAccommodations, psActivities);
             const response = await fetch(`${API_URL}/api/routes/compute`, {
               method: 'POST',
               headers: {
@@ -876,8 +846,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 'Authorization': `Bearer ${token}`,
               },
               body: JSON.stringify({
-                origin: getStepDeparture(current),
-                destination: getStepArrival(next),
+                origin,
+                destination: dest,
                 alternatives: false,
               }),
             });
@@ -1009,11 +979,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       }
 
       // 🎯 Marker que le calcul des directions est terminé
+      lastDepArrKeyRef.current = psDepArrKey;
       directionsCalculatedRef.current = true;
     };
 
     loadRoutes();
-  }, [stepsLength, refreshCounter]);
+  }, [stepsLength, refreshCounter, psDepArrKey]);
 
   // Injecter titre + hamburger dans la barre de navigation native
   React.useLayoutEffect(() => {
@@ -1080,6 +1051,74 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     return coords;
   }, []);
 
+  // Calculer une région centrée sur le marqueur de l'étape avec un zoom adapté à ses items
+  const getStepRegion = useCallback((step, accomList, activityList) => {
+    if (!step) return null;
+
+    const stepLat = parseFloat(step.latitude);
+    const stepLng = parseFloat(step.longitude);
+
+    if (isNaN(stepLat) || isNaN(stepLng)) return null;
+
+    // Ratio de décalage nord pour compenser le volet fermé en bas (~200px sur ~750px d'écran)
+    const SHEET_OFFSET_RATIO = 0.14;
+
+    // Collecter toutes les coordonnées (étape + items)
+    const allCoords = [{ latitude: stepLat, longitude: stepLng }];
+
+    accomList
+      .filter(a => a.stepId === step.id && a.latitude && a.longitude)
+      .forEach(a => {
+        allCoords.push({ latitude: parseFloat(a.latitude), longitude: parseFloat(a.longitude) });
+      });
+
+    activityList
+      .filter(a => a.stepId === step.id && a.latitude && a.longitude)
+      .forEach(a => {
+        allCoords.push({ latitude: parseFloat(a.latitude), longitude: parseFloat(a.longitude) });
+      });
+
+    if (allCoords.length === 1) {
+      // Aucun item avec coordonnées → zoom par défaut sur l'étape
+      return {
+        latitude: stepLat - 0.05 * SHEET_OFFSET_RATIO,
+        longitude: stepLng,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+
+    // Calculer la distance max d'un item par rapport à l'étape
+    // (contrairement à min/max, ça garantit que tous les items restent dans le viewport
+    //  même si l'étape est à une extrémité du groupe)
+    let maxLatDiff = 0;
+    let maxLngDiff = 0;
+
+    allCoords.forEach(c => {
+      const latDiff = Math.abs(c.latitude - stepLat);
+      const lngDiff = Math.abs(c.longitude - stepLng);
+      if (latDiff > maxLatDiff) maxLatDiff = latDiff;
+      if (lngDiff > maxLngDiff) maxLngDiff = lngDiff;
+    });
+
+    // Deltas : 2× la distance max (pour couvrir des deux côtés de l'étape) + padding
+    const PADDING_FACTOR = 1.5;
+    const MIN_DELTA = 0.008;
+    const latDelta = Math.max(maxLatDiff * 2 * PADDING_FACTOR, MIN_DELTA);
+    const lngDelta = Math.max(maxLngDiff * 2 * PADDING_FACTOR, MIN_DELTA);
+
+    // Décaler le centre vers le nord pour que les marqueurs ne soient pas masqués par le volet
+    const latitude = stepLat - latDelta * SHEET_OFFSET_RATIO;
+
+    // La région est centrée sur le marqueur de l'étape, avec un décalage nord pour le volet
+    return {
+      latitude,
+      longitude: stepLng,
+      latitudeDelta: latDelta,
+      longitudeDelta: lngDelta,
+    };
+  }, []);
+
   // Récupérer les coordonnées de tout le roadtrip (pour fitToCoordinates)
   const getRoadtripCoordinates = useCallback((stepList, accomList, activityList) => {
     const coords = [];
@@ -1126,23 +1165,14 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     }).start();
     setSheetExpanded(false);
 
-    // Zoomer sur la carte : englober l'étape ET tous ses items
-    // Utiliser fitToCoordinates avec edgePadding pour exclure la zone du volet fermé
+    // Centrer la carte sur le marqueur de l'étape avec un zoom adapté à ses items
     if (steps[index] && mapRef.current) {
-      const coords = getStepCoordinates(steps[index], psAccommodations, psActivities);
-      if (coords.length > 0) {
-        mapRef.current.fitToCoordinates(coords, {
-          edgePadding: {
-            top: 80,
-            right: 40,
-            bottom: SHEET_COLLAPSED + 20,  // Exclure la zone du volet fermé
-            left: 40,
-          },
-          animated: true,
-        });
+      const region = getStepRegion(steps[index], psAccommodations, psActivities);
+      if (region) {
+        mapRef.current.animateToRegion(region, 400);
       }
     }
-  }, [steps, sheetAnim, psAccommodations, psActivities, getStepCoordinates]);
+  }, [steps, sheetAnim, psAccommodations, psActivities, getStepRegion]);
 
   const openEditStep = useCallback((index) => {
     const step = steps[index];
@@ -1347,11 +1377,11 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           >
             {/* Afficher les itinéraires */}
             {routes.map((route, idx) => {
-              const first = route.coordinates?.[0];
-              const coordKey = first ? `${first.latitude.toFixed(4)}_${first.longitude.toFixed(4)}_${route.coordinates.length}` : idx;
+              const first = route.coordinates[0];
+              const last = route.coordinates[route.coordinates.length - 1];
               return (
                 <Polyline
-                  key={`route-${idx}-${coordKey}`}
+                  key={`route-${idx}-${route.coordinates.length}-${first?.latitude.toFixed(5)}-${first?.longitude.toFixed(5)}-${last?.latitude.toFixed(5)}-${last?.longitude.toFixed(5)}`}
                   coordinates={route.coordinates}
                   strokeColor={route.color}
                   strokeWidth={4}
@@ -1484,24 +1514,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 onPress={() => {
                   const step = steps[selectedIndex];
                   if (!step || !mapRef.current) return;
-                  const coords = getStepCoordinates(step, psAccommodations, psActivities);
-                  if (coords.length > 0) {
-                    mapRef.current.fitToCoordinates(coords, {
-                      edgePadding: {
-                        top: 80,
-                        right: 40,
-                        bottom: SHEET_COLLAPSED + 20,
-                        left: 40,
-                      },
-                      animated: true,
-                    });
-                  } else if (step.latitude && step.longitude) {
-                    mapRef.current.animateToRegion({
-                      latitude: parseFloat(step.latitude),
-                      longitude: parseFloat(step.longitude),
-                      latitudeDelta: 0.05,
-                      longitudeDelta: 0.05,
-                    }, 400);
+                  const region = getStepRegion(step, psAccommodations, psActivities);
+                  if (region) {
+                    mapRef.current.animateToRegion(region, 400);
                   }
                 }}
                 style={[styles.ovBtn, { backgroundColor: 'rgba(59,130,246,0.25)', borderColor: 'rgba(59,130,246,0.4)' }]}
@@ -1886,36 +1901,18 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                     setShowMarkerMenu(false);
                     return;
                   }
-                  const depLat = parseFloat(menuMarker.item.latitude);
-                  const depLng = parseFloat(menuMarker.item.longitude);
-                  const stepName = steps.find(s => s.id === menuMarker.stepId)?.name ?? '?';
-                  console.log('[MarkerMenu] 🚐 Départ → étape:', stepName, '('+menuMarker.stepId.slice(0,12)+'...)');
-                  console.log('[MarkerMenu]   item:', menuMarker.item.name, 'lat:', depLat, 'lng:', depLng);
-                  // Mémoriser la surcharge dans la ref (survit aux syncs PowerSync)
-                  departureOverridesRef.current[menuMarker.stepId] = {
-                    ...departureOverridesRef.current[menuMarker.stepId],
-                    departureLatitude: depLat,
-                    departureLongitude: depLng,
-                  };
-                  console.log('[MarkerMenu] 📌 overridesRef après écriture (DEPART):', JSON.stringify(departureOverridesRef.current));
-                  await useRoadtripStore.getState().updateStep(menuMarker.stepId, {
-                    departureLatitude: depLat,
-                    departureLongitude: depLng,
-                  });
-                  console.log('[MarkerMenu] ✅ updateStep(DEPART) terminé pour', menuMarker.stepId.slice(0,12)+'...');
-                  // Mise à jour locale immédiate (pas d'attente PowerSync)
-                  setSteps(prev => prev.map(s =>
-                    s.id === menuMarker.stepId
-                      ? { ...s, departureLatitude: depLat, departureLongitude: depLng }
-                      : s
-                  ));
+                  const itemId = menuMarker.item.id;
+                  const itemName = menuMarker.item.name;
+                  console.log('[MarkerMenu] 🚐 Départ → item:', itemName, `(${itemId.slice(0,12)}...)`);
+                  // Désactiver les autres flags de départ sur les items de cette étape
+                  const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
+                  for (const a of otherAccos) await localUpdateAccommodation(a.id, { isDeparture: false });
+                  const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
+                  for (const a of otherActs) await localUpdateActivity(a.id, { isDeparture: false });
+                  // Marquer cet item comme départ
+                  const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
+                  await updateFn(itemId, { isDeparture: true });
                   setShowMarkerMenu(false);
-                  shouldRefreshRef.current = true;
-                  polylinesFetchedRef.current = false;
-                  polylinesRef.current = [];
-                  polylinesLoadingRef.current = false;
-                  directionsCalculatedRef.current = false;
-                  setRefreshCounter(c => c + 1);
                 }}
               >
                 <Text style={styles.searchResultActionIcon}>🚐</Text>
@@ -1925,41 +1922,24 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               {/* Arrivée depuis l'étape précédente */}
               <TouchableOpacity style={styles.searchResultAction}
                 onPress={async () => {
-                  const stepName = steps.find(s => s.id === menuMarker.stepId)?.name ?? '?';
-                  const arrLat = parseFloat(menuMarker.item.latitude);
-                  const arrLng = parseFloat(menuMarker.item.longitude);
-                  console.log('[MarkerMenu] 🏁 Arrivée → étape:', stepName, 'item:', menuMarker.item.name, 'lat:', arrLat, 'lng:', arrLng);
-                  // Mémoriser la surcharge dans la ref (survit aux syncs PowerSync)
-                  departureOverridesRef.current[menuMarker.stepId] = {
-                    ...departureOverridesRef.current[menuMarker.stepId],
-                    arrivalLatitude: arrLat,
-                    arrivalLongitude: arrLng,
-                  };
-                  console.log('[MarkerMenu] 📌 overridesRef après écriture (ARRIVEE):', JSON.stringify(departureOverridesRef.current));
                   const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
                   if (stepIndex <= 0) {
                     Alert.alert('Aucune étape précédente', 'Cette étape est la première du voyage.');
                     setShowMarkerMenu(false);
                     return;
                   }
-                  await useRoadtripStore.getState().updateStep(menuMarker.stepId, {
-                    arrivalLatitude: arrLat,
-                    arrivalLongitude: arrLng,
-                  });
-                  console.log('[MarkerMenu] ✅ updateStep(ARRIVEE) terminé pour', menuMarker.stepId.slice(0,12)+'...');
-                  // Mise à jour locale immédiate
-                  setSteps(prev => prev.map(s =>
-                    s.id === menuMarker.stepId
-                      ? { ...s, arrivalLatitude: arrLat, arrivalLongitude: arrLng }
-                      : s
-                  ));
+                  const itemId = menuMarker.item.id;
+                  const itemName = menuMarker.item.name;
+                  console.log('[MarkerMenu] 🏁 Arrivée → item:', itemName, `(${itemId.slice(0,12)}...)`);
+                  // Désactiver les autres flags d'arrivée sur les items de cette étape
+                  const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
+                  for (const a of otherAccos) await localUpdateAccommodation(a.id, { isArrival: false });
+                  const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
+                  for (const a of otherActs) await localUpdateActivity(a.id, { isArrival: false });
+                  // Marquer cet item comme arrivée
+                  const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
+                  await updateFn(itemId, { isArrival: true });
                   setShowMarkerMenu(false);
-                  shouldRefreshRef.current = true;
-                  polylinesFetchedRef.current = false;
-                  polylinesRef.current = [];
-                  polylinesLoadingRef.current = false;
-                  directionsCalculatedRef.current = false;
-                  setRefreshCounter(c => c + 1);
                 }}
               >
                 <Text style={styles.searchResultActionIcon}>🏁</Text>
@@ -1970,29 +1950,19 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               <View style={styles.searchResultDivider} />
               <TouchableOpacity style={styles.searchResultAction}
                 onPress={async () => {
-                  const stepName = steps.find(s => s.id === menuMarker.stepId)?.name ?? '?';
+                  const stepId = menuMarker.stepId;
+                  const stepName = steps.find(s => s.id === stepId)?.name ?? '?';
                   console.log('[MarkerMenu] 🗑️ Réinitialiser → étape:', stepName);
-                  // Supprimer la surcharge de la ref
-                  delete departureOverridesRef.current[menuMarker.stepId];
-                  await useRoadtripStore.getState().updateStep(menuMarker.stepId, {
-                    departureLatitude: null,
-                    departureLongitude: null,
-                    arrivalLatitude: null,
-                    arrivalLongitude: null,
-                  });
-                  // Mise à jour locale immédiate
-                  setSteps(prev => prev.map(s =>
-                    s.id === menuMarker.stepId
-                      ? { ...s, departureLatitude: null, departureLongitude: null, arrivalLatitude: null, arrivalLongitude: null }
-                      : s
-                  ));
+                  // Réinitialiser TOUS les flags de tous les items de cette étape
+                  const stepAccos = psAccommodations.filter(a => a.stepId === stepId);
+                  for (const a of stepAccos) {
+                    if (a.isDeparture || a.isArrival) await localUpdateAccommodation(a.id, { isDeparture: false, isArrival: false });
+                  }
+                  const stepActs = psActivities.filter(a => a.stepId === stepId);
+                  for (const a of stepActs) {
+                    if (a.isDeparture || a.isArrival) await localUpdateActivity(a.id, { isDeparture: false, isArrival: false });
+                  }
                   setShowMarkerMenu(false);
-                  shouldRefreshRef.current = true;
-                  polylinesFetchedRef.current = false;
-                  polylinesRef.current = [];
-                  polylinesLoadingRef.current = false;
-                  directionsCalculatedRef.current = false;
-                  setRefreshCounter(c => c + 1);
                 }}
               >
                 <Text style={styles.searchResultActionIcon}>🗑️</Text>

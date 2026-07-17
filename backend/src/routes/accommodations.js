@@ -60,7 +60,7 @@ router.post('/', async (req, res) => {
 
 // PUT /api/accommodations/:id — upsert (EDITOR+, ID généré côté client)
 router.put('/:id', async (req, res) => {
-  const { stepId, type, name, address, latitude, longitude, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, currency, notes, status } = req.body;
+  const { stepId, type, name, address, latitude, longitude, isDeparture, isArrival, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, currency, notes, status } = req.body;
 
   if (!stepId) return res.status(400).json({ error: 'stepId is required' });
 
@@ -82,6 +82,8 @@ router.put('/:id', async (req, res) => {
       address: address || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
+      isDeparture: !!isDeparture ?? false,
+      isArrival: !!isArrival ?? false,
       checkIn: checkIn ? toUTCDate(checkIn) : null,
       checkOut: checkOut ? toUTCDate(checkOut) : null,
       bookingRef: bookingRef || null,
@@ -97,6 +99,8 @@ router.put('/:id', async (req, res) => {
       ...(address !== undefined && { address }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
+      ...(isDeparture !== undefined && { isDeparture: !!isDeparture }),
+      ...(isArrival !== undefined && { isArrival: !!isArrival }),
       ...(checkIn !== undefined && { checkIn: checkIn ? toUTCDate(checkIn) : null }),
       ...(checkOut !== undefined && { checkOut: checkOut ? toUTCDate(checkOut) : null }),
       ...(bookingRef !== undefined && { bookingRef }),
@@ -126,7 +130,7 @@ router.patch('/:id', async (req, res) => {
   if (!role) return res.status(403).json({ error: 'Access denied' });
   if (role === 'VIEWER') return res.status(403).json({ error: 'Role EDITOR required' });
 
-  const { type, name, address, latitude, longitude, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, currency, notes, status } = req.body;
+  const { type, name, address, latitude, longitude, isDeparture, isArrival, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, currency, notes, status } = req.body;
 
   const updated = await prisma.accommodation.update({
     where: { id: req.params.id },
@@ -136,6 +140,8 @@ router.patch('/:id', async (req, res) => {
       ...(address !== undefined && { address }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
+      ...(isDeparture !== undefined && { isDeparture: !!isDeparture }),
+      ...(isArrival !== undefined && { isArrival: !!isArrival }),
       ...(checkIn !== undefined && { checkIn: checkIn ? toUTCDate(checkIn) : null }),
       ...(checkOut !== undefined && { checkOut: checkOut ? toUTCDate(checkOut) : null }),
       ...(bookingRef !== undefined && { bookingRef }),
