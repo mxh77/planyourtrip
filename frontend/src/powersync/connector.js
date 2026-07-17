@@ -303,6 +303,9 @@ export class AppConnector {
         } else {
           continue;
         }
+        if (table === 'steps' && (effectiveOpData.departureLatitude !== undefined || effectiveOpData.arrivalLatitude !== undefined)) {
+          console.log(TAG, `📤 ${method} steps/${id.slice(0,12)}... dep/arr:`, JSON.stringify({depLat:effectiveOpData.departureLatitude,depLng:effectiveOpData.departureLongitude,arrLat:effectiveOpData.arrivalLatitude,arrLng:effectiveOpData.arrivalLongitude}));
+        }
 
         const res = await fetch(url, {
           method,

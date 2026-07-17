@@ -27,7 +27,7 @@ function isActivity(types = []) {
   return types.some(t => ACTIVITY_TYPES.includes(t));
 }
 
-export default function PlaceDetailModal({ placeId, stepId, roadtripId, onClose }) {
+export default function PlaceDetailModal({ placeId, stepId, roadtripId, stepStartDate, stepArrivalTime, onClose }) {
   const [place, setPlace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(null); // 'accommodation' | 'activity' | null
@@ -63,12 +63,18 @@ export default function PlaceDetailModal({ placeId, stepId, roadtripId, onClose 
       return;
     }
     setAdding('accommodation');
+    // Pré-remplir avec la date/heure d'arrivée de l'étape
+    const defaultTime = stepArrivalTime || '10:00';
+    const checkIn = stepStartDate ? `${stepStartDate} ${defaultTime}` : null;
+    const checkOut = stepStartDate ? `${stepStartDate} ${defaultTime}` : null;
     try {
       await createAccommodation({
         name: place.name,
         address: place.formatted_address ?? null,
         latitude: place.geometry?.location?.lat ?? null,
         longitude: place.geometry?.location?.lng ?? null,
+        checkIn,
+        checkOut,
         stepId,
         roadtripId,
       });
@@ -87,10 +93,16 @@ export default function PlaceDetailModal({ placeId, stepId, roadtripId, onClose 
       return;
     }
     setAdding('activity');
+    // Pré-remplir avec la date/heure d'arrivée de l'étape
+    const defaultTime = stepArrivalTime || '10:00';
+    const startTime = stepStartDate ? `${stepStartDate} ${defaultTime}` : null;
+    const endTime = stepStartDate ? `${stepStartDate} ${defaultTime}` : null;
     try {
       await createActivity({
         name: place.name,
         location: place.formatted_address ?? null,
+        startTime,
+        endTime,
         stepId,
         roadtripId,
       });

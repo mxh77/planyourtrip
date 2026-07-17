@@ -158,7 +158,7 @@ const EMPTY_FORM = {
   notes: '',
 };
 
-export default function ActivitySection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, initialEditId }) {
+export default function ActivitySection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, stepArrivalTime, stepDepartureTime, initialEditId }) {
   const { data: activities } = useQuery(
     stepId
       ? 'SELECT * FROM activities WHERE stepId = ? ORDER BY startTime ASC'
@@ -223,10 +223,19 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
   }, [searchQuery, tab, modalVisible]);
 
   const openCreate = () => {
+    // Pré-remplir avec la date/heure d'arrivée de l'étape (même pour la fin)
+    // Si l'étape n'a pas d'heure, forcer 10:00
+    const defaultTime = stepArrivalTime || '10:00';
+    const defaultStart = stepStartDate
+      ? `${stepStartDate} ${defaultTime}`
+      : '';
+    const defaultEnd = stepEndDate
+      ? `${stepEndDate} ${defaultTime}`
+      : '';
     setForm({
       ...EMPTY_FORM,
-      startTime: stepStartDate || '',
-      endTime: stepEndDate || '',
+      startTime: defaultStart,
+      endTime: defaultEnd,
     });
     setEditingId(null);
     setTab('manual');

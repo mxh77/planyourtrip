@@ -45,13 +45,8 @@ export function AppPowerSyncProvider({ children }) {
     });
 
     const unsubscribe = db.registerListener({
-      statusChanged: (status) => {
-        console.log(TAG, 'status →',
-          `connected=${status.connected}`,
-          `lastSync=${status.lastSyncedAt ?? 'jamais'}`,
-          `downloading=${status.downloading}`,
-          `uploading=${status.uploading}`,
-        );
+      statusChanged: (_status) => {
+        // Log désactivé temporairement
       },
     });
 

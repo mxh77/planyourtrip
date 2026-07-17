@@ -156,7 +156,7 @@ const EMPTY_FORM = {
   notes: '',
 };
 
-export default function AccommodationSection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, initialEditId }) {
+export default function AccommodationSection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, stepArrivalTime, stepDepartureTime, initialEditId }) {
   const { data: rows } = useQuery(
     stepId
       ? 'SELECT * FROM accommodations WHERE stepId = ? ORDER BY createdAt ASC'
@@ -222,10 +222,19 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
   }, [searchQuery, tab, modalVisible]);
 
   const openCreate = () => {
+    // Pré-remplir avec la date/heure d'arrivée de l'étape (même pour le départ)
+    // Si l'étape n'a pas d'heure, forcer 10:00
+    const defaultTime = stepArrivalTime || '10:00';
+    const defaultCheckIn = stepStartDate
+      ? `${stepStartDate} ${defaultTime}`
+      : '';
+    const defaultCheckOut = stepEndDate
+      ? `${stepEndDate} ${defaultTime}`
+      : '';
     setForm({
       ...EMPTY_FORM,
-      checkIn: stepStartDate || '',
-      checkOut: stepEndDate || '',
+      checkIn: defaultCheckIn,
+      checkOut: defaultCheckOut,
     });
     setEditingId(null);
     setTab('manual');

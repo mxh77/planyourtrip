@@ -89,7 +89,7 @@ async function fetchNearbyV1(latitude, longitude, radius, includedTypes) {
   return data.places ?? [];
 }
 
-export default function NearbySearchPanel({ latitude, longitude, stepId, roadtripId, allowedTypes, radius }) {
+export default function NearbySearchPanel({ latitude, longitude, stepId, roadtripId, allowedTypes, radius, stepStartDate, stepArrivalTime }) {
   const [lodgingPlaces, setLodgingPlaces] = useState([]);
   const [activityPlaces, setActivityPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -249,6 +249,8 @@ export default function NearbySearchPanel({ latitude, longitude, stepId, roadtri
           placeId={selectedPlaceId}
           stepId={stepId}
           roadtripId={roadtripId}
+          stepStartDate={stepStartDate}
+          stepArrivalTime={stepArrivalTime}
           onClose={() => setSelectedPlaceId(null)}
         />
       ) : null}

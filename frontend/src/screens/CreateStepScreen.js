@@ -44,7 +44,7 @@ export default function CreateStepScreen({ route, navigation }) {
 
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState(defaultDate);
-  const [endDate, setEndDate] = useState(null); // null = non définie
+  const [endDate, setEndDate] = useState(defaultDate); // Par défaut = même jour que l'arrivée
   const [location, setLocation] = useState('');
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
@@ -205,18 +205,13 @@ export default function CreateStepScreen({ route, navigation }) {
           <View style={[styles.inputGroup, { flex: 1 }]}>
             <Text style={styles.label}>Départ</Text>
             <TouchableOpacity
-              style={[styles.dateBtn, !endDate && styles.dateBtnEmpty]}
+              style={styles.dateBtn}
               onPress={() => openDtPicker('end')}
             >
-              <Text style={[styles.dateBtnText, !endDate && { color: COLORS.textDim }]}>
-                {endDate ? fmtBtn(endDate, departureTime) : '+ Ajouter'}
+              <Text style={styles.dateBtnText}>
+                {fmtBtn(endDate, departureTime)}
               </Text>
             </TouchableOpacity>
-            {endDate && (
-              <TouchableOpacity onPress={() => { setEndDate(null); setDepartureTime(null); }} style={styles.clearBtn}>
-                <Text style={styles.clearBtnText}>✕ effacer</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
 
@@ -244,6 +239,8 @@ export default function CreateStepScreen({ route, navigation }) {
             roadtripId={roadtripId}
             allowedTypes={roadtripSettings?.suggestionPlaceTypes}
             radius={roadtripSettings?.suggestionRadius}
+            stepStartDate={startDate ? toLocalDateString(startDate) : null}
+            stepArrivalTime={arrivalTime ?? null}
           />
         ) : null}
 

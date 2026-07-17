@@ -7,6 +7,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { useQuery } from '@powersync/react-native';
 import { useRoadtripStore } from '../store/roadtripStore';
 import { useAuthStore } from '../store/authStore';
 import { useStepPhotos } from '../hooks/usePowerSync';
@@ -58,6 +59,74 @@ export default function EditStepScreen({ route, navigation }) {
   const userId = useAuthStore((s) => s.user?.id);
   const { photos } = useStepPhotos(step.id);
   const roadtripSettings = useRoadtripSettings(step.roadtripId);
+
+  // ─── Requêtes items de l'étape ────────────────────────────────────────
+  const { data: rawAcs } = useQuery(
+    step.id ? 'SELECT checkIn, checkOut FROM accommodations WHERE stepId = ?' : 'SELECT * FROM accommodations WHERE 1=0',
+    step.id ? [step.id] : []
+  );
+  const { data: rawActs } = useQuery(
+    step.id ? 'SELECT startTime, endTime FROM activities WHERE stepId = ?' : 'SELECT * FROM activities WHERE 1=0',
+    step.id ? [step.id] : []
+  );
+
+  const acs = rawAcs ?? [];
+  const acts = rawActs ?? [];
+  const hasItems = acs.length > 0 || acts.length > 0;
+
+  // ─── Calcul DIRECT des valeurs d'affichage depuis les items ────────────
+  // NE PAS utiliser le state, calculer synchrone pendant le render
+  let dispStartDate = startDate;
+  let dispEndDate = endDate;
+  let dispArrivalTime = arrivalTime;
+  let dispDepartureTime = departureTime;
+
+  if (hasItems) {
+    const allItems = [...acs, ...acts];
+
+    // Helper : extraire { date, time } depuis "YYYY-MM-DD HH:mm" ou "YYYY-MM-DDTHH:mm:SS.000000"
+    const splitDt = (str) => {
+      if (!str) return { date: null, time: null };
+      // Format avec T : "2026-07-31T18:45:00.000000"
+      if (str.includes('T')) {
+        const [ymd, rest] = str.split('T');
+        return { date: parseDate(ymd), time: rest ? rest.slice(0, 5) : null };
+      }
+      // Format avec espace : "2026-07-31 18:45"
+      const p = str.split(' ');
+      return { date: parseDate(p[0]), time: p.length > 1 ? p[1] : null };
+    };
+
+    let minDt = null, maxDt = null;
+    for (const item of allItems) {
+      const d = item.checkIn || item.startTime;
+      if (d && (!minDt || d < minDt)) minDt = d;
+    }
+    for (const item of allItems) {
+      const d = item.checkOut || item.endTime;
+      if (d && (!maxDt || d > maxDt)) maxDt = d;
+    }
+
+    // Toujours forcer les heures quand des items existent
+    // Si un item a une heure explicite, on l'utilise, sinon 10:00 par défaut
+    const FORCED_DEFAULT_TIME = '10:00';
+
+    if (minDt) {
+      const { date, time } = splitDt(minDt);
+      if (date) dispStartDate = date;
+      dispArrivalTime = time ?? FORCED_DEFAULT_TIME;
+    } else {
+      dispArrivalTime = FORCED_DEFAULT_TIME;
+    }
+
+    if (maxDt) {
+      const { date, time } = splitDt(maxDt);
+      if (date) dispEndDate = date;
+      dispDepartureTime = time ?? FORCED_DEFAULT_TIME;
+    } else {
+      dispDepartureTime = dispArrivalTime;
+    }
+  }
 
   // URL de la photo de carte — état local pour éviter les re-renders intermédiaires de PowerSync
   const [coverPhotoUrl, setCoverPhotoUrl] = useState(step.photoUrl ?? null);
@@ -157,8 +226,8 @@ export default function EditStepScreen({ route, navigation }) {
       return;
     }
     const dateErrors = validateStepDates({
-      startDate: toLocalDateString(startDate),
-      endDate: endDate ? toLocalDateString(endDate) : undefined,
+      startDate: toLocalDateString(dispStartDate),
+      endDate: dispEndDate ? toLocalDateString(dispEndDate) : undefined,
     });
     if (dateErrors.length > 0) {
       Alert.alert('Dates incohérentes', dateErrors.join('\n'));
@@ -166,18 +235,20 @@ export default function EditStepScreen({ route, navigation }) {
     }
     setLoading(true);
     try {
-      await updateStep(step.id, {
+      const payload = {
         name: name.trim(),
         location: location.trim() || null,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
-        startDate: toLocalDateString(startDate),
-        endDate: endDate ? toLocalDateString(endDate) : null,
-        arrivalTime: arrivalTime ?? null,
-        departureTime: departureTime ?? null,
+        startDate: toLocalDateString(dispStartDate),
+        endDate: dispEndDate ? toLocalDateString(dispEndDate) : null,
+        arrivalTime: dispArrivalTime ?? null,
+        departureTime: dispDepartureTime ?? null,
         notes: notes.trim() || null,
         stopType: null,
-      });
+      };
+      console.log('[EditStepScreen] 💾 handleSubmit → payload envoyé à updateStep:', JSON.stringify(payload), 'step.id:', step.id);
+      await updateStep(step.id, payload);
       navigation.goBack();
     } catch {
       Alert.alert('Erreur', "Impossible de modifier l'étape.");
@@ -254,39 +325,54 @@ export default function EditStepScreen({ route, navigation }) {
         {/* ─── Arrivée / Départ ────────────────────────────────────────────── */}
         {/* Arrivée */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Arrivée</Text>
+          <Text style={styles.label}>
+            Arrivée {hasItems ? <Text style={{ color: COLORS.textDim, fontSize: 10 }}>(calculée depuis les items)</Text> : null}
+          </Text>
           <View style={styles.dateSplitRow}>
             <Text style={styles.dateSplitLabel}>Date :</Text>
-            <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
-              <Text style={styles.dateSplitValue}>{fmtDateField(startDate)}</Text>
+            <TouchableOpacity
+              style={[styles.dateSplitBtn, hasItems && styles.dateBtnForced]}
+              onPress={() => { if (!hasItems) openDtPicker('start'); }}
+              activeOpacity={hasItems ? 1 : 0.6}
+            >
+              <Text style={[styles.dateSplitValue, hasItems && { color: COLORS.textDim }]}>{fmtDateField(dispStartDate)}</Text>
             </TouchableOpacity>
             <Text style={styles.dateSplitSep}> </Text>
             <Text style={styles.dateSplitLabel}>Heure :</Text>
-            <TouchableOpacity style={styles.dateSplitBtn} onPress={() => openDtPicker('start')}>
-              <Text style={styles.dateSplitValue}>{fmtTimeField(arrivalTime)}</Text>
+            <TouchableOpacity
+              style={[styles.dateSplitBtn, hasItems && styles.dateBtnForced]}
+              onPress={() => { if (!hasItems) openDtPicker('start'); }}
+              activeOpacity={hasItems ? 1 : 0.6}
+            >
+              <Text style={[styles.dateSplitValue, hasItems && { color: COLORS.textDim }]}>{fmtTimeField(dispArrivalTime)}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Départ */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Départ</Text>
+          <Text style={styles.label}>
+            Départ {hasItems ? <Text style={{ color: COLORS.textDim, fontSize: 10 }}>(calculé depuis les items)</Text> : null}
+          </Text>
           <View style={styles.dateSplitRow}>
             <Text style={styles.dateSplitLabel}>Date :</Text>
-            <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
-              <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtDateField(endDate)}</Text>
+            <TouchableOpacity
+              style={[styles.dateSplitBtn, hasItems && styles.dateBtnForced]}
+              onPress={() => { if (!hasItems) openDtPicker('end'); }}
+              activeOpacity={hasItems ? 1 : 0.6}
+            >
+              <Text style={[styles.dateSplitValue, hasItems && { color: COLORS.textDim }]}>{fmtDateField(dispEndDate)}</Text>
             </TouchableOpacity>
             <Text style={styles.dateSplitSep}> </Text>
             <Text style={styles.dateSplitLabel}>Heure :</Text>
-            <TouchableOpacity style={[styles.dateSplitBtn, !endDate && styles.dateBtnEmpty]} onPress={() => openDtPicker('end')}>
-              <Text style={[styles.dateSplitValue, !endDate && { color: COLORS.textDim }]}>{fmtTimeField(departureTime)}</Text>
+            <TouchableOpacity
+              style={[styles.dateSplitBtn, hasItems && styles.dateBtnForced]}
+              onPress={() => { if (!hasItems) openDtPicker('end'); }}
+              activeOpacity={hasItems ? 1 : 0.6}
+            >
+              <Text style={[styles.dateSplitValue, hasItems && { color: COLORS.textDim }]}>{fmtTimeField(dispDepartureTime)}</Text>
             </TouchableOpacity>
           </View>
-          {endDate && (
-            <TouchableOpacity onPress={() => { setEndDate(null); setDepartureTime(null); }} style={styles.clearBtn}>
-              <Text style={styles.clearBtnText}>✕ effacer</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* ─── Type d'arrêt (STOP uniquement) ──────────────────────────────── */}
@@ -301,8 +387,10 @@ export default function EditStepScreen({ route, navigation }) {
           longitude={longitude ? parseFloat(longitude) : null}
           allowedTypes={roadtripSettings?.suggestionPlaceTypes}
           radius={roadtripSettings?.suggestionRadius}
-          stepStartDate={startDate ? toLocalDateString(startDate) : null}
-          stepEndDate={endDate ? toLocalDateString(endDate) : null}
+          stepStartDate={dispStartDate ? toLocalDateString(dispStartDate) : null}
+          stepEndDate={dispEndDate ? toLocalDateString(dispEndDate) : null}
+          stepArrivalTime={dispArrivalTime ?? null}
+          stepDepartureTime={dispDepartureTime ?? null}
           initialEditId={initialEditAccommodationId}
         />
 
@@ -315,8 +403,10 @@ export default function EditStepScreen({ route, navigation }) {
           longitude={longitude ? parseFloat(longitude) : null}
           allowedTypes={roadtripSettings?.suggestionPlaceTypes}
           radius={roadtripSettings?.suggestionRadius}
-          stepStartDate={startDate ? toLocalDateString(startDate) : null}
-          stepEndDate={endDate ? toLocalDateString(endDate) : null}
+          stepStartDate={dispStartDate ? toLocalDateString(dispStartDate) : null}
+          stepEndDate={dispEndDate ? toLocalDateString(dispEndDate) : null}
+          stepArrivalTime={dispArrivalTime ?? null}
+          stepDepartureTime={dispDepartureTime ?? null}
           initialEditId={initialEditActivityId}
         />
 
@@ -478,14 +568,18 @@ const styles = StyleSheet.create({
     minHeight: 38,
     justifyContent: 'center',
   },
+  dateBtnForced: {
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+    borderStyle: 'dashed',
+    opacity: 0.7,
+  },
   dateSplitValue: {
     color: COLORS.text,
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
-  clearBtn: { marginTop: 4, alignSelf: 'flex-start' },
-  clearBtnText: { color: COLORS.textDim, fontSize: 12 },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   photoItem: { width: (SCREEN_W - SPACING.lg * 2 - 16) / 3, aspectRatio: 1, borderRadius: RADIUS.sm },
   photoItemCover: { borderWidth: 2.5, borderColor: COLORS.accent },
