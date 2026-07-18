@@ -284,7 +284,46 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
 
         <Divider />
 
-        {/* ── Section 2 : Planning — placeholder ───────────────────────────── */}
+        {/* ── Section 2 : Boutons de recherche rapide ─────────────────────── */}
+        <SectionHeader
+          icon="🔘"
+          title="Boutons de recherche rapide"
+          subtitle="Boutons affichés sous la barre de recherche sur la carte"
+        />
+
+        {/* Catégories prédéfinies (toujours disponibles) */}
+        <Text style={styles.groupLabel}>🏕️ Catégories principales</Text>
+        <Text style={styles.groupHint}>Toujours visibles dans la barre de recherche</Text>
+
+        {/* Ces catégories sont fixes mais on pourrait les rendre configurables plus tard */}
+
+        {/* Types supplémentaires (ceux cochés apparaîtront comme boutons) */}
+        <Text style={styles.groupLabel}>➕ Types supplémentaires</Text>
+        <Text style={styles.groupHint}>Cochez les types à ajouter comme boutons dédiés</Text>
+        <View style={styles.chipsContainer}>
+          {[
+            { key: 'restaurant', icon: '🍽️', label: 'Restaurants' },
+            { key: 'hotel', icon: '🏨', label: 'Hôtels' },
+            { key: 'supermarket', icon: '🛒', label: 'Supermarchés' },
+            { key: 'museum', icon: '🏗️', label: 'Musées' },
+            { key: 'transit_station', icon: '🚌', label: 'Transports' },
+            { key: 'bar', icon: '🍺', label: 'Bars' },
+            { key: 'park', icon: '🌳', label: 'Parcs' },
+            { key: 'spa', icon: '💆', label: 'Spa / Bien-être' },
+          ].map((opt) => (
+            <Chip
+              key={opt.key}
+              label={opt.label}
+              icon={opt.icon}
+              selected={selectedTypes.includes(opt.key)}
+              onPress={() => togglePlaceType(opt.key)}
+            />
+          ))}
+        </View>
+
+        <Divider />
+
+        {/* ── Section 3 : Planning — placeholder ──────────────────────────── */}
         <ComingSoonSection icon="📅" title="Planning" />
 
         <Divider />

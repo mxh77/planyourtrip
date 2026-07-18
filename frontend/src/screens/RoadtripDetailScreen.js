@@ -5,7 +5,7 @@ import {
   Modal, TextInput, Platform, PanResponder, Pressable,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
@@ -317,12 +317,33 @@ function CurrentStepBar({ step, index, color, onPress, isOverview = false, roadt
   );
 }
 
-// ─── Overlay map buttons ─────────────────────────────────────────────────────
-const OVERLAY_ITEMS = [
-  { key: 'campings', icon: '🏕️', label: 'Campings' },
-  { key: 'trails', icon: '🥾', label: 'Sentiers' },
-  { key: 'pois', icon: '📍', label: 'POI' },
-  { key: 'p4n', icon: '🅿️', label: 'P4N' },
+// ─── Helpers for bounds adjustment ──────────────────────────────────────────
+// Le volet (180px) + le navigateur d'étape (~44px) masquent le bas de la carte.
+// On doit remonter la limite sud des bounds pour chercher uniquement dans la zone visible.
+const HEADER_HEIGHT_ESTIMATE = 100;  // searchArea + catBar (px)
+const BOTTOM_HIDDEN_PX = SHEET_COLLAPSED + 44; // volet + navigateur d'étape
+function adjustBoundsForSheet(bounds) {
+  if (!bounds) return null;
+  const mapTotalH = SCREEN_H - HEADER_HEIGHT_ESTIMATE; // hauteur estimée de la carte en px
+  const hiddenRatio = BOTTOM_HIDDEN_PX / mapTotalH;    // proportion masquée en bas
+  const latRange = bounds.ne.lat - bounds.sw.lat;
+  return {
+    ne: { lat: bounds.ne.lat, lng: bounds.ne.lng },
+    sw: {
+      lat: bounds.sw.lat + latRange * hiddenRatio,  // remonter le sud
+      lng: bounds.sw.lng,
+    },
+  };
+}
+
+// ─── Category search buttons (Google Maps style) ─────────────────────────────
+const CATEGORY_BUTTONS = [
+  { key: 'campings',  icon: '🏕️', label: 'Campings',  googleTypes: ['campground', 'rv_park'],                     includeP4N: true,  p4nTypes: [9] },
+  { key: 'trails',    icon: '🥾', label: 'Rando',      googleTypes: ['hiking_area', 'park'],                          includeP4N: false, p4nTypes: [] },
+  { key: 'p4n',       icon: '🅿️', label: 'P4N',        googleTypes: [],                                             includeP4N: true,  p4nTypes: [7, 8, 10, 12, 14, 57] },
+  { key: 'pois',      icon: '📍', label: 'Activités',   googleTypes: ['tourist_attraction', 'museum', 'amusement_park'], includeP4N: false, p4nTypes: [] },
+  { key: 'restaurant',icon: '🍽️',label: 'Restaurants', googleTypes: ['restaurant', 'cafe', 'bar'],                  includeP4N: false, p4nTypes: [] },
+  { key: 'hotel',     icon: '🏨', label: 'Hôtels',     googleTypes: ['lodging', 'hotel', 'motel', 'bed_and_breakfast'], includeP4N: false, p4nTypes: [] },
 ];
 
 // ─── Écran principal ─────────────────────────────────────────────────────────
@@ -417,6 +438,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [showDetail, setShowDetail] = useState(false);
   const [activeOverlays, setActiveOverlays] = useState({});
   const [showSearchArea, setShowSearchArea] = useState(false);
+  // Recherche par catégorie (boutons Google Maps style)
+  const [categoryResults, setCategoryResults] = useState({});     // { campings: [...], trails: [...], ... }
+  const [categoryLoading, setCategoryLoading] = useState({});     // { campings: true, ... }
+  const [searchBounds, setSearchBounds] = useState(null);         // { ne: {lat,lng}, sw: {lat,lng} } — pour le rectangle
   // Charger le roadtrip depuis PowerSync (réactif)
   const { data: psRoadtripRows } = useQuery(
     'SELECT * FROM roadtrips WHERE id = ?',
@@ -1231,9 +1256,60 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
     navigation.navigate('EditStep', { step });
   }, [navigation, steps]);
 
-  const toggleOverlay = useCallback((key) => {
-    setActiveOverlays(prev => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+  // Fonction de recherche par catégorie (clic bouton)
+  const handleCategoryPress = useCallback(async (cat) => {
+    const isActive = activeOverlays[cat.key];
+
+    if (isActive) {
+      // Désactiver : masquer les résultats
+      setActiveOverlays(prev => ({ ...prev, [cat.key]: false }));
+      return;
+    }
+
+    // Activer : lancer la recherche
+    setActiveOverlays(prev => ({ ...prev, [cat.key]: true }));
+    setCategoryLoading(prev => ({ ...prev, [cat.key]: true }));
+
+    try {
+      const bounds = await mapRef.current?.getMapBoundaries();
+      if (!bounds) {
+        setActiveOverlays(prev => ({ ...prev, [cat.key]: false }));
+        setCategoryLoading(prev => ({ ...prev, [cat.key]: false }));
+        return;
+      }
+
+      const rawBounds = {
+        ne: { lat: bounds.northEast.latitude, lng: bounds.northEast.longitude },
+        sw: { lat: bounds.southWest.latitude, lng: bounds.southWest.longitude },
+      };
+      const visibleBounds = adjustBoundsForSheet(rawBounds);
+      setSearchBounds(visibleBounds);
+
+      const token = useAuthStore.getState().token;
+      const res = await fetch(`${API_URL}/api/places/searchCategory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          bounds: visibleBounds,
+          category: cat.key,
+          includedTypes: cat.googleTypes,
+          includeP4N: cat.includeP4N,
+          p4nTypeIds: cat.p4nTypes,
+          maxResults: 20,
+          language: 'fr',
+        }),
+      });
+      const data = await res.json();
+      console.log(`[ZoneSearch] ✓ ${cat.key}: ${data.results?.length || 0} résultats`);
+
+      setCategoryResults(prev => ({ ...prev, [cat.key]: data.results || [] }));
+    } catch (err) {
+      console.error(`[ZoneSearch] ✗ ${cat.key}:`, err.message);
+      setCategoryResults(prev => ({ ...prev, [cat.key]: [] }));
+    } finally {
+      setCategoryLoading(prev => ({ ...prev, [cat.key]: false }));
+    }
+  }, [activeOverlays]);
 
   // Mapping des types Google Places vers nos enums AccomType / ActivityType
   const mapGoogleTypesToAccomType = (types = []) => {
@@ -1310,9 +1386,9 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
       <View style={styles.container}>
         <StatusBar barStyle="light-content" />
 
-        {/* ─── SEARCH (sous la nav native) ───────────────────────────────── */}
+        {/* ─── SEARCH + CATEGORIES (sous la nav native) ──────────────────── */}
         <View style={styles.headerContainer}>
-          {/* Search + Zone on same row */}
+          {/* Search bar */}
           <View style={styles.searchArea}>
             <View style={styles.searchBar}>
               <TextInput
@@ -1336,16 +1412,39 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                 </TouchableOpacity>
               )}
             </View>
-
-            <TouchableOpacity
-              onPress={() => setShowSearchArea(!showSearchArea)}
-              style={[styles.zoneBtn, showSearchArea && styles.zoneBtnActive]}
-            >
-              <Text style={[styles.zoneBtnText, showSearchArea && styles.zoneBtnTextActive]}>🔍 Zone</Text>
-            </TouchableOpacity>
           </View>
 
-          {/* Dropdown suggestions - OUTSIDE searchArea, absolutely positioned */}
+          {/* Category buttons bar (horizontal scroll) */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.catBar}
+            contentContainerStyle={styles.catBarContent}
+          >
+            {CATEGORY_BUTTONS.map(cat => {
+              const isActive = activeOverlays[cat.key];
+              const isLoading = categoryLoading[cat.key];
+              return (
+                <TouchableOpacity
+                  key={cat.key}
+                  onPress={() => handleCategoryPress(cat)}
+                  style={[styles.catBtn, isActive && styles.catBtnActive]}
+                  activeOpacity={0.7}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color="#93c5fd" style={{ marginRight: 4 }} />
+                  ) : (
+                    <Text style={styles.catBtnIcon}>{cat.icon}</Text>
+                  )}
+                  <Text style={[styles.catBtnLabel, isActive && styles.catBtnLabelActive]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* Dropdown suggestions */}
           {suggestions.length > 0 && (
             <View style={styles.suggestionsDropdown}>
               <ScrollView scrollEnabled={suggestions.length > 5} style={{ maxHeight: 280 }}>
@@ -1353,7 +1452,6 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                   <TouchableOpacity
                     key={idx}
                     onPress={async () => {
-                      // Fetch details (lat/lng) via le backend avec placeId
                       try {
                         const token = useAuthStore.getState().token;
                         const detailsResponse = await fetch(
@@ -1361,14 +1459,9 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                           { headers: { Authorization: `Bearer ${token}` } }
                         );
                         const details = await detailsResponse.json();
-                        console.log('[Places] Full details response:', details);
-
                         const lat = details.lat;
                         const lng = details.lng;
-                        console.log('[Places] Got location:', { lat, lng });
-
                         if (lat != null && lng != null) {
-                          // Stocker le marqueur de résultat de recherche (avec les types Google pour la détection auto)
                           setSearchResultMarker({
                             latitude: lat,
                             longitude: lng,
@@ -1377,21 +1470,16 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                             types: (details.types && details.types.length > 0) ? details.types : (place.types || []),
                             fullPlace: place,
                           });
-
-                          // Zoomer sur le marqueur (le modal s'ouvrira au clic sur le marqueur)
                           if (mapRef.current) {
                             mapRef.current.animateToRegion({
-                              latitude: lat,
-                              longitude: lng,
-                              latitudeDelta: 0.05,
-                              longitudeDelta: 0.05,
+                              latitude: lat, longitude: lng,
+                              latitudeDelta: 0.05, longitudeDelta: 0.05,
                             }, 500);
                           }
                         }
                       } catch (err) {
                         console.error('[Places] Error fetching details:', err);
                       }
-
                       setSearchQuery('');
                       setSuggestions([]);
                     }}
@@ -1502,6 +1590,35 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                 </Marker>
               ))}
 
+            {/* Marqueurs de résultats par catégorie */}
+            {Object.entries(categoryResults).map(([catKey, results]) => {
+              const catDef = CATEGORY_BUTTONS.find(c => c.key === catKey);
+              const catIcon = catDef?.icon || '📍';
+              return activeOverlays[catKey] && results.map((place, idx) => (
+                <Marker
+                  key={`zr-${catKey}-${place.id}-${idx}`}
+                  coordinate={{ latitude: place.latitude, longitude: place.longitude }}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  onPress={() => {
+                    setMenuMarker({ item: place, type: 'poi', stepId: null });
+                    setShowMarkerMenu(true);
+                  }}
+                >
+                  <View style={[
+                    styles.catResultMarker,
+                    { backgroundColor: catKey === 'p4n' ? 'rgba(99,102,241,0.9)' :
+                                    catKey === 'campings' ? 'rgba(249,115,22,0.9)' :
+                                    catKey === 'trails' ? 'rgba(34,197,94,0.9)' :
+                                    catKey === 'pois' ? 'rgba(139,92,246,0.9)' :
+                                    catKey === 'restaurant' ? 'rgba(236,72,153,0.9)' :
+                                    catKey === 'hotel' ? 'rgba(59,130,246,0.9)' : 'rgba(255,255,255,0.9)' },
+                  ]}>
+                    <Text style={styles.catResultMarkerText}>{catIcon}</Text>
+                  </View>
+                </Marker>
+              ));
+            })}
+
             {/* Marqueur de résultat de recherche */}
             {searchResultMarker && (
               <Marker
@@ -1556,7 +1673,7 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
             </View>
           )}
 
-          {/* ─── OVERLAY BUTTONS (absolute within map) ─────────────────────── */}
+          {/* ─── OVERLAY BUTTONS (absolute within map) — zoom + global only ── */}
           <View style={[styles.overlayCol, { top: 12 }]}>
             {/* Bouton zoom sur l'étape sélectionnée */}
             {selectedIndex >= 0 && (
@@ -1600,15 +1717,6 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                 <Text style={styles.ovBtnIcon}>🗺️</Text>
               </TouchableOpacity>
             )}
-            {OVERLAY_ITEMS.map(item => (
-              <TouchableOpacity
-                key={item.key}
-                onPress={() => toggleOverlay(item.key)}
-                style={[styles.ovBtn, activeOverlays[item.key] && styles.ovBtnActive]}
-              >
-                <Text style={styles.ovBtnIcon}>{item.icon}</Text>
-              </TouchableOpacity>
-            ))}
           </View>
         </View>
 
@@ -2411,7 +2519,7 @@ const styles = StyleSheet.create({
   // Suggestions dropdown — absolutely positioned at headerContainer level
   suggestionsDropdown: {
     position: 'absolute',
-    top: 56, // height of searchArea (paddingVertical 8 + paddingBottom 8 + 40px for input)
+    top: 100, // searchArea ~56px + catBar ~44px
     left: 12,
     right: 12,
     zIndex: 9999,
@@ -2550,6 +2658,59 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   markerText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // Category bar (horizontal buttons under search)
+  catBar: {
+    maxHeight: 46,
+    backgroundColor: 'rgba(26,26,38,0.98)',
+    paddingBottom: 6,
+  },
+  catBarContent: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  catBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  catBtnActive: {
+    backgroundColor: 'rgba(59,130,246,0.25)',
+    borderColor: 'rgba(59,130,246,0.5)',
+  },
+  catBtnIcon: { fontSize: 14 },
+  catBtnLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.7)',
+  },
+  catBtnLabelActive: {
+    color: '#93c5fd',
+  },
+
+  // Search result markers for category search
+  catResultMarker: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.4)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  catResultMarkerText: { fontSize: 16 },
 
   // Search result marker
   searchResultMarker: {

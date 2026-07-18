@@ -2,6 +2,7 @@
  * routes/places.js — Places, Autocomplete, Geocoding, Elevation
  */
 const express = require('express');
+const axios   = require('axios');
 const gm      = require('../services/googleMaps');
 const { log, error } = require('../services/logger');
 
@@ -152,6 +153,135 @@ router.get('/elevation/profile', async (req, res, next) => {
     const elevation = await gm.getElevation({ path: points, samples: parseInt(samples) });
     res.json(elevation);
   } catch (e) { next(e); }
+});
+
+// ─── Search by Category (for map category buttons) ──────────────────────────
+
+// POST /api/places/searchCategory
+// Body: { bounds: { ne: {lat,lng}, sw: {lat,lng} }, category, includedTypes, includeP4N, p4nTypeIds, maxResults, language }
+router.post('/searchCategory', async (req, res, next) => {
+  try {
+    const {
+      bounds,
+      category = 'pois',
+      includedTypes = [],
+      includeP4N = false,
+      p4nTypeIds = [],
+      maxResults = 20,
+      language = 'fr',
+    } = req.body;
+
+    if (!bounds?.ne?.lat || !bounds?.sw?.lat) {
+      return res.status(400).json({ error: 'bounds.ne et bounds.sw requis' });
+    }
+
+    // Calculer le centre du viewport
+    const centerLat = (bounds.ne.lat + bounds.sw.lat) / 2;
+    const centerLng = (bounds.ne.lng + bounds.sw.lng) / 2;
+
+    // Calculer le rayon (60% de la diagonale des bounds, max 50km)
+    const R = 6371000;
+    const dLat = (bounds.ne.lat - bounds.sw.lat) * Math.PI / 180;
+    const dLng = (bounds.ne.lng - bounds.sw.lng) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2
+      + Math.cos(bounds.sw.lat * Math.PI / 180) * Math.cos(bounds.ne.lat * Math.PI / 180)
+      * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const radius = Math.min(Math.round(R * c * 0.6), 50000);
+
+    log('SEARCH', `🔍 searchCategory: ${category} centre=(${centerLat.toFixed(4)},${centerLng.toFixed(4)}) rayon=${radius}m`);
+
+    const results = [];
+
+    // 1. Google Places search
+    if (includedTypes.length > 0) {
+      try {
+        const places = await gm.searchNearbyV1({
+          lat: centerLat,
+          lng: centerLng,
+          radius,
+          includedTypes,
+          maxResultCount: maxResults,
+          languageCode: language,
+        });
+
+        for (const p of places) {
+          results.push({
+            id: `google_${p.placeId}`,
+            source: 'google',
+            placeId: p.placeId,
+            name: p.name,
+            latitude: p.lat,
+            longitude: p.lng,
+            address: p.address || '',
+            rating: p.rating || null,
+            types: p.types || [],
+            overlayType: category,
+          });
+        }
+        log('SEARCH', `  ✓ Google: ${places.length} résultats`);
+      } catch (e) {
+        log('SEARCH', `  ✗ Google: ${e.message}`);
+      }
+    }
+
+    // 2. Park4Night search
+    if (includeP4N) {
+      try {
+        const p4nRadius = Math.min(Math.round(radius / 1000), 200);
+        const p4nRes = await axios.get('https://park4night.com/api/places/around', {
+          params: { lat: centerLat, lng: centerLng, radius: p4nRadius, filter: '{}', lang: language },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0',
+            'Accept': '*/*',
+            'Content-Type': 'application/json',
+            'Referer': `https://park4night.com/fr/search?lat=${centerLat}&lng=${centerLng}&z=13`,
+          },
+          timeout: 10000,
+        });
+
+        let raw = p4nRes.data;
+        if (typeof raw === 'string') {
+          try { raw = JSON.parse(Buffer.from(raw, 'base64').toString('utf-8')); }
+          catch { try { raw = JSON.parse(raw); } catch { raw = []; } }
+        }
+        const items = Array.isArray(raw) ? raw : (raw?.places ?? raw?.results ?? []);
+        const filtered = p4nTypeIds.length > 0
+          ? items.filter(p => p4nTypeIds.includes(p.type?.id))
+          : items;
+
+        for (const p of filtered) {
+          const typeId = p.type?.id ?? 7;
+          const typeLabel = p.type?.label ?? 'Lieu';
+          results.push({
+            id: `p4n_${p.id}`,
+            source: 'p4n',
+            placeId: String(p.id),
+            name: p.title_short || p.name || `#${p.id}`,
+            latitude: p.lat,
+            longitude: p.lng,
+            address: p.address || null,
+            rating: p.rating || null,
+            types: [],
+            overlayType: category,
+            p4nTypeId: typeId,
+            p4nTypeLabel: typeLabel,
+            p4nTypeColor: { 9: '#f97316', 8: '#8b5cf6', 7: '#6366f1', 10: '#22c55e', 12: '#6366f1', 14: '#3b82f6', 57: '#64748b' }[typeId] || '#6366f1',
+            p4nUrl: `https://park4night.com/en/map#16/${p.lat}/${p.lng}`,
+          });
+        }
+        log('SEARCH', `  ✓ P4N: ${filtered.length} résultats (${items.length} total)`);
+      } catch (e) {
+        log('SEARCH', `  ✗ P4N: ${e.message}`);
+      }
+    }
+
+    log('SEARCH', `  ✅ Total: ${results.length} résultats pour "${category}"`);
+    res.json({ results, category, bounds: req.body.bounds, radius });
+  } catch (e) {
+    error('SEARCH', 'Erreur searchCategory', e);
+    next(e);
+  }
 });
 
 module.exports = router;
