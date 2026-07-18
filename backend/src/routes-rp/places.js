@@ -49,6 +49,33 @@ router.get('/search', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ─── Photo proxy ────────────────────────────────────────────────────────────
+// Places API v1 retourne un nom de ressource (ex: "places/ChIJ.../photos/AU...")
+// qu'il faut résoudre via le media endpoint.
+// GET /api/places/photo?photoName=...&maxWidth=...&maxHeight=...
+router.get('/photo', async (req, res, next) => {
+  try {
+    const { photoName, maxWidth = 400, maxHeight = 400 } = req.query;
+    if (!photoName) return res.status(400).json({ error: 'photoName requis' });
+
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'API key non configurée' });
+
+    const url = `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=${maxHeight}&maxWidthPx=${maxWidth}&skipHttpRedirect=true&key=${apiKey}`;
+    const resp = await axios.get(url, { timeout: 5000 });
+    
+    if (resp.data?.photoUri) {
+      // Rediriger le client vers l'URL réelle de l'image
+      return res.redirect(302, resp.data.photoUri);
+    }
+    res.status(404).json({ error: 'Photo non trouvée' });
+  } catch (e) {
+    if (e.response?.status === 404) return res.status(404).json({ error: 'Photo non trouvée' });
+    console.error('[PHOTO] Erreur proxy photo:', e.message);
+    res.status(502).json({ error: 'Erreur chargement photo' });
+  }
+});
+
 // GET /api/places/:placeId
 router.get('/:placeId', async (req, res, next) => {
   try {
@@ -156,8 +183,11 @@ router.post('/searchCategory', async (req, res, next) => {
             longitude: p.lng,
             address: p.address || '',
             rating: p.rating || null,
+            userRatingCount: p.userRatingCount || null,
             types: p.types || [],
             overlayType: category,
+            photoName: p.photos?.[0] || null,
+            googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}&query_place_id=${p.placeId}`,
           });
         }
         log('SEARCH', `  ✓ Google: ${places.length} résultats`);
@@ -267,7 +297,7 @@ router.post('/searchCategory', async (req, res, next) => {
             overlayType: category,
             p4nTypeId: typeId,
             p4nTypeLabel: typeLabel,
-            p4nUrl: `https://park4night.com/en/map#16/${p.lat}/${p.lng}`,
+            p4nUrl: `https://park4night.com/fr/place/${p.id}`,
           });
         }
         log('SEARCH', `  ✓ P4N: ${filtered.length} résultats (${items.length} total)`);

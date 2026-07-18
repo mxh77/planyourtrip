@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
   ScrollView, Animated, StatusBar, Alert, ActivityIndicator,
   Modal, TextInput, Platform, PanResponder, Pressable, Linking,
+  Image,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
 import MapView, { Marker, Polyline, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -15,6 +16,7 @@ import { localUpdateAccommodation, localUpdateActivity } from '../powersync/loca
 import API_URL from '../api/config';
 import { log, warn } from '../services/logger';
 import { LogsViewer } from '../components/LogsViewer';
+import { getEnabledCategories } from '../constants/categories';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -65,6 +67,17 @@ function formatTime(t) {
   }
   return null;
 }
+
+// Convertir une date en string YYYY-MM-DD (indépendant du fuseau horaire)
+function toYMD(d) {
+  if (!d) return '';
+  if (typeof d === 'string') return d.slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // Décoder polyline (format Google Directions)
 function decodePolyline(encoded) {
   const poly = [];
@@ -336,15 +349,7 @@ function adjustBoundsForSheet(bounds) {
   };
 }
 
-// ─── Category search buttons (Google Maps style) ─────────────────────────────
-const CATEGORY_BUTTONS = [
-  { key: 'campings',  icon: '🏕️', label: 'Campings',  googleTypes: ['campground', 'rv_park'],                     includeP4N: true,  p4nTypes: [9] },
-  { key: 'trails',    icon: '🥾', label: 'Rando',      googleTypes: ['hiking_area', 'park'],                          includeP4N: false, p4nTypes: [] },
-  { key: 'p4n',       icon: '🅿️', label: 'P4N',        googleTypes: [],                                             includeP4N: true,  p4nTypes: [7, 8, 10, 12, 14, 57] },
-  { key: 'pois',      icon: '📍', label: 'Activités',   googleTypes: ['tourist_attraction', 'museum', 'amusement_park'], includeP4N: false, p4nTypes: [] },
-  { key: 'restaurant',icon: '🍽️',label: 'Restaurants', googleTypes: ['restaurant', 'cafe', 'bar'],                  includeP4N: false, p4nTypes: [] },
-  { key: 'hotel',     icon: '🏨', label: 'Hôtels',     googleTypes: ['lodging', 'hotel', 'motel', 'bed_and_breakfast'], includeP4N: false, p4nTypes: [] },
-];
+// ─── Category search buttons — chargés dynamiquement depuis les settings ─────
 
 // ─── Écran principal ─────────────────────────────────────────────────────────
 export default function RoadtripDetailScreen({ route, navigation }) {
@@ -448,6 +453,48 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     [id]
   );
   const psRoadtrip = psRoadtripRows?.[0];
+
+  // État local pour les catégories activées
+  // Priorité : 1) API fraîche au focus, 2) PowerSync, 3) defaults
+  const [enabledKeys, setEnabledKeys] = useState(null);
+
+  // Au focus de l'écran (retour depuis Paramètres), recharger via API
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      const fetchSettings = async () => {
+        try {
+          const token = useAuthStore.getState().token;
+          const res = await fetch(`${API_URL}/api/roadtrips/${id}/settings`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.enabledQuickSearch) {
+              setEnabledKeys(data.enabledQuickSearch);
+            }
+          }
+        } catch {}
+      };
+      fetchSettings();
+    });
+    return unsubscribe;
+  }, [navigation, id]);
+
+  // Charger les catégories activées depuis les settings
+  const categoryButtons = useMemo(() => {
+    // Priorité 1 : état local (API fraîche au focus)
+    if (enabledKeys) return getEnabledCategories(enabledKeys, false);
+    // Priorité 2 : PowerSync
+    try {
+      const settings = psRoadtrip?.settings;
+      const parsed = typeof settings === 'string' ? JSON.parse(settings) : settings;
+      const psKeys = parsed?.enabledQuickSearch;
+      if (psKeys) return getEnabledCategories(psKeys, false);
+    } catch {}
+    // Fallback : defaults
+    return getEnabledCategories(null, true);
+  }, [enabledKeys, psRoadtrip?.settings]);
+
   const [roadtrip, setRoadtrip] = useState({ title: psRoadtrip?.title ?? 'Europe', distance: 3610, id: psRoadtrip?.id ?? id });
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -1421,7 +1468,7 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
             style={styles.catBar}
             contentContainerStyle={styles.catBarContent}
           >
-            {CATEGORY_BUTTONS.map(cat => {
+            {categoryButtons.map(cat => {
               const isActive = activeOverlays[cat.key];
               const isLoading = categoryLoading[cat.key];
               return (
@@ -1592,31 +1639,38 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
 
             {/* Marqueurs de résultats par catégorie */}
             {Object.entries(categoryResults).map(([catKey, results]) => {
-              const catDef = CATEGORY_BUTTONS.find(c => c.key === catKey);
+              const catDef = categoryButtons.find(c => c.key === catKey);
               const catIcon = catDef?.icon || '📍';
               return activeOverlays[catKey] && results.map((place, idx) => {
                 // Icône différente pour AllTrails (🌲) vs Google Places (🥾)
                 const markerIcon = (catKey === 'trails' && place.source === 'algolia') ? '🌲' : catIcon;
+                // Tronquer le nom si trop long
+                const labelName = place.name?.length > 22 ? place.name.slice(0, 20) + '…' : place.name;
                 return (
                 <Marker
                   key={`zr-${catKey}-${place.id}-${idx}`}
                   coordinate={{ latitude: place.latitude, longitude: place.longitude }}
-                  anchor={{ x: 0.5, y: 0.5 }}
+                  anchor={{ x: 0, y: 0.5 }}
                   onPress={() => {
                     setMenuMarker({ item: place, type: 'poi', stepId: null });
                     setShowMarkerMenu(true);
                   }}
                 >
-                  <View style={[
-                    styles.catResultMarker,
-                    { backgroundColor: catKey === 'p4n' ? 'rgba(99,102,241,0.9)' :
-                                    catKey === 'campings' ? 'rgba(249,115,22,0.9)' :
-                                    catKey === 'trails' ? 'rgba(34,197,94,0.9)' :
-                                    catKey === 'pois' ? 'rgba(139,92,246,0.9)' :
-                                    catKey === 'restaurant' ? 'rgba(236,72,153,0.9)' :
-                                    catKey === 'hotel' ? 'rgba(59,130,246,0.9)' : 'rgba(255,255,255,0.9)' },
-                  ]}>
-                    <Text style={styles.catResultMarkerText}>{markerIcon}</Text>
+                  <View style={styles.catResultMarkerRow}>
+                    <View style={[
+                      styles.catResultMarker,
+                      { backgroundColor: catKey === 'p4n' ? 'rgba(99,102,241,0.9)' :
+                                      catKey === 'campings' ? 'rgba(249,115,22,0.9)' :
+                                      catKey === 'trails' ? 'rgba(34,197,94,0.9)' :
+                                      catKey === 'pois' ? 'rgba(139,92,246,0.9)' :
+                                      catKey === 'restaurant' ? 'rgba(236,72,153,0.9)' :
+                                      catKey === 'hotel' ? 'rgba(59,130,246,0.9)' : 'rgba(255,255,255,0.9)' },
+                    ]}>
+                      <Text style={styles.catResultMarkerText}>{markerIcon}</Text>
+                    </View>
+                    <View style={styles.catResultLabelBox}>
+                      <Text style={styles.catResultLabel} numberOfLines={1}>{labelName}</Text>
+                    </View>
                   </View>
                 </Marker>
                 );
@@ -1872,8 +1926,8 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                     return;
                   }
                   const defaultTime = currentStep.arrivalTime || '10:00';
-                  const checkIn = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
-                  const checkOut = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
+                  const checkIn = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
+                  const checkOut = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
                   try {
                     await useRoadtripStore.getState().createAccommodation({
                       stepId: currentStep.id,
@@ -1908,8 +1962,8 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                     return;
                   }
                   const defaultTime = currentStep.arrivalTime || '10:00';
-                  const startTime = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
-                  const endTime = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
+                  const startTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
+                  const endTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
                   try {
                     await useRoadtripStore.getState().createActivity({
                       stepId: currentStep.id,
@@ -1991,6 +2045,76 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                       <Text style={[styles.searchResultActionText, { color: '#4ade80' }]}>Voir sur AllTrails</Text>
                     </TouchableOpacity>
                   )}
+
+                  {/* Photo + Note Google Places */}
+                  {menuMarker.item.source === 'google' && (
+                    <>
+                      {menuMarker.item.photoName && (
+                        <View style={styles.poiPhotoContainer}>
+                          <Image
+                            source={{ uri: `${API_URL}/api/places/photo?photoName=${encodeURIComponent(menuMarker.item.photoName)}` }}
+                            style={styles.poiPhoto}
+                            resizeMode="cover"
+                          />
+                        </View>
+                      )}
+
+                      {/* Note et nombre d'avis */}
+                      {(menuMarker.item.rating || menuMarker.item.userRatingCount) && (
+                        <View style={styles.poiRatingRow}>
+                          {menuMarker.item.rating && (
+                            <Text style={styles.poiRatingStars}>
+                              {'⭐'.repeat(Math.round(menuMarker.item.rating))}{'☆'.repeat(5 - Math.round(menuMarker.item.rating))}
+                            </Text>
+                          )}
+                          <Text style={styles.poiRatingText}>
+                            {menuMarker.item.rating ? `${menuMarker.item.rating}/5` : ''}
+                            {menuMarker.item.userRatingCount ? ` · ${menuMarker.item.userRatingCount} avis` : ''}
+                          </Text>
+                        </View>
+                      )}
+                    </>
+                  )}
+
+                  {/* Lien Google Maps pour les items Google Places */}
+                  {menuMarker.item.source === 'google' && menuMarker.item.googleMapsUrl && (
+                    <TouchableOpacity
+                      style={[styles.searchResultAction, { backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)' }]}
+                      onPress={() => {
+                        Linking.openURL(menuMarker.item.googleMapsUrl);
+                        setShowMarkerMenu(false);
+                      }}
+                    >
+                      <Text style={styles.searchResultActionIcon}>🗺️</Text>
+                      <Text style={[styles.searchResultActionText, { color: '#60a5fa' }]}>Voir sur Google Maps</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Lien Park4Night → ouvre l'app native P4N */}
+                  {menuMarker.item.source === 'p4n' && menuMarker.item.p4nUrl && (
+                    <TouchableOpacity
+                      style={[styles.searchResultAction, { backgroundColor: 'rgba(99,102,241,0.1)', borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)' }]}
+                      onPress={async () => {
+                        const placeId = menuMarker.item.placeId;
+                        if (Platform.OS === 'android' && placeId) {
+                          // Intent Android explicite vers l'app P4N (package: fr.tramb.park4night)
+                          const intentUrl = `intent://fr/place/${placeId}#Intent;scheme=https;package=fr.tramb.park4night;end`;
+                          try {
+                            await Linking.openURL(intentUrl);
+                            setShowMarkerMenu(false);
+                            return;
+                          } catch (_e) {
+                            // Fallback: URL standard
+                          }
+                        }
+                        Linking.openURL(menuMarker.item.p4nUrl);
+                        setShowMarkerMenu(false);
+                      }}
+                    >
+                      <Text style={styles.searchResultActionIcon}>⛺</Text>
+                      <Text style={[styles.searchResultActionText, { color: '#818cf8' }]}>Voir sur Park4Night</Text>
+                    </TouchableOpacity>
+                  )}
                   <View style={styles.searchResultDivider} />
                   <Text style={styles.searchResultActionTitle}>Ajouter au voyage</Text>
                   <TouchableOpacity style={styles.searchResultAction}
@@ -2011,17 +2135,17 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.searchResultAction}
                     onPress={async () => {
-                      const currentStep = steps.find(s => s.id === menuMarker.stepId);
+                      const currentStep = steps[selectedIndex];
                       if (!currentStep) {
-                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.');
+                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape dans la liste ou sur la carte.');
                         setShowMarkerMenu(false);
                         return;
                       }
                       const defaultTime = currentStep.arrivalTime || '10:00';
-                      const checkIn = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
-                      const checkOut = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
+                      const checkIn = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
+                      const checkOut = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
                       await useRoadtripStore.getState().createAccommodation({
-                        stepId: menuMarker.stepId,
+                        stepId: currentStep.id,
                         roadtripId: id,
                         name: menuMarker.item.name,
                         address: menuMarker.item.name,
@@ -2039,17 +2163,17 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.searchResultAction}
                     onPress={async () => {
-                      const currentStep = steps.find(s => s.id === menuMarker.stepId);
+                      const currentStep = steps[selectedIndex];
                       if (!currentStep) {
-                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.');
+                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape dans la liste ou sur la carte.');
                         setShowMarkerMenu(false);
                         return;
                       }
                       const defaultTime = currentStep.arrivalTime || '10:00';
-                      const startTime = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
-                      const endTime = currentStep.startDate ? `${currentStep.startDate} ${defaultTime}` : null;
+                      const startTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
+                      const endTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
                       await useRoadtripStore.getState().createActivity({
-                        stepId: menuMarker.stepId,
+                        stepId: currentStep.id,
                         roadtripId: id,
                         name: menuMarker.item.name,
                         location: menuMarker.item.name,
@@ -2735,6 +2859,10 @@ const styles = StyleSheet.create({
   },
 
   // Search result markers for category search
+  catResultMarkerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   catResultMarker: {
     width: 34,
     height: 34,
@@ -2750,6 +2878,21 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   catResultMarkerText: { fontSize: 16 },
+  catResultLabelBox: {
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginLeft: 4,
+    maxWidth: 160,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  catResultLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#fff',
+  },
 
   // Search result marker
   searchResultMarker: {
@@ -3152,6 +3295,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4ade80',
     fontWeight: '600',
+  },
+
+  // Photo du lieu (Google Places)
+  poiPhotoContainer: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 6,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  poiPhoto: {
+    width: '100%',
+    height: 160,
+    borderRadius: 10,
+  },
+
+  // Note et avis (Google Places)
+  poiRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: SPACING.sm,
+    marginBottom: 6,
+  },
+  poiRatingStars: {
+    fontSize: 14,
+  },
+  poiRatingText: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '500',
   },
 
   searchResultAction: {

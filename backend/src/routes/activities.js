@@ -8,9 +8,12 @@ const { notifyRoadtripMembers } = require('../lib/notify');
 function toUTCDate(str) {
   if (!str) return null;
   const [ymd, hhmm] = str.split(' ');
-  const [y, m, d] = ymd.split('-').map(Number);
+  const parts = ymd.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
   if (hhmm) {
     const [hh, mm] = hhmm.split(':').map(Number);
+    if (isNaN(hh) || isNaN(mm)) return null;
     return new Date(Date.UTC(y, m - 1, d, hh, mm, 0, 0));
   }
   return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));

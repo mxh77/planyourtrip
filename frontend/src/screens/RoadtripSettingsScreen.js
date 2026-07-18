@@ -1,53 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, Switch,
+  ActivityIndicator, Alert,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import API_URL from '../api/config';
-
-// ─── Constantes ───────────────────────────────────────────────────────────────
-
-/**
- * Types de lieux Google Places disponibles pour les suggestions.
- * On map sur les types réels de l'API Google Places Nearby Search.
- */
-const PLACE_TYPE_OPTIONS_LODGING = [
-  { key: 'hotel',             label: 'Hôtel',           icon: '🏨' },
-  { key: 'campground',        label: 'Camping',          icon: '⛺' },
-  { key: 'parking',           label: 'Parking',          icon: '🅿️' },
-];
-
-const PLACE_TYPE_OPTIONS_ACTIVITY = [
-  { key: 'restaurant',          label: 'Restaurant',          icon: '🍽️' },
-  { key: 'cafe',                label: 'Café',                icon: '☕' },
-  { key: 'bar',                 label: 'Bar',                 icon: '🍺' },
-  { key: 'cultural_center',     label: 'Attraction',          icon: '🎭' },
-  { key: 'museum',              label: 'Musée',               icon: '🏗️' },
-  { key: 'park',                label: 'Parc',                icon: '🌳' },
-  { key: 'amusement_park',      label: 'Parc d\'attractions',  icon: '🎡' },
-  { key: 'art_gallery',         label: 'Galerie d\'art',      icon: '🖼️' },
-  { key: 'department_store',   label: 'Shopping',            icon: '🛍️' },
-  { key: 'supermarket',         label: 'Supermarché',        icon: '�' },
-  { key: 'spa',                 label: 'Spa / Bien-être',     icon: '💆' },
-  { key: 'gym',                 label: 'Sport / Gym',         icon: '🏋️' },
-  { key: 'hiking_area',         label: 'Randonnée',           icon: '🥾' },  { key: 'transit_station',     label: 'Transport',           icon: '🚌' },];
-
-const RADIUS_OPTIONS = [
-  { value: 1000,  label: '1 km' },
-  { value: 5000,  label: '5 km' },
-  { value: 10000, label: '10 km' },
-  { value: 20000, label: '20 km' },
-];
-
-// Valeurs par défaut si aucun settings n'existe encore
-const DEFAULT_SETTINGS = {
-  suggestionPlaceTypes: ['hotel', 'campground', 'restaurant', 'cultural_center', 'museum', 'park'],
-  suggestionRadius: 1000,
-};
+import ALL_CATEGORIES from '../constants/categories';
 
 // ─── Composants UI ────────────────────────────────────────────────────────────
 
@@ -80,18 +40,6 @@ function Divider() {
   return <View style={styles.divider} />;
 }
 
-function ComingSoonSection({ icon, title }) {
-  return (
-    <View style={styles.comingSoon}>
-      <Text style={styles.sectionIcon}>{icon}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.comingSoonText}>À venir</Text>
-      </View>
-    </View>
-  );
-}
-
 // ─── Écran principal ──────────────────────────────────────────────────────────
 
 export default function RoadtripSettingsScreen({ navigation, route }) {
@@ -99,7 +47,9 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
   const { bottom } = useSafeAreaInsets();
   const token = useAuthStore((s) => s.token);
 
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  // Les keys activées par défaut
+  const defaultKeys = ALL_CATEGORIES.filter((c) => c.default).map((c) => c.key);
+  const [enabledKeys, setEnabledKeys] = useState(defaultKeys);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cloning, setCloning] = useState(false);
@@ -113,7 +63,9 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setSettings({ ...DEFAULT_SETTINGS, ...data });
+      if (data.enabledQuickSearch && Array.isArray(data.enabledQuickSearch)) {
+        setEnabledKeys(data.enabledQuickSearch);
+      }
     } catch {
       // On garde les valeurs par défaut silencieusement
     } finally {
@@ -123,11 +75,23 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
+  // Header natif (identique à RoadtripDetail)
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitle: 'Paramètres',
+      headerTitleAlign: 'center',
+      headerTitleStyle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+      headerStyle: { backgroundColor: 'rgba(26,26,38,1)' },
+      headerTintColor: '#fff',
+    });
+  }, [navigation]);
+
   // ─── Sauvegarde ─────────────────────────────────────────────────────────────
 
   const save = useCallback(async (patch) => {
-    const next = { ...settings, ...patch };
-    setSettings(next);
+    const nextEnabled = patch.enabledQuickSearch;
+    setEnabledKeys(nextEnabled);
     setSaving(true);
     try {
       const res = await fetch(`${API_URL}/api/roadtrips/${roadtripId}/settings`, {
@@ -141,12 +105,20 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
       if (!res.ok) throw new Error();
     } catch {
       Alert.alert('Erreur', 'Impossible de sauvegarder les paramètres.');
-      // rollback
-      setSettings(settings);
+      fetchSettings();
     } finally {
       setSaving(false);
     }
-  }, [roadtripId, token, settings]);
+  }, [roadtripId, token, fetchSettings]);
+
+  // ─── Handlers ───────────────────────────────────────────────────────────────
+
+  const toggleCategory = useCallback((key) => {
+    const next = enabledKeys.includes(key)
+      ? enabledKeys.filter((k) => k !== key)
+      : [...enabledKeys, key];
+    save({ enabledQuickSearch: next });
+  }, [enabledKeys, save]);
 
   // ─── Clone ───────────────────────────────────────────────────────────────────
 
@@ -183,19 +155,33 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
     );
   }, [roadtripId, token, navigation]);
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
+  // ─── Supprimer ──────────────────────────────────────────────────────────────
 
-  const togglePlaceType = useCallback((key) => {
-    const current = settings.suggestionPlaceTypes ?? [];
-    const next = current.includes(key)
-      ? current.filter((k) => k !== key)
-      : [...current, key];
-    save({ suggestionPlaceTypes: next });
-  }, [settings.suggestionPlaceTypes, save]);
-
-  const selectRadius = useCallback((value) => {
-    save({ suggestionRadius: value });
-  }, [save]);
+  const handleDelete = useCallback(() => {
+    Alert.alert(
+      'Supprimer ce roadtrip',
+      'Cette action est irréversible. Toutes les étapes, hébergements et activités seront définitivement supprimés.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_URL}/api/roadtrips/${roadtripId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (!res.ok) throw new Error();
+              navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+            } catch {
+              Alert.alert('Erreur', 'Impossible de supprimer le roadtrip.');
+            }
+          },
+        },
+      ]
+    );
+  }, [roadtripId, token, navigation]);
 
   // ─── Rendu ───────────────────────────────────────────────────────────────────
 
@@ -207,133 +193,56 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
     );
   }
 
-  const selectedTypes = settings.suggestionPlaceTypes ?? [];
-  const selectedRadius = settings.suggestionRadius ?? 1500;
+  const mainCategories = ALL_CATEGORIES.filter((c) => c.default);
+  const extraCategories = ALL_CATEGORIES.filter((c) => !c.default);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <MaterialIcons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paramètres</Text>
-        {saving ? (
-          <ActivityIndicator color={COLORS.accent} size="small" style={{ marginRight: SPACING.sm }} />
-        ) : (
-          <View style={{ width: 32 }} />
-        )}
-      </View>
-
+    <View style={styles.safe}>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(bottom, SPACING.xl) }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Section 1 : Suggestions ──────────────────────────────────────── */}
-        <SectionHeader
-          icon="🔍"
-          title="Suggestions de lieux"
-          subtitle="Types de lieux affichés dans la recherche à proximité de chaque étape"
-        />
-
-        {/* Groupe hébergements */}
-        <Text style={styles.groupLabel}>🏨 Hébergements</Text>
-        <Text style={styles.groupHint}>Affichés uniquement sur les étapes (pas les arrêts)</Text>
-        <View style={styles.chipsContainer}>
-          {PLACE_TYPE_OPTIONS_LODGING.map((opt) => (
-            <Chip
-              key={opt.key}
-              label={opt.label}
-              icon={opt.icon}
-              selected={selectedTypes.includes(opt.key)}
-              onPress={() => togglePlaceType(opt.key)}
-            />
-          ))}
-        </View>
-
-        {/* Groupe lieux & activités */}
-        <Text style={styles.groupLabel}>📍 Lieux & activités</Text>
-        <Text style={styles.groupHint}>Affichés sur les étapes et les arrêts</Text>
-        <View style={styles.chipsContainer}>
-          {PLACE_TYPE_OPTIONS_ACTIVITY.map((opt) => (
-            <Chip
-              key={opt.key}
-              label={opt.label}
-              icon={opt.icon}
-              selected={selectedTypes.includes(opt.key)}
-              onPress={() => togglePlaceType(opt.key)}
-            />
-          ))}
-        </View>
-
-        <Text style={styles.label}>Rayon de recherche</Text>
-        <View style={styles.radiusRow}>
-          {RADIUS_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.radiusBtn, selectedRadius === opt.value && styles.radiusBtnSelected]}
-              onPress={() => selectRadius(opt.value)}
-              activeOpacity={0.75}
-            >
-              <Text style={[styles.radiusBtnText, selectedRadius === opt.value && styles.radiusBtnTextSelected]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Divider />
-
-        {/* ── Section 2 : Boutons de recherche rapide ─────────────────────── */}
+        {/* ── Section : Boutons de recherche rapide ──────────────────────── */}
         <SectionHeader
           icon="🔘"
           title="Boutons de recherche rapide"
-          subtitle="Boutons affichés sous la barre de recherche sur la carte"
+          subtitle="Activez ou désactivez les catégories affichées sous la barre de recherche sur la carte"
         />
 
-        {/* Catégories prédéfinies (toujours disponibles) */}
-        <Text style={styles.groupLabel}>🏕️ Catégories principales</Text>
-        <Text style={styles.groupHint}>Toujours visibles dans la barre de recherche</Text>
-
-        {/* Ces catégories sont fixes mais on pourrait les rendre configurables plus tard */}
-
-        {/* Types supplémentaires (ceux cochés apparaîtront comme boutons) */}
-        <Text style={styles.groupLabel}>➕ Types supplémentaires</Text>
-        <Text style={styles.groupHint}>Cochez les types à ajouter comme boutons dédiés</Text>
+        {/* Catégories principales */}
+        <Text style={styles.groupLabel}>⭐ Principales</Text>
         <View style={styles.chipsContainer}>
-          {[
-            { key: 'restaurant', icon: '🍽️', label: 'Restaurants' },
-            { key: 'hotel', icon: '🏨', label: 'Hôtels' },
-            { key: 'supermarket', icon: '🛒', label: 'Supermarchés' },
-            { key: 'museum', icon: '🏗️', label: 'Musées' },
-            { key: 'transit_station', icon: '🚌', label: 'Transports' },
-            { key: 'bar', icon: '🍺', label: 'Bars' },
-            { key: 'park', icon: '🌳', label: 'Parcs' },
-            { key: 'spa', icon: '💆', label: 'Spa / Bien-être' },
-          ].map((opt) => (
+          {mainCategories.map((cat) => (
             <Chip
-              key={opt.key}
-              label={opt.label}
-              icon={opt.icon}
-              selected={selectedTypes.includes(opt.key)}
-              onPress={() => togglePlaceType(opt.key)}
+              key={cat.key}
+              label={cat.label}
+              icon={cat.icon}
+              selected={enabledKeys.includes(cat.key)}
+              onPress={() => toggleCategory(cat.key)}
+            />
+          ))}
+        </View>
+
+        {/* Catégories supplémentaires */}
+        <Text style={styles.groupLabel}>➕ Supplémentaires</Text>
+        <Text style={styles.groupHint}>
+          Activez pour ajouter un bouton dédié dans la barre de recherche
+        </Text>
+        <View style={styles.chipsContainer}>
+          {extraCategories.map((cat) => (
+            <Chip
+              key={cat.key}
+              label={cat.label}
+              icon={cat.icon}
+              selected={enabledKeys.includes(cat.key)}
+              onPress={() => toggleCategory(cat.key)}
             />
           ))}
         </View>
 
         <Divider />
 
-        {/* ── Section 3 : Planning — placeholder ──────────────────────────── */}
-        <ComingSoonSection icon="📅" title="Planning" />
-
-        <Divider />
-
-        {/* ── Section 3 : Accès & partage — placeholder ────────────────────── */}
-        <ComingSoonSection icon="👥" title="Accès & partage" />
-
-        <Divider />
-
-        {/* ── Section 4 : Actions ──────────────────────────────────────────── */}
+        {/* ── Section : Actions ──────────────────────────────────────────── */}
         <SectionHeader icon="⚙️" title="Actions" />
 
         <TouchableOpacity
@@ -345,12 +254,21 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
           {cloning ? (
             <ActivityIndicator color={COLORS.accent} size="small" />
           ) : (
-            <MaterialIcons name="content-copy" size={20} color={COLORS.accent} />
+            <Text style={styles.actionBtnIcon}>📋</Text>
           )}
           <Text style={styles.actionBtnText}>Cloner ce roadtrip</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionBtnDanger]}
+          onPress={handleDelete}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.actionBtnIcon}>🗑️</Text>
+          <Text style={[styles.actionBtnText, { color: COLORS.error }]}>Supprimer ce roadtrip</Text>
+        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -368,25 +286,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  backBtn: {
-    width: 32,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: FONTS.title,
-    fontSize: 22,
-    color: COLORS.text,
-  },
+  // Header natif — géré par useLayoutEffect dans le composant
 
   // Contenu
   content: {
@@ -508,20 +408,6 @@ const styles = StyleSheet.create({
     marginVertical: SPACING.sm,
   },
 
-  // Coming soon
-  comingSoon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    opacity: 0.45,
-  },
-  comingSoonText: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-
   // Actions
   actionBtn: {
     flexDirection: 'row',
@@ -533,6 +419,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.accent,
     backgroundColor: COLORS.accentDim,
+    marginBottom: SPACING.sm,
+  },
+  actionBtnDanger: {
+    borderColor: COLORS.error,
+    backgroundColor: COLORS.errorDim,
+  },
+  actionBtnIcon: {
+    fontSize: 20,
   },
   actionBtnText: {
     fontSize: 15,

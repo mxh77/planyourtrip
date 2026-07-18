@@ -294,19 +294,20 @@ async function searchNearbyV1({ lat, lng, radius = 5000, includedTypes = [], max
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': KEY(),
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.photos,places.formattedAddress,places.location',
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.userRatingCount,places.photos,places.formattedAddress,places.location',
       },
     });
     
     return (resp.data.places || []).map(p => ({
-      placeId:      p.id,
-      name:         p.displayName?.text || '',
-      address:      p.formattedAddress || '',
-      lat:          p.location?.latitude,
-      lng:          p.location?.longitude,
-      rating:       p.rating,
-      types:        [],
-      photos:       p.photos?.slice(0, 1).map(ph => ph.name) || [],
+      placeId:          p.id,
+      name:             p.displayName?.text || '',
+      address:          p.formattedAddress || '',
+      lat:              p.location?.latitude,
+      lng:              p.location?.longitude,
+      rating:           p.rating,
+      userRatingCount:  p.userRatingCount,
+      types:            [],
+      photos:           p.photos?.slice(0, 1).map(ph => ph.name) || [],
     }));
   } catch (err) {
     const msg = err.response?.data?.error?.message || err.message;
@@ -334,19 +335,20 @@ async function searchTextV1({ textQuery, includedType, maxResultCount = 20, lang
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': KEY(),
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.photos,places.formattedAddress,places.location',
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.userRatingCount,places.photos,places.formattedAddress,places.location',
       },
     });
     
     return (resp.data.places || []).map(p => ({
-      placeId:      p.id,
-      name:         p.displayName?.text || '',
-      address:      p.formattedAddress || '',
-      lat:          p.location?.latitude,
-      lng:          p.location?.longitude,
-      rating:       p.rating,
-      types:        [],
-      photos:       p.photos?.slice(0, 1).map(ph => ph.name) || [],
+      placeId:          p.id,
+      name:             p.displayName?.text || '',
+      address:          p.formattedAddress || '',
+      lat:              p.location?.latitude,
+      lng:              p.location?.longitude,
+      rating:           p.rating,
+      userRatingCount:  p.userRatingCount,
+      types:            [],
+      photos:           p.photos?.slice(0, 1).map(ph => ph.name) || [],
     }));
   } catch (err) {
     const msg = err.response?.data?.error?.message || err.message;

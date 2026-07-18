@@ -93,7 +93,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="RoadtripSettings"
               component={RoadtripSettingsScreen}
-              options={{ headerShown: false }}
+              options={{ headerShown: true }}
             />
             <Stack.Screen
               name="RoadtripGeneralInfo"
