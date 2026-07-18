@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
   ScrollView, Animated, StatusBar, Alert, ActivityIndicator,
-  Modal, TextInput, Platform, PanResponder, Pressable,
+  Modal, TextInput, Platform, PanResponder, Pressable, Linking,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
 import MapView, { Marker, Polyline, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -1594,7 +1594,10 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
             {Object.entries(categoryResults).map(([catKey, results]) => {
               const catDef = CATEGORY_BUTTONS.find(c => c.key === catKey);
               const catIcon = catDef?.icon || '📍';
-              return activeOverlays[catKey] && results.map((place, idx) => (
+              return activeOverlays[catKey] && results.map((place, idx) => {
+                // Icône différente pour AllTrails (🌲) vs Google Places (🥾)
+                const markerIcon = (catKey === 'trails' && place.source === 'algolia') ? '🌲' : catIcon;
+                return (
                 <Marker
                   key={`zr-${catKey}-${place.id}-${idx}`}
                   coordinate={{ latitude: place.latitude, longitude: place.longitude }}
@@ -1613,10 +1616,11 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                                     catKey === 'restaurant' ? 'rgba(236,72,153,0.9)' :
                                     catKey === 'hotel' ? 'rgba(59,130,246,0.9)' : 'rgba(255,255,255,0.9)' },
                   ]}>
-                    <Text style={styles.catResultMarkerText}>{catIcon}</Text>
+                    <Text style={styles.catResultMarkerText}>{markerIcon}</Text>
                   </View>
                 </Marker>
-              ));
+                );
+              });
             })}
 
             {/* Marqueur de résultat de recherche */}
@@ -1962,10 +1966,49 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
               </Text>
               <View style={styles.searchResultDivider} />
 
-              {/* Pour les POI : d'abord ajouter comme hébergement/activité */}
+              {/* ── MARQUEURS DE RECHERCHE (POI) : ajouter comme étape/hébergement/activité ── */}
               {menuMarker.type === 'poi' && (
                 <>
+                  {/* Infos AllTrails pour les randonnées */}
+                  {menuMarker.item.source === 'algolia' && menuMarker.item.lengthKm && (
+                    <View style={styles.trailStatsRow}>
+                      <Text style={styles.trailStatsText}>
+                        🥾 {menuMarker.item.lengthKm}km
+                        {menuMarker.item.elevationGain ? ` · ⛰️ ${menuMarker.item.elevationGain}m` : ''}
+                        {menuMarker.item.avgRating ? ` · ⭐ ${menuMarker.item.avgRating}/5` : ''}
+                      </Text>
+                    </View>
+                  )}
+                  {menuMarker.item.source === 'algolia' && menuMarker.item.alltrailsUrl && (
+                    <TouchableOpacity
+                      style={[styles.searchResultAction, { backgroundColor: 'rgba(34,197,94,0.1)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.2)' }]}
+                      onPress={() => {
+                        Linking.openURL(menuMarker.item.alltrailsUrl);
+                        setShowMarkerMenu(false);
+                      }}
+                    >
+                      <Text style={styles.searchResultActionIcon}>🌲</Text>
+                      <Text style={[styles.searchResultActionText, { color: '#4ade80' }]}>Voir sur AllTrails</Text>
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.searchResultDivider} />
                   <Text style={styles.searchResultActionTitle}>Ajouter au voyage</Text>
+                  <TouchableOpacity style={styles.searchResultAction}
+                    onPress={async () => {
+                      await useRoadtripStore.getState().createStep({
+                        roadtripId: roadtrip.id,
+                        name: menuMarker.item.name,
+                        location: menuMarker.item.address || menuMarker.item.name,
+                        latitude: parseFloat(menuMarker.item.latitude),
+                        longitude: parseFloat(menuMarker.item.longitude),
+                        order: steps.length,
+                      });
+                      setShowMarkerMenu(false);
+                    }}
+                  >
+                    <Text style={styles.searchResultActionIcon}>📍</Text>
+                    <Text style={styles.searchResultActionText}>Ajouter comme étape</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity style={styles.searchResultAction}
                     onPress={async () => {
                       const currentStep = steps.find(s => s.id === menuMarker.stepId);
@@ -2022,125 +2065,121 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                     <Text style={styles.searchResultActionIcon}>🎯</Text>
                     <Text style={styles.searchResultActionText}>Ajouter comme activité</Text>
                   </TouchableOpacity>
-                  <View style={styles.searchResultDivider} />
                 </>
               )}
 
-              <Text style={styles.searchResultActionTitle}>Utiliser comme point de trajet</Text>
-
-              {/* Ouvrir l'étape associée — pour hébergement et activité */}
+              {/* ── MARQUEURS D'ÉTAPES (hébergement/activité existants) : menu départ/arrivée complet ── */}
               {menuMarker.type !== 'poi' && (
-                <TouchableOpacity style={styles.searchResultAction}
-                  onPress={() => {
-                    const stepObj = steps.find(s => s.id === menuMarker.stepId);
-                    if (stepObj) {
-                      setShowMarkerMenu(false);
-                      navigation.navigate('EditStep', {
-                        step: stepObj,
-                        [menuMarker.type === 'accommodation' ? 'initialEditAccommodationId' : 'initialEditActivityId']: menuMarker.item.id,
+                <>
+                  <Text style={styles.searchResultActionTitle}>Utiliser comme point de trajet</Text>
+
+                  {/* Ouvrir l'étape associée */}
+                  <TouchableOpacity style={styles.searchResultAction}
+                    onPress={() => {
+                      const stepObj = steps.find(s => s.id === menuMarker.stepId);
+                      if (stepObj) {
+                        setShowMarkerMenu(false);
+                        navigation.navigate('EditStep', {
+                          step: stepObj,
+                          [menuMarker.type === 'accommodation' ? 'initialEditAccommodationId' : 'initialEditActivityId']: menuMarker.item.id,
+                        });
+                      } else {
+                        setShowMarkerMenu(false);
+                      }
+                    }}
+                  >
+                    <Text style={styles.searchResultActionIcon}>✎</Text>
+                    <Text style={styles.searchResultActionText}>
+                      {menuMarker.type === 'accommodation' ? "Modifier l'hébergement" : "Modifier l'activité"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Départ vers l'étape suivante */}
+                  <TouchableOpacity style={styles.searchResultAction}
+                    onPress={async () => {
+                      const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
+                      if (stepIndex < 0 || stepIndex >= steps.length - 1) {
+                        Alert.alert('Aucune étape suivante', 'Cette étape est la dernière du voyage.');
+                        setShowMarkerMenu(false);
+                        return;
+                      }
+                      const itemId = menuMarker.item.id;
+                      const itemName = menuMarker.item.name;
+                      console.log('[MarkerMenu] 🚐 Départ → item:', itemName, `(${itemId.slice(0,12)}...)`);
+                      const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
+                      for (const a of otherAccos) await localUpdateAccommodation(a.id, { isDeparture: false });
+                      const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
+                      for (const a of otherActs) await localUpdateActivity(a.id, { isDeparture: false });
+                      const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
+                      _depArrOverride.current[itemId] = { ..._depArrOverride.current[itemId], isDeparture: true };
+                      psAccommodations.concat(psActivities).filter(a => a.stepId === menuMarker.stepId && a.id !== itemId).forEach(a => {
+                        if (_depArrOverride.current[a.id]) _depArrOverride.current[a.id].isDeparture = false;
                       });
-                    } else {
+                      await updateFn(itemId, { isDeparture: true });
                       setShowMarkerMenu(false);
-                    }
-                  }}
-                >
-                  <Text style={styles.searchResultActionIcon}>✎</Text>
-                  <Text style={styles.searchResultActionText}>
-                    {menuMarker.type === 'accommodation' ? "Modifier l'hébergement" : "Modifier l'activité"}
-                  </Text>
-                </TouchableOpacity>
+                      setRefreshCounter(c => c + 1);
+                    }}
+                  >
+                    <Text style={styles.searchResultActionIcon}>🚐</Text>
+                    <Text style={styles.searchResultActionText}>Départ vers l'étape suivante</Text>
+                  </TouchableOpacity>
+
+                  {/* Arrivée depuis l'étape précédente */}
+                  <TouchableOpacity style={styles.searchResultAction}
+                    onPress={async () => {
+                      const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
+                      if (stepIndex <= 0) {
+                        Alert.alert('Aucune étape précédente', 'Cette étape est la première du voyage.');
+                        setShowMarkerMenu(false);
+                        return;
+                      }
+                      const itemId = menuMarker.item.id;
+                      const itemName = menuMarker.item.name;
+                      console.log('[MarkerMenu] 🏁 Arrivée → item:', itemName, `(${itemId.slice(0,12)}...)`);
+                      const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
+                      for (const a of otherAccos) await localUpdateAccommodation(a.id, { isArrival: false });
+                      const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
+                      for (const a of otherActs) await localUpdateActivity(a.id, { isArrival: false });
+                      const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
+                      _depArrOverride.current[itemId] = { ..._depArrOverride.current[itemId], isArrival: true };
+                      psAccommodations.concat(psActivities).filter(a => a.stepId === menuMarker.stepId && a.id !== itemId).forEach(a => {
+                        if (_depArrOverride.current[a.id]) _depArrOverride.current[a.id].isArrival = false;
+                      });
+                      await updateFn(itemId, { isArrival: true });
+                      setShowMarkerMenu(false);
+                      setRefreshCounter(c => c + 1);
+                    }}
+                  >
+                    <Text style={styles.searchResultActionIcon}>🏁</Text>
+                    <Text style={styles.searchResultActionText}>Arrivée depuis l'étape précédente</Text>
+                  </TouchableOpacity>
+
+                  {/* Réinitialiser les points de trajet */}
+                  <View style={styles.searchResultDivider} />
+                  <TouchableOpacity style={styles.searchResultAction}
+                    onPress={async () => {
+                      const stepId = menuMarker.stepId;
+                      const stepName = steps.find(s => s.id === stepId)?.name ?? '?';
+                      console.log('[MarkerMenu] 🗑️ Réinitialiser → étape:', stepName);
+                      const stepAccos = psAccommodations.filter(a => a.stepId === stepId);
+                      for (const a of stepAccos) {
+                        _depArrOverride.current[a.id] = { isDeparture: false, isArrival: false };
+                        if (a.isDeparture || a.isArrival) await localUpdateAccommodation(a.id, { isDeparture: false, isArrival: false });
+                      }
+                      const stepActs = psActivities.filter(a => a.stepId === stepId);
+                      for (const a of stepActs) {
+                        _depArrOverride.current[a.id] = { isDeparture: false, isArrival: false };
+                        if (a.isDeparture || a.isArrival) await localUpdateActivity(a.id, { isDeparture: false, isArrival: false });
+                      }
+                      setShowMarkerMenu(false);
+                      setRefreshCounter(c => c + 1);
+                    }}
+                  >
+                    <Text style={styles.searchResultActionIcon}>🗑️</Text>
+                    <Text style={[styles.searchResultActionText, { color: '#ef4444' }]}>Réinitialiser les points de trajet</Text>
+                  </TouchableOpacity>
+                </>
               )}
-
-              {/* Départ vers l'étape suivante */}
-              <TouchableOpacity style={styles.searchResultAction}
-                onPress={async () => {
-                  const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
-                  if (stepIndex < 0 || stepIndex >= steps.length - 1) {
-                    Alert.alert('Aucune étape suivante', 'Cette étape est la dernière du voyage.');
-                    setShowMarkerMenu(false);
-                    return;
-                  }
-                  const itemId = menuMarker.item.id;
-                  const itemName = menuMarker.item.name;
-                  console.log('[MarkerMenu] 🚐 Départ → item:', itemName, `(${itemId.slice(0,12)}...)`);
-                  // Désactiver les autres flags de départ sur les items de cette étape
-                  const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
-                  for (const a of otherAccos) await localUpdateAccommodation(a.id, { isDeparture: false });
-                  const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
-                  for (const a of otherActs) await localUpdateActivity(a.id, { isDeparture: false });
-                  // Marquer cet item comme départ
-                  const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
-                  _depArrOverride.current[itemId] = { ..._depArrOverride.current[itemId], isDeparture: true };
-                  // Désactiver l'override sur les autres items de cette étape
-                  psAccommodations.concat(psActivities).filter(a => a.stepId === menuMarker.stepId && a.id !== itemId).forEach(a => {
-                    if (_depArrOverride.current[a.id]) _depArrOverride.current[a.id].isDeparture = false;
-                  });
-                  await updateFn(itemId, { isDeparture: true });
-                  setShowMarkerMenu(false);
-                  setRefreshCounter(c => c + 1);
-                }}
-              >
-                <Text style={styles.searchResultActionIcon}>🚐</Text>
-                <Text style={styles.searchResultActionText}>Départ vers l'étape suivante</Text>
-              </TouchableOpacity>
-
-              {/* Arrivée depuis l'étape précédente */}
-              <TouchableOpacity style={styles.searchResultAction}
-                onPress={async () => {
-                  const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
-                  if (stepIndex <= 0) {
-                    Alert.alert('Aucune étape précédente', 'Cette étape est la première du voyage.');
-                    setShowMarkerMenu(false);
-                    return;
-                  }
-                  const itemId = menuMarker.item.id;
-                  const itemName = menuMarker.item.name;
-                  console.log('[MarkerMenu] 🏁 Arrivée → item:', itemName, `(${itemId.slice(0,12)}...)`);
-                  // Désactiver les autres flags d'arrivée sur les items de cette étape
-                  const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
-                  for (const a of otherAccos) await localUpdateAccommodation(a.id, { isArrival: false });
-                  const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
-                  for (const a of otherActs) await localUpdateActivity(a.id, { isArrival: false });
-                  // Marquer cet item comme arrivée
-                  const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
-                  _depArrOverride.current[itemId] = { ..._depArrOverride.current[itemId], isArrival: true };
-                  psAccommodations.concat(psActivities).filter(a => a.stepId === menuMarker.stepId && a.id !== itemId).forEach(a => {
-                    if (_depArrOverride.current[a.id]) _depArrOverride.current[a.id].isArrival = false;
-                  });
-                  await updateFn(itemId, { isArrival: true });
-                  setShowMarkerMenu(false);
-                  setRefreshCounter(c => c + 1);
-                }}
-              >
-                <Text style={styles.searchResultActionIcon}>🏁</Text>
-                <Text style={styles.searchResultActionText}>Arrivée depuis l'étape précédente</Text>
-              </TouchableOpacity>
-
-              {/* Effacer les points personnalisés */}
-              <View style={styles.searchResultDivider} />
-              <TouchableOpacity style={styles.searchResultAction}
-                onPress={async () => {
-                  const stepId = menuMarker.stepId;
-                  const stepName = steps.find(s => s.id === stepId)?.name ?? '?';
-                  console.log('[MarkerMenu] 🗑️ Réinitialiser → étape:', stepName);
-                  // Réinitialiser TOUS les flags de tous les items de cette étape
-                  const stepAccos = psAccommodations.filter(a => a.stepId === stepId);
-                  for (const a of stepAccos) {
-                    _depArrOverride.current[a.id] = { isDeparture: false, isArrival: false };
-                    if (a.isDeparture || a.isArrival) await localUpdateAccommodation(a.id, { isDeparture: false, isArrival: false });
-                  }
-                  const stepActs = psActivities.filter(a => a.stepId === stepId);
-                  for (const a of stepActs) {
-                    _depArrOverride.current[a.id] = { isDeparture: false, isArrival: false };
-                    if (a.isDeparture || a.isArrival) await localUpdateActivity(a.id, { isDeparture: false, isArrival: false });
-                  }
-                  setShowMarkerMenu(false);
-                  setRefreshCounter(c => c + 1);
-                }}
-              >
-                <Text style={styles.searchResultActionIcon}>🗑️</Text>
-                <Text style={[styles.searchResultActionText, { color: '#ef4444' }]}>Réinitialiser les points de trajet</Text>
-              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -3101,6 +3140,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
+  // AllTrails stats row
+  trailStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: SPACING.sm,
+    marginBottom: 4,
+  },
+  trailStatsText: {
+    fontSize: 13,
+    color: '#4ade80',
+    fontWeight: '600',
+  },
+
   searchResultAction: {
     flexDirection: 'row',
     alignItems: 'center',

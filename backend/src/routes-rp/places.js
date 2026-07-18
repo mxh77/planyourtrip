@@ -166,7 +166,67 @@ router.post('/searchCategory', async (req, res, next) => {
       }
     }
 
-    // 2. Park4Night search
+    // 2. Algolia / AllTrails search (pour la catégorie "trails" uniquement)
+    if (category === 'trails') {
+      try {
+        const algoliaAppId = process.env.ALGOLIA_APP_ID;
+        const algoliaApiKey = process.env.ALGOLIA_API_KEY;
+        if (algoliaAppId && algoliaApiKey) {
+          const algoliaRadius = Math.min(radius, 100000); // max 100km
+          const algoliaRes = await axios.post(
+            `https://${algoliaAppId}-3.algolianet.com/1/indexes/alltrails_primary_fr-FR/query`,
+            {
+              hitsPerPage: maxResults,
+              aroundLatLng: `${centerLat},${centerLng}`,
+              aroundRadius: algoliaRadius,
+              facetFilters: [['type:trail']],
+              attributesToRetrieve: ['name', 'length', 'elevation_gain', 'avg_rating', 'popularity', '_geoloc', 'duration_minutes', 'slug', 'objectID'],
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Algolia-API-Key': algoliaApiKey,
+                'X-Algolia-Application-Id': algoliaAppId,
+              },
+              timeout: 8000,
+            }
+          );
+
+          const hits = algoliaRes.data?.hits || [];
+          // Filtrer : ne garder que les vrais trails (objectID commence par "trail-")
+          const trailsOnly = hits.filter(h => h.objectID && h.objectID.startsWith('trail-'));
+
+          for (const h of trailsOnly) {
+            results.push({
+              id: `algolia_${h.objectID}`,
+              source: 'algolia',
+              placeId: h.objectID,
+              name: h.name,
+              latitude: h._geoloc?.lat || centerLat,
+              longitude: h._geoloc?.lng || centerLng,
+              address: '',
+              rating: h.avg_rating || null,
+              types: ['trail'],
+              overlayType: category,
+              // Champs spécifiques AllTrails
+              lengthKm: h.length ? Math.round(h.length / 1000 * 10) / 10 : null,
+              elevationGain: h.elevation_gain ? Math.round(h.elevation_gain) : null,
+              avgRating: h.avg_rating || null,
+              popularity: h.popularity || null,
+              durationMinutes: h.duration_minutes || null,
+              alltrailsUrl: h.slug ? `https://www.alltrails.com/${h.slug}` : null,
+            });
+          }
+          log('SEARCH', `  ✓ Algolia: ${trailsOnly.length} résultats (${hits.length} total)`);
+        } else {
+          log('SEARCH', '  ⚠️ Algolia: credentials manquants');
+        }
+      } catch (e) {
+        log('SEARCH', `  ✗ Algolia: ${e.message}`);
+      }
+    }
+
+    // 3. Park4Night search
     if (includeP4N) {
       try {
         const p4nRadius = Math.min(Math.round(radius / 1000), 200);
@@ -213,6 +273,38 @@ router.post('/searchCategory', async (req, res, next) => {
         log('SEARCH', `  ✓ P4N: ${filtered.length} résultats (${items.length} total)`);
       } catch (e) {
         log('SEARCH', `  ✗ P4N: ${e.message}`);
+      }
+    }
+
+    // Dédoublonnage : pour les trails, si un résultat Algolia existe,
+    // supprimer les résultats Google Places dont le nom est similaire.
+    if (category === 'trails') {
+      const algoliaResults = results.filter(r => r.source === 'algolia');
+      if (algoliaResults.length > 0) {
+        const toRemove = new Set();
+        for (const alg of algoliaResults) {
+          const algWords = alg.name.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+          for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+            if (r.source !== 'google') continue;
+            // Compter les mots significatifs en commun
+            const rWords = r.name.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+            const common = algWords.filter(w => rWords.includes(w)).length;
+            // Si >= 2 mots communs ou un mot unique très long, c'est probablement le même lieu
+            if (common >= 2 || (common >= 1 && Math.max(...algWords.map(w => w.length)) >= 7)) {
+              toRemove.add(i);
+            }
+          }
+        }
+        if (toRemove.size > 0) {
+          const removed = results.filter((_, i) => toRemove.has(i));
+          log('SEARCH', `  🗑️ Dédoublonnage: ${toRemove.size} Google supprimés (fusionnés dans Algolia)`);
+          removed.forEach(r => log('SEARCH', `     ✗ ${r.name}`));
+          // Filtrer en gardant les Algolia et les Google non doublons
+          const newResults = results.filter((_, i) => !toRemove.has(i));
+          results.length = 0;
+          results.push(...newResults);
+        }
       }
     }
 
