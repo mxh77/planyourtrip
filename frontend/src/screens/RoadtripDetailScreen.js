@@ -1918,107 +1918,56 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                 <Text style={styles.searchResultSubtitle}>{searchResultMarker.description}</Text>
               )}
               <View style={styles.searchResultDivider} />
-              <Text style={styles.searchResultActionTitle}>Ajouter à votre voyage</Text>
-              <TouchableOpacity
-                style={styles.searchResultAction}
-                onPress={async () => {
-                  // Ajouter comme étape
-                  await useRoadtripStore.getState().createStep({
-                    roadtripId: roadtrip.id,
-                    name: searchResultMarker.title,
-                    location: searchResultMarker.description,
-                    latitude: searchResultMarker.latitude,
-                    longitude: searchResultMarker.longitude,
-                    order: steps.length,
-                  });
-                  setShowSearchResultModal(false);
-                  setSearchResultMarker(null);
-                  setSearchQuery('');
-                }}
-              >
-                <Text style={styles.searchResultActionIcon}>📍</Text>
-                <Text style={styles.searchResultActionText}>Ajouter comme étape</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.searchResultAction}
-                onPress={async () => {
-                  // Ajouter comme hébergement
-                  const currentStep = steps[selectedIndex];
-                  if (!currentStep) {
-                    Alert.alert('Aucune étape sélectionnée', 'Sélectionnez d’abord une étape sur la carte ou dans la liste avant d’ajouter un hébergement.');
-                    return;
-                  }
-                  const defaultTime = currentStep.arrivalTime || '10:00';
-                  const checkIn = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                  const checkOut = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                  try {
-                    await useRoadtripStore.getState().createAccommodation({
-                      stepId: currentStep.id,
-                      roadtripId: roadtrip.id,
-                      name: searchResultMarker.title,
-                      address: searchResultMarker.description,
-                      latitude: searchResultMarker.latitude,
-                      longitude: searchResultMarker.longitude,
-                      type: mapGoogleTypesToAccomType(searchResultMarker.types),
-                      checkIn,
-                      checkOut,
-                    });
-                    setShowSearchResultModal(false);
-                    setSearchResultMarker(null);
-                    setSearchQuery('');
-                  } catch (err) {
-                    console.error('[SearchResult] Error creating accommodation:', err);
-                    Alert.alert('Erreur', 'Impossible d’ajouter cet hébergement.');
-                  }
-                }}
-              >
-                <Text style={styles.searchResultActionIcon}>🏨</Text>
-                <Text style={styles.searchResultActionText}>Ajouter comme hébergement</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.searchResultAction}
-                onPress={async () => {
-                  // Ajouter comme activité
-                  const currentStep = steps[selectedIndex];
-                  if (!currentStep) {
-                    Alert.alert('Aucune étape sélectionnée', 'Sélectionnez d’abord une étape sur la carte ou dans la liste avant d’ajouter une activité.');
-                    return;
-                  }
-                  const defaultTime = currentStep.arrivalTime || '10:00';
-                  const startTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                  const endTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                  try {
-                    await useRoadtripStore.getState().createActivity({
-                      stepId: currentStep.id,
-                      roadtripId: roadtrip.id,
-                      name: searchResultMarker.title,
+              <Text style={styles.markerActionSectionTitle}>Ajouter en tant que</Text>
+              <View style={styles.markerActionGrid}>
+                <MarkerAction icon="📍" label="Étape" color="#f59e0b" bg="rgba(245,158,11,0.15)"
+                  onPress={async () => {
+                    await useRoadtripStore.getState().createStep({
+                      roadtripId: roadtrip.id, name: searchResultMarker.title,
                       location: searchResultMarker.description,
-                      latitude: searchResultMarker.latitude,
-                      longitude: searchResultMarker.longitude,
-                      type: mapGoogleTypesToActivityType(searchResultMarker.types),
-                      startTime,
-                      endTime,
+                      latitude: searchResultMarker.latitude, longitude: searchResultMarker.longitude,
+                      order: steps.length,
                     });
-                    setShowSearchResultModal(false);
-                    setSearchResultMarker(null);
-                    setSearchQuery('');
-                  } catch (err) {
-                    console.error('[SearchResult] Error creating activity:', err);
-                    Alert.alert('Erreur', 'Impossible d’ajouter cette activité.');
-                  }
-                }}
-              >
-                <Text style={styles.searchResultActionIcon}>🎯</Text>
-                <Text style={styles.searchResultActionText}>Ajouter comme activité</Text>
-              </TouchableOpacity>
-
+                    setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery('');
+                  }} />
+                <MarkerAction icon="🏨" label="Hébergement" color="#3b82f6" bg="rgba(59,130,246,0.15)"
+                  onPress={async () => {
+                    const cs = steps[selectedIndex];
+                    if (!cs) { Alert.alert('Aucune étape sélectionnée', ''); return; }
+                    const dt = cs.arrivalTime || '10:00';
+                    try {
+                      await useRoadtripStore.getState().createAccommodation({
+                        stepId: cs.id, roadtripId: roadtrip.id, name: searchResultMarker.title,
+                        address: searchResultMarker.description,
+                        latitude: searchResultMarker.latitude, longitude: searchResultMarker.longitude,
+                        type: mapGoogleTypesToAccomType(searchResultMarker.types),
+                        checkIn: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                        checkOut: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                      });
+                      setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery('');
+                    } catch (err) { Alert.alert('Erreur', 'Impossible d\'ajouter.'); }
+                  }} />
+              <MarkerAction icon="🎯" label="Activité" color="#22c55e" bg="rgba(34,197,94,0.15)"
+                  onPress={async () => {
+                    const cs = steps[selectedIndex];
+                    if (!cs) { Alert.alert('Aucune étape sélectionnée', ''); return; }
+                    const dt = cs.arrivalTime || '10:00';
+                    try {
+                      await useRoadtripStore.getState().createActivity({
+                        stepId: cs.id, roadtripId: roadtrip.id, name: searchResultMarker.title,
+                        location: searchResultMarker.description,
+                        latitude: searchResultMarker.latitude, longitude: searchResultMarker.longitude,
+                        type: mapGoogleTypesToActivityType(searchResultMarker.types),
+                        startTime: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                        endTime: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                      });
+                      setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery('');
+                    } catch (err) { Alert.alert('Erreur', 'Impossible d\'ajouter.'); }
+                  }} />
+              </View>
               <View style={styles.searchResultDivider} />
               <TouchableOpacity style={styles.searchResultAction}
-                onPress={() => {
-                  setShowSearchResultModal(false);
-                  setSearchResultMarker(null);
-                  setSearchQuery('');
-                }}
+                onPress={() => { setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery(''); }}
               >
                 <Text style={styles.searchResultActionIcon}>✕</Text>
                 <Text style={[styles.searchResultActionText, { color: 'rgba(255,255,255,0.4)' }]}>Supprimer le marqueur</Text>
@@ -2029,306 +1978,161 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
 
         {/* ─── MENU CONTEXTUEL MARQUEUR ────────────────────────────────── */}
         {showMarkerMenu && menuMarker && (
-          <View style={styles.searchResultModalOverlay}>
-            <View style={styles.searchResultModalContent}>
-              <View style={styles.searchResultHeader}>
-                <Text style={styles.searchResultTitle}>{menuMarker.item.name}</Text>
-                <TouchableOpacity onPress={() => setShowMarkerMenu(false)}>
-                  <Text style={styles.searchResultClose}>✕</Text>
+          <Pressable style={styles.markerOverlay} onPress={() => setShowMarkerMenu(false)}>
+            <Pressable style={styles.searchResultModalContent}>
+              {/* Header */}
+              <View style={styles.markerMenuHeader}>
+                <Text style={styles.markerMenuTitle} numberOfLines={2}>{menuMarker.item.name}</Text>
+                <TouchableOpacity onPress={() => setShowMarkerMenu(false)} style={styles.markerMenuClose}>
+                  <Text style={styles.markerMenuCloseText}>✕</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.searchResultSubtitle}>
+              <Text style={styles.markerMenuBadge}>
                 {menuMarker.type === 'accommodation' ? '🏨 Hébergement' : menuMarker.type === 'activity' ? '🎯 Activité' : '📍 Point d\'intérêt'}
-                {menuMarker.stepId ? ` — étape ${steps.findIndex(s => s.id === menuMarker.stepId) + 1}` : ''}
+                {menuMarker.stepId ? ` · Étape ${steps.findIndex(s => s.id === menuMarker.stepId) + 1}` : ''}
               </Text>
-              <View style={styles.searchResultDivider} />
 
-              {/* ── MARQUEURS DE RECHERCHE (POI) : ajouter comme étape/hébergement/activité ── */}
+              {/* ── INFOS + PHOTO ── */}
+              {/* AllTrails stats */}
+              {menuMarker.item.source === 'algolia' && menuMarker.item.lengthKm && (
+                <View style={styles.markerInfoRow}>
+                  <View style={styles.markerInfoChip}><Text style={styles.markerInfoChipText}>🥾 {menuMarker.item.lengthKm}km</Text></View>
+                  {menuMarker.item.elevationGain ? <View style={styles.markerInfoChip}><Text style={styles.markerInfoChipText}>⛰️ {menuMarker.item.elevationGain}m</Text></View> : null}
+                  {menuMarker.item.avgRating ? <View style={styles.markerInfoChip}><Text style={styles.markerInfoChipText}>⭐ {menuMarker.item.avgRating}/5</Text></View> : null}
+                  {menuMarker.item.durationMinutes ? <View style={styles.markerInfoChip}><Text style={styles.markerInfoChipText}>⏱️ {(menuMarker.item.durationMinutes || 0) >= 60 ? `${Math.floor((menuMarker.item.durationMinutes || 0) / 60)}h${(menuMarker.item.durationMinutes || 0) % 60}` : `${menuMarker.item.durationMinutes || 0}min`}</Text></View> : null}
+                </View>
+              )}
+
+              {/* Photo Google Places */}
+              {menuMarker.item.source === 'google' && menuMarker.item.photoName && (
+                <View style={styles.markerPhotoContainer}>
+                  <Image
+                    source={{ uri: `${API_URL}/api/places/photo?photoName=${encodeURIComponent(menuMarker.item.photoName)}` }}
+                    style={styles.poiPhoto}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
+
+              {/* Rating Google */}
+              {menuMarker.item.source === 'google' && (menuMarker.item.rating || menuMarker.item.userRatingCount) && (
+                <View style={styles.markerInfoRow}>
+                  {menuMarker.item.rating && (
+                    <View style={styles.markerInfoChip}><Text style={styles.markerInfoChipText}>{'⭐'.repeat(Math.round(menuMarker.item.rating))}{'☆'.repeat(5 - Math.round(menuMarker.item.rating))} {menuMarker.item.rating}/5</Text></View>
+                  )}
+                  {menuMarker.item.userRatingCount ? (
+                    <View style={styles.markerInfoChip}><Text style={styles.markerInfoChipText}>👤 {menuMarker.item.userRatingCount} avis</Text></View>
+                  ) : null}
+                </View>
+              )}
+
+              {/* ── GRILLE D'ACTIONS ── */}
+              {/* Liens externes (POI) */}
               {menuMarker.type === 'poi' && (
                 <>
-                  {/* Infos AllTrails pour les randonnées */}
-                  {menuMarker.item.source === 'algolia' && menuMarker.item.lengthKm && (
-                    <View style={styles.trailStatsRow}>
-                      <Text style={styles.trailStatsText}>
-                        🥾 {menuMarker.item.lengthKm}km
-                        {menuMarker.item.elevationGain ? ` · ⛰️ ${menuMarker.item.elevationGain}m` : ''}
-                        {menuMarker.item.avgRating ? ` · ⭐ ${menuMarker.item.avgRating}/5` : ''}
-                      </Text>
-                    </View>
-                  )}
-                  {menuMarker.item.source === 'algolia' && menuMarker.item.alltrailsUrl && (
-                    <TouchableOpacity
-                      style={[styles.searchResultAction, { backgroundColor: 'rgba(34,197,94,0.1)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.2)' }]}
-                      onPress={() => {
-                        Linking.openURL(menuMarker.item.alltrailsUrl);
-                        setShowMarkerMenu(false);
-                      }}
-                    >
-                      <Text style={styles.searchResultActionIcon}>🌲</Text>
-                      <Text style={[styles.searchResultActionText, { color: '#4ade80' }]}>Voir sur AllTrails</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Photo + Note Google Places */}
-                  {menuMarker.item.source === 'google' && (
-                    <>
-                      {menuMarker.item.photoName && (
-                        <View style={styles.poiPhotoContainer}>
-                          <Image
-                            source={{ uri: `${API_URL}/api/places/photo?photoName=${encodeURIComponent(menuMarker.item.photoName)}` }}
-                            style={styles.poiPhoto}
-                            resizeMode="cover"
-                          />
-                        </View>
-                      )}
-
-                      {/* Note et nombre d'avis */}
-                      {(menuMarker.item.rating || menuMarker.item.userRatingCount) && (
-                        <View style={styles.poiRatingRow}>
-                          {menuMarker.item.rating && (
-                            <Text style={styles.poiRatingStars}>
-                              {'⭐'.repeat(Math.round(menuMarker.item.rating))}{'☆'.repeat(5 - Math.round(menuMarker.item.rating))}
-                            </Text>
-                          )}
-                          <Text style={styles.poiRatingText}>
-                            {menuMarker.item.rating ? `${menuMarker.item.rating}/5` : ''}
-                            {menuMarker.item.userRatingCount ? ` · ${menuMarker.item.userRatingCount} avis` : ''}
-                          </Text>
-                        </View>
-                      )}
-                    </>
-                  )}
-
-                  {/* Lien Google Maps pour les items Google Places */}
-                  {menuMarker.item.source === 'google' && menuMarker.item.googleMapsUrl && (
-                    <TouchableOpacity
-                      style={[styles.searchResultAction, { backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)' }]}
-                      onPress={() => {
-                        Linking.openURL(menuMarker.item.googleMapsUrl);
-                        setShowMarkerMenu(false);
-                      }}
-                    >
-                      <Text style={styles.searchResultActionIcon}>🗺️</Text>
-                      <Text style={[styles.searchResultActionText, { color: '#60a5fa' }]}>Voir sur Google Maps</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Lien Park4Night → ouvre l'app native P4N */}
-                  {menuMarker.item.source === 'p4n' && menuMarker.item.p4nUrl && (
-                    <TouchableOpacity
-                      style={[styles.searchResultAction, { backgroundColor: 'rgba(99,102,241,0.1)', borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)' }]}
-                      onPress={async () => {
-                        const placeId = menuMarker.item.placeId;
-                        if (Platform.OS === 'android' && placeId) {
-                          // Intent Android explicite vers l'app P4N (package: fr.tramb.park4night)
-                          const intentUrl = `intent://fr/place/${placeId}#Intent;scheme=https;package=fr.tramb.park4night;end`;
-                          try {
-                            await Linking.openURL(intentUrl);
-                            setShowMarkerMenu(false);
-                            return;
-                          } catch (_e) {
-                            // Fallback: URL standard
+                  <View style={styles.markerActionGrid}>
+                    {menuMarker.item.source === 'algolia' && menuMarker.item.alltrailsUrl && (
+                      <MarkerAction icon="🌲" label="AllTrails" color="#4ade80" bg="rgba(34,197,94,0.15)"
+                        onPress={() => { Linking.openURL(menuMarker.item.alltrailsUrl); setShowMarkerMenu(false); }} />
+                    )}
+                    {menuMarker.item.source === 'google' && menuMarker.item.googleMapsUrl && (
+                      <MarkerAction icon="🗺️" label="Google Maps" color="#60a5fa" bg="rgba(59,130,246,0.15)"
+                        onPress={() => { Linking.openURL(menuMarker.item.googleMapsUrl); setShowMarkerMenu(false); }} />
+                    )}
+                    {menuMarker.item.source === 'p4n' && menuMarker.item.p4nUrl && (
+                      <MarkerAction icon="🚐" label="Park4Night" color="#818cf8" bg="rgba(99,102,241,0.15)"
+                        onPress={async () => {
+                          const placeId = menuMarker.item.placeId;
+                          if (Platform.OS === 'android' && placeId) {
+                            try { await Linking.openURL(`intent://fr/place/${placeId}#Intent;scheme=https;package=fr.tramb.park4night;end`); setShowMarkerMenu(false); return; } catch {}
                           }
-                        }
-                        Linking.openURL(menuMarker.item.p4nUrl);
+                          Linking.openURL(menuMarker.item.p4nUrl); setShowMarkerMenu(false);
+                        }} />
+                    )}
+                  </View>
+
+                  <Text style={styles.markerActionSectionTitle}>Ajouter en tant que</Text>
+                  <View style={styles.markerActionGrid}>
+                    <MarkerAction icon="📍" label="Étape" color="#f59e0b" bg="rgba(245,158,11,0.15)"
+                      onPress={async () => {
+                        await useRoadtripStore.getState().createStep({
+                          roadtripId: roadtrip.id, name: menuMarker.item.name,
+                          location: menuMarker.item.address || menuMarker.item.name,
+                          latitude: parseFloat(menuMarker.item.latitude), longitude: parseFloat(menuMarker.item.longitude),
+                          order: steps.length,
+                        });
                         setShowMarkerMenu(false);
-                      }}
-                    >
-                      <Text style={styles.searchResultActionIcon}>⛺</Text>
-                      <Text style={[styles.searchResultActionText, { color: '#818cf8' }]}>Voir sur Park4Night</Text>
-                    </TouchableOpacity>
-                  )}
-                  <View style={styles.searchResultDivider} />
-                  <Text style={styles.searchResultActionTitle}>Ajouter au voyage</Text>
-                  <TouchableOpacity style={styles.searchResultAction}
-                    onPress={async () => {
-                      await useRoadtripStore.getState().createStep({
-                        roadtripId: roadtrip.id,
-                        name: menuMarker.item.name,
-                        location: menuMarker.item.address || menuMarker.item.name,
-                        latitude: parseFloat(menuMarker.item.latitude),
-                        longitude: parseFloat(menuMarker.item.longitude),
-                        order: steps.length,
-                      });
-                      setShowMarkerMenu(false);
-                    }}
-                  >
-                    <Text style={styles.searchResultActionIcon}>📍</Text>
-                    <Text style={styles.searchResultActionText}>Ajouter comme étape</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.searchResultAction}
-                    onPress={async () => {
-                      const currentStep = steps[selectedIndex];
-                      if (!currentStep) {
-                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape dans la liste ou sur la carte.');
+                      }} />
+                    <MarkerAction icon="🏨" label="Hébergement" color="#3b82f6" bg="rgba(59,130,246,0.15)"
+                      onPress={async () => {
+                        const cs = steps[selectedIndex];
+                        if (!cs) { Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.'); setShowMarkerMenu(false); return; }
+                        const dt = cs.arrivalTime || '10:00';
+                        await useRoadtripStore.getState().createAccommodation({
+                          stepId: cs.id, roadtripId: id, name: menuMarker.item.name, address: menuMarker.item.name,
+                          latitude: parseFloat(menuMarker.item.latitude), longitude: parseFloat(menuMarker.item.longitude),
+                          type: 'OTHER', checkIn: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                          checkOut: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                        });
                         setShowMarkerMenu(false);
-                        return;
-                      }
-                      const defaultTime = currentStep.arrivalTime || '10:00';
-                      const checkIn = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                      const checkOut = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                      await useRoadtripStore.getState().createAccommodation({
-                        stepId: currentStep.id,
-                        roadtripId: id,
-                        name: menuMarker.item.name,
-                        address: menuMarker.item.name,
-                        latitude: parseFloat(menuMarker.item.latitude),
-                        longitude: parseFloat(menuMarker.item.longitude),
-                        type: 'OTHER',
-                        checkIn,
-                        checkOut,
-                      });
-                      setShowMarkerMenu(false);
-                    }}
-                  >
-                    <Text style={styles.searchResultActionIcon}>🏨</Text>
-                    <Text style={styles.searchResultActionText}>Ajouter comme hébergement</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.searchResultAction}
-                    onPress={async () => {
-                      const currentStep = steps[selectedIndex];
-                      if (!currentStep) {
-                        Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape dans la liste ou sur la carte.');
+                      }} />
+                    <MarkerAction icon="🎯" label="Activité" color="#22c55e" bg="rgba(34,197,94,0.15)"
+                      onPress={async () => {
+                        const cs = steps[selectedIndex];
+                        if (!cs) { Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.'); setShowMarkerMenu(false); return; }
+                        const dt = cs.arrivalTime || '10:00';
+                        await useRoadtripStore.getState().createActivity({
+                          stepId: cs.id, roadtripId: id, name: menuMarker.item.name, location: menuMarker.item.name,
+                          latitude: parseFloat(menuMarker.item.latitude), longitude: parseFloat(menuMarker.item.longitude),
+                          type: 'ACTIVITY', startTime: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                          endTime: cs.startDate ? `${toYMD(cs.startDate)} ${dt}` : null,
+                        });
                         setShowMarkerMenu(false);
-                        return;
-                      }
-                      const defaultTime = currentStep.arrivalTime || '10:00';
-                      const startTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                      const endTime = currentStep.startDate ? `${toYMD(currentStep.startDate)} ${defaultTime}` : null;
-                      await useRoadtripStore.getState().createActivity({
-                        stepId: currentStep.id,
-                        roadtripId: id,
-                        name: menuMarker.item.name,
-                        location: menuMarker.item.name,
-                        latitude: parseFloat(menuMarker.item.latitude),
-                        longitude: parseFloat(menuMarker.item.longitude),
-                        type: 'ACTIVITY',
-                        startTime,
-                        endTime,
-                      });
-                      setShowMarkerMenu(false);
-                    }}
-                  >
-                    <Text style={styles.searchResultActionIcon}>🎯</Text>
-                    <Text style={styles.searchResultActionText}>Ajouter comme activité</Text>
-                  </TouchableOpacity>
+                      }} />
+                  </View>
                 </>
               )}
 
-              {/* ── MARQUEURS D'ÉTAPES (hébergement/activité existants) : menu départ/arrivée complet ── */}
+              {/* ── MARQUEURS D'ÉTAPES : départ/arrivée ── */}
               {menuMarker.type !== 'poi' && (
                 <>
-                  <Text style={styles.searchResultActionTitle}>Utiliser comme point de trajet</Text>
-
-                  {/* Ouvrir l'étape associée */}
-                  <TouchableOpacity style={styles.searchResultAction}
-                    onPress={() => {
-                      const stepObj = steps.find(s => s.id === menuMarker.stepId);
-                      if (stepObj) {
-                        setShowMarkerMenu(false);
-                        navigation.navigate('EditStep', {
-                          step: stepObj,
-                          [menuMarker.type === 'accommodation' ? 'initialEditAccommodationId' : 'initialEditActivityId']: menuMarker.item.id,
-                        });
-                      } else {
-                        setShowMarkerMenu(false);
-                      }
-                    }}
-                  >
-                    <Text style={styles.searchResultActionIcon}>✎</Text>
-                    <Text style={styles.searchResultActionText}>
-                      {menuMarker.type === 'accommodation' ? "Modifier l'hébergement" : "Modifier l'activité"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Départ vers l'étape suivante */}
-                  <TouchableOpacity style={styles.searchResultAction}
-                    onPress={async () => {
-                      const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
-                      if (stepIndex < 0 || stepIndex >= steps.length - 1) {
-                        Alert.alert('Aucune étape suivante', 'Cette étape est la dernière du voyage.');
-                        setShowMarkerMenu(false);
-                        return;
-                      }
-                      const itemId = menuMarker.item.id;
-                      const itemName = menuMarker.item.name;
-                      console.log('[MarkerMenu] 🚐 Départ → item:', itemName, `(${itemId.slice(0,12)}...)`);
-                      const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
-                      for (const a of otherAccos) await localUpdateAccommodation(a.id, { isDeparture: false });
-                      const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== itemId);
-                      for (const a of otherActs) await localUpdateActivity(a.id, { isDeparture: false });
-                      const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
-                      _depArrOverride.current[itemId] = { ..._depArrOverride.current[itemId], isDeparture: true };
-                      psAccommodations.concat(psActivities).filter(a => a.stepId === menuMarker.stepId && a.id !== itemId).forEach(a => {
-                        if (_depArrOverride.current[a.id]) _depArrOverride.current[a.id].isDeparture = false;
-                      });
-                      await updateFn(itemId, { isDeparture: true });
-                      setShowMarkerMenu(false);
-                      setRefreshCounter(c => c + 1);
-                    }}
-                  >
-                    <Text style={styles.searchResultActionIcon}>🚐</Text>
-                    <Text style={styles.searchResultActionText}>Départ vers l'étape suivante</Text>
-                  </TouchableOpacity>
-
-                  {/* Arrivée depuis l'étape précédente */}
-                  <TouchableOpacity style={styles.searchResultAction}
-                    onPress={async () => {
-                      const stepIndex = steps.findIndex(s => s.id === menuMarker.stepId);
-                      if (stepIndex <= 0) {
-                        Alert.alert('Aucune étape précédente', 'Cette étape est la première du voyage.');
-                        setShowMarkerMenu(false);
-                        return;
-                      }
-                      const itemId = menuMarker.item.id;
-                      const itemName = menuMarker.item.name;
-                      console.log('[MarkerMenu] 🏁 Arrivée → item:', itemName, `(${itemId.slice(0,12)}...)`);
-                      const otherAccos = psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
-                      for (const a of otherAccos) await localUpdateAccommodation(a.id, { isArrival: false });
-                      const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== itemId);
-                      for (const a of otherActs) await localUpdateActivity(a.id, { isArrival: false });
-                      const updateFn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
-                      _depArrOverride.current[itemId] = { ..._depArrOverride.current[itemId], isArrival: true };
-                      psAccommodations.concat(psActivities).filter(a => a.stepId === menuMarker.stepId && a.id !== itemId).forEach(a => {
-                        if (_depArrOverride.current[a.id]) _depArrOverride.current[a.id].isArrival = false;
-                      });
-                      await updateFn(itemId, { isArrival: true });
-                      setShowMarkerMenu(false);
-                      setRefreshCounter(c => c + 1);
-                    }}
-                  >
-                    <Text style={styles.searchResultActionIcon}>🏁</Text>
-                    <Text style={styles.searchResultActionText}>Arrivée depuis l'étape précédente</Text>
-                  </TouchableOpacity>
-
-                  {/* Réinitialiser les points de trajet */}
-                  <View style={styles.searchResultDivider} />
-                  <TouchableOpacity style={styles.searchResultAction}
-                    onPress={async () => {
-                      const stepId = menuMarker.stepId;
-                      const stepName = steps.find(s => s.id === stepId)?.name ?? '?';
-                      console.log('[MarkerMenu] 🗑️ Réinitialiser → étape:', stepName);
-                      const stepAccos = psAccommodations.filter(a => a.stepId === stepId);
-                      for (const a of stepAccos) {
-                        _depArrOverride.current[a.id] = { isDeparture: false, isArrival: false };
-                        if (a.isDeparture || a.isArrival) await localUpdateAccommodation(a.id, { isDeparture: false, isArrival: false });
-                      }
-                      const stepActs = psActivities.filter(a => a.stepId === stepId);
-                      for (const a of stepActs) {
-                        _depArrOverride.current[a.id] = { isDeparture: false, isArrival: false };
-                        if (a.isDeparture || a.isArrival) await localUpdateActivity(a.id, { isDeparture: false, isArrival: false });
-                      }
-                      setShowMarkerMenu(false);
-                      setRefreshCounter(c => c + 1);
-                    }}
-                  >
-                    <Text style={styles.searchResultActionIcon}>🗑️</Text>
-                    <Text style={[styles.searchResultActionText, { color: '#ef4444' }]}>Réinitialiser les points de trajet</Text>
-                  </TouchableOpacity>
+                  <Text style={styles.markerActionSectionTitle}>Point de trajet</Text>
+                  <View style={styles.markerActionGrid}>
+                    <MarkerAction icon="✎" label="Modifier" color="#93c5fd" bg="rgba(59,130,246,0.5)"
+                      onPress={() => {
+                        const so = steps.find(s => s.id === menuMarker.stepId);
+                        if (so) { setShowMarkerMenu(false); navigation.navigate('EditStep', { step: so, [menuMarker.type === 'accommodation' ? 'initialEditAccommodationId' : 'initialEditActivityId']: menuMarker.item.id }); }
+                        else setShowMarkerMenu(false);
+                      }} />
+                    <MarkerAction icon="🏁" label="Arrivée" color="#f97316" bg="rgba(249,115,22,0.2)"
+                      onPress={async () => {
+                        const idx = steps.findIndex(s => s.id === menuMarker.stepId);
+                        if (idx <= 0) { Alert.alert('Aucune étape précédente', ''); setShowMarkerMenu(false); return; }
+                        const id2 = menuMarker.item.id;
+                        for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== id2)) await localUpdateAccommodation(a.id, { isArrival: false });
+                        const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== id2);
+                        for (const a of otherActs) await localUpdateActivity(a.id, { isArrival: false });
+                        const fn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
+                        _depArrOverride.current[id2] = { ..._depArrOverride.current[id2], isArrival: true };
+                        await fn(id2, { isArrival: true }); setShowMarkerMenu(false); setRefreshCounter(c => c + 1);
+                      }} />
+                    <MarkerAction icon="🚀" label="Départ" color="#4ade80" bg="rgba(34,197,94,0.2)"
+                      onPress={async () => {
+                        const idx = steps.findIndex(s => s.id === menuMarker.stepId);
+                        if (idx < 0 || idx >= steps.length - 1) { Alert.alert('Aucune étape suivante', ''); setShowMarkerMenu(false); return; }
+                        const id2 = menuMarker.item.id;
+                        for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== id2)) await localUpdateAccommodation(a.id, { isDeparture: false });
+                        const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== id2);
+                        for (const a of otherActs) await localUpdateActivity(a.id, { isDeparture: false });
+                        const fn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
+                        _depArrOverride.current[id2] = { ..._depArrOverride.current[id2], isDeparture: true };
+                        await fn(id2, { isDeparture: true }); setShowMarkerMenu(false); setRefreshCounter(c => c + 1);
+                      }} />
+                  </View>
                 </>
               )}
-            </View>
-          </View>
+            </Pressable>
+            </Pressable>
         )}
 
         {/* ─── STEP DETAIL MODAL ─────────────────────────────────────────── */}
@@ -2616,6 +2420,18 @@ function StepDetailModal({ step, index, color, onClose, onNext }) {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// ─── MarkerAction (petite icône carrée pour la grille du menu) ──────────────
+function MarkerAction({ icon, label, color, bg, onPress }) {
+  return (
+    <TouchableOpacity style={styles.markerGridItem} onPress={onPress} activeOpacity={0.7}>
+      <View style={[styles.markerGridIconBox, { backgroundColor: bg }]}>
+        <Text style={styles.markerGridIcon}>{icon}</Text>
+      </View>
+      <Text style={[styles.markerGridLabel, { color: color || '#fff' }]} numberOfLines={1}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -3260,16 +3076,25 @@ const styles = StyleSheet.create({
   // Search result modal
   searchResultModalOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
     zIndex: 100,
   },
   searchResultModalContent: {
     backgroundColor: '#1a1a26',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: SPACING.md,
-    maxHeight: '70%',
+    paddingTop: SPACING.lg,
+    maxHeight: '75%',
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
   },
   searchResultHeader: {
     flexDirection: 'row',
@@ -3447,6 +3272,126 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: 'rgba(255,255,255,0.5)',
+  },
+
+  // ─── Marqueur : menu contextuel (volet bas) ──────────────────────────────
+  markerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+    zIndex: 100,
+  },
+  markerHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignSelf: 'center',
+    marginBottom: SPACING.md,
+  },
+  markerMenuHeader: {
+    position: 'relative',
+    marginBottom: 2,
+    paddingRight: 40,
+  },
+  markerMenuTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    lineHeight: 26,
+  },
+  markerMenuClose: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markerMenuCloseText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '600',
+  },
+  markerMenuBadge: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    marginBottom: 8,
+  },
+  markerInfoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  markerInfoChip: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  markerInfoChipText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+  },
+  markerActionSectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.35)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  markerActionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  markerGridItem: {
+    width: '30%',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  markerGridIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  markerGridIcon: {
+    fontSize: 24,
+  },
+  markerGridLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  markerPhotoContainer: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 8,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  markerResetBtn: {
+    backgroundColor: 'rgba(232,84,53,0.1)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(232,84,53,0.2)',
+  },
+  markerResetText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ef4444',
   },
 });
 
