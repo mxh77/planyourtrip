@@ -23,7 +23,7 @@ router.use(auth);
 
 // POST /api/accommodations — écriture : EDITOR+
 router.post('/', async (req, res) => {
-  const { stepId, type, name, address, latitude, longitude, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, currency, notes, status } = req.body;
+  const { stepId, type, name, address, latitude, longitude, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status } = req.body;
 
   if (!stepId || !name) {
     return res.status(400).json({ error: 'stepId and name are required' });
@@ -50,7 +50,10 @@ router.post('/', async (req, res) => {
       bookingRef: bookingRef || null,
       bookingUrl: bookingUrl || null,
       pricePerNight: pricePerNight ?? null,
+      totalPrice: totalPrice ?? null,
+      depositPaid: depositPaid ?? null,
       currency: currency || 'EUR',
+      amenities: amenities || null,
       notes: notes || null,
       status: status || 'PLANNED',
     },
@@ -63,7 +66,7 @@ router.post('/', async (req, res) => {
 
 // PUT /api/accommodations/:id — upsert (EDITOR+, ID généré côté client)
 router.put('/:id', async (req, res) => {
-  const { stepId, type, name, address, latitude, longitude, isDeparture, isArrival, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, currency, notes, status } = req.body;
+  const { stepId, type, name, address, latitude, longitude, isDeparture, isArrival, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status } = req.body;
 
   if (!stepId) return res.status(400).json({ error: 'stepId is required' });
 
@@ -92,7 +95,10 @@ router.put('/:id', async (req, res) => {
       bookingRef: bookingRef || null,
       bookingUrl: bookingUrl || null,
       pricePerNight: pricePerNight ?? null,
+      totalPrice: totalPrice ?? null,
+      depositPaid: depositPaid ?? null,
       currency: currency || 'EUR',
+      amenities: amenities || null,
       notes: notes || null,
       status: status || 'PLANNED',
     },
@@ -109,7 +115,10 @@ router.put('/:id', async (req, res) => {
       ...(bookingRef !== undefined && { bookingRef }),
       ...(bookingUrl !== undefined && { bookingUrl }),
       ...(pricePerNight !== undefined && { pricePerNight }),
+      ...(totalPrice !== undefined && { totalPrice }),
+      ...(depositPaid !== undefined && { depositPaid }),
       ...(currency !== undefined && { currency }),
+      ...(amenities !== undefined && { amenities }),
       ...(notes !== undefined && { notes }),
       ...(status !== undefined && { status }),
     },
@@ -133,7 +142,7 @@ router.patch('/:id', async (req, res) => {
   if (!role) return res.status(403).json({ error: 'Access denied' });
   if (role === 'VIEWER') return res.status(403).json({ error: 'Role EDITOR required' });
 
-  const { type, name, address, latitude, longitude, isDeparture, isArrival, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, currency, notes, status } = req.body;
+  const { type, name, address, latitude, longitude, isDeparture, isArrival, checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status } = req.body;
 
   const updated = await prisma.accommodation.update({
     where: { id: req.params.id },
@@ -150,7 +159,10 @@ router.patch('/:id', async (req, res) => {
       ...(bookingRef !== undefined && { bookingRef }),
       ...(bookingUrl !== undefined && { bookingUrl }),
       ...(pricePerNight !== undefined && { pricePerNight }),
+      ...(totalPrice !== undefined && { totalPrice }),
+      ...(depositPaid !== undefined && { depositPaid }),
       ...(currency !== undefined && { currency }),
+      ...(amenities !== undefined && { amenities }),
       ...(notes !== undefined && { notes }),
       ...(status !== undefined && { status }),
     },

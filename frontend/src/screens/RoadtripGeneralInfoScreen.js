@@ -112,7 +112,6 @@ export default function RoadtripGeneralInfoScreen({ route, navigation }) {
             onChangeText={setTitle}
             placeholder="Nom du voyage..."
             placeholderTextColor={COLORS.textDim}
-            autoFocus
           />
         </View>
 

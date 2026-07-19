@@ -480,7 +480,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               });
             }
           }
-        } catch {}
+        } catch { }
       };
       fetchSettings();
     });
@@ -497,7 +497,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       const parsed = typeof settings === 'string' ? JSON.parse(settings) : settings;
       const psKeys = parsed?.enabledQuickSearch;
       if (psKeys) return getEnabledCategories(psKeys, false);
-    } catch {}
+    } catch { }
     // Fallback : defaults
     return getEnabledCategories(null, true);
   }, [enabledKeys, psRoadtrip?.settings]);
@@ -510,7 +510,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       const parsed = typeof settings === 'string' ? JSON.parse(settings) : settings;
       const psFilter = parsed?.trailDistanceFilter;
       if (psFilter) return { min: psFilter.min || null, max: psFilter.max || null };
-    } catch {}
+    } catch { }
     return { min: null, max: null };
   }, [trailDistanceFilter, psRoadtrip?.settings]);
 
@@ -585,7 +585,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // Clé qui ne change que quand les FLAGS isDeparture/isArrival changent
   const psDepArrKey = useMemo(
     () => psAccommodations.map(a => `${a.id}:${a.isDeparture ? '1' : '0'}:${a.isArrival ? '1' : '0'}`).join(',') + '|' +
-             psActivities.map(a => `${a.id}:${a.isDeparture ? '1' : '0'}:${a.isArrival ? '1' : '0'}`).join(','),
+      psActivities.map(a => `${a.id}:${a.isDeparture ? '1' : '0'}:${a.isArrival ? '1' : '0'}`).join(','),
     [psAccommodations, psActivities]
   );
 
@@ -948,7 +948,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         if (needsRecalc) routesNeedingRecalc.push(i);
       }
 
-log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${routesNeedingRecalc.join(', ')}`);
+      log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${routesNeedingRecalc.join(', ')}`);
 
       if (routesNeedingRecalc.length === 0) {
         log('DIRECTIONS', '✓ Toutes les routes OK (polyline + distance > 0)');
@@ -1670,32 +1670,34 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                 // Tronquer le nom si trop long
                 const labelName = place.name?.length > 22 ? place.name.slice(0, 20) + '…' : place.name;
                 return (
-                <Marker
-                  key={`zr-${catKey}-${place.id}-${idx}`}
-                  coordinate={{ latitude: place.latitude, longitude: place.longitude }}
-                  anchor={{ x: 0, y: 0.5 }}
-                  onPress={() => {
-                    setMenuMarker({ item: place, type: 'poi', stepId: null });
-                    setShowMarkerMenu(true);
-                  }}
-                >
-                  <View style={styles.catResultMarkerRow}>
-                    <View style={[
-                      styles.catResultMarker,
-                      { backgroundColor: catKey === 'p4n' ? 'rgba(99,102,241,0.9)' :
-                                      catKey === 'campings' ? 'rgba(249,115,22,0.9)' :
-                                      catKey === 'trails' ? 'rgba(34,197,94,0.9)' :
-                                      catKey === 'pois' ? 'rgba(139,92,246,0.9)' :
-                                      catKey === 'restaurant' ? 'rgba(236,72,153,0.9)' :
-                                      catKey === 'hotel' ? 'rgba(59,130,246,0.9)' : 'rgba(255,255,255,0.9)' },
-                    ]}>
-                      <Text style={styles.catResultMarkerText}>{markerIcon}</Text>
+                  <Marker
+                    key={`zr-${catKey}-${place.id}-${idx}`}
+                    coordinate={{ latitude: place.latitude, longitude: place.longitude }}
+                    anchor={{ x: 0, y: 0.5 }}
+                    onPress={() => {
+                      setMenuMarker({ item: place, type: 'poi', stepId: null });
+                      setShowMarkerMenu(true);
+                    }}
+                  >
+                    <View style={styles.catResultMarkerRow}>
+                      <View style={[
+                        styles.catResultMarker,
+                        {
+                          backgroundColor: catKey === 'p4n' ? 'rgba(99,102,241,0.9)' :
+                            catKey === 'campings' ? 'rgba(249,115,22,0.9)' :
+                              catKey === 'trails' ? 'rgba(34,197,94,0.9)' :
+                                catKey === 'pois' ? 'rgba(139,92,246,0.9)' :
+                                  catKey === 'restaurant' ? 'rgba(236,72,153,0.9)' :
+                                    catKey === 'hotel' ? 'rgba(59,130,246,0.9)' : 'rgba(255,255,255,0.9)'
+                        },
+                      ]}>
+                        <Text style={styles.catResultMarkerText}>{markerIcon}</Text>
+                      </View>
+                      <View style={styles.catResultLabelBox}>
+                        <Text style={styles.catResultLabel} numberOfLines={1}>{labelName}</Text>
+                      </View>
                     </View>
-                    <View style={styles.catResultLabelBox}>
-                      <Text style={styles.catResultLabel} numberOfLines={1}>{labelName}</Text>
-                    </View>
-                  </View>
-                </Marker>
+                  </Marker>
                 );
               });
             })}
@@ -1947,7 +1949,7 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                       setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery('');
                     } catch (err) { Alert.alert('Erreur', 'Impossible d\'ajouter.'); }
                   }} />
-              <MarkerAction icon="🎯" label="Activité" color="#22c55e" bg="rgba(34,197,94,0.15)"
+                <MarkerAction icon="🎯" label="Activité" color="#22c55e" bg="rgba(34,197,94,0.15)"
                   onPress={async () => {
                     const cs = steps[selectedIndex];
                     if (!cs) { Alert.alert('Aucune étape sélectionnée', ''); return; }
@@ -2044,7 +2046,7 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                         onPress={async () => {
                           const placeId = menuMarker.item.placeId;
                           if (Platform.OS === 'android' && placeId) {
-                            try { await Linking.openURL(`intent://fr/place/${placeId}#Intent;scheme=https;package=fr.tramb.park4night;end`); setShowMarkerMenu(false); return; } catch {}
+                            try { await Linking.openURL(`intent://fr/place/${placeId}#Intent;scheme=https;package=fr.tramb.park4night;end`); setShowMarkerMenu(false); return; } catch { }
                           }
                           Linking.openURL(menuMarker.item.p4nUrl); setShowMarkerMenu(false);
                         }} />
@@ -2132,7 +2134,7 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                 </>
               )}
             </Pressable>
-            </Pressable>
+          </Pressable>
         )}
 
         {/* ─── STEP DETAIL MODAL ─────────────────────────────────────────── */}
@@ -2174,6 +2176,38 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
 
               <Text style={styles.menuTitle}>{roadtrip.title}</Text>
 
+
+
+              {/* Infos générales */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('RoadtripGeneralInfo', { roadtripId: id });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>📋</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Infos générales</Text>
+                  <Text style={styles.menuItemDesc}>Modifier le titre, les dates, dupliquer ou supprimer</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Paramètres du roadtrip */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('RoadtripSettings', { roadtripId: id });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>⚙️</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Paramètres</Text>
+                  <Text style={styles.menuItemDesc}>Boutons de recherche rapide, filtre distances de randonnée</Text>
+                </View>
+              </TouchableOpacity>
+
               {/* Partager — uniquement pour le propriétaire */}
               {isOwner && (
                 <TouchableOpacity
@@ -2190,36 +2224,6 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
                   </View>
                 </TouchableOpacity>
               )}
-
-              {/* Infos générales */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                  navigation.navigate('RoadtripGeneralInfo', { roadtripId: id });
-                }}
-              >
-                <Text style={styles.menuItemIcon}>📋</Text>
-                <View style={styles.menuItemContent}>
-                  <Text style={styles.menuItemLabel}>Infos générales</Text>
-                  <Text style={styles.menuItemDesc}>Modifier le titre et les dates</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Paramètres du roadtrip */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                  navigation.navigate('RoadtripSettings', { roadtripId: id });
-                }}
-              >
-                <Text style={styles.menuItemIcon}>⚙️</Text>
-                <View style={styles.menuItemContent}>
-                  <Text style={styles.menuItemLabel}>Paramètres</Text>
-                  <Text style={styles.menuItemDesc}>Modifier le titre, dupliquer, supprimer</Text>
-                </View>
-              </TouchableOpacity>
 
               {/* Rôle actuel */}
               <View style={styles.menuRoleRow}>

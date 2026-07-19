@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { PowerSyncContext } from '@powersync/react-native';
-import { db } from '../powersync/db';
+import { db, runMigrations } from '../powersync/db';
 import { AppConnector } from '../powersync/connector';
 import { useAuthStore } from '../store/authStore';
 
@@ -40,8 +40,10 @@ export function AppPowerSyncProvider({ children }) {
     const getToken = () => Promise.resolve(useAuthStore.getState().token);
     connectorRef.current = new AppConnector(getToken);
 
-    db.connect(connectorRef.current).catch(err => {
-      console.error(TAG, 'db.connect erreur:', err.message, err);
+    runMigrations().then(() => {
+      db.connect(connectorRef.current).catch(err => {
+        console.error(TAG, 'db.connect erreur:', err.message, err);
+      });
     });
 
     const unsubscribe = db.registerListener({

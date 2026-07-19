@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput, Modal,
-  ScrollView, Alert, StyleSheet, Pressable, KeyboardAvoidingView, Platform,
+  ScrollView, Alert, StyleSheet, Pressable, Keyboard, Platform,
   Image, ActivityIndicator, Linking,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
@@ -144,6 +144,52 @@ const ACCOM_TYPES = [
   { key: 'OTHER', label: 'Autre', icon: '🏪' },
 ];
 
+const AMENITY_TAGS = [
+  { key: 'POOL', label: 'Piscine', icon: '🏊' },
+  { key: 'RESTAURANT', label: 'Restaurant', icon: '🍽️' },
+  { key: 'SUPERMARKET', label: 'Supermarché', icon: '🛒' },
+  { key: 'WIFI', label: 'WiFi', icon: '📶' },
+  { key: 'PARKING', label: 'Parking', icon: '🅿️' },
+  { key: 'LAUNDRY', label: 'Laverie', icon: '🧺' },
+  { key: 'KITCHEN', label: 'Cuisine', icon: '🍳' },
+  { key: 'BREAKFAST', label: 'Petit-déjeuner', icon: '🥐' },
+  { key: 'SHOWER', label: 'Douche', icon: '🚿' },
+  { key: 'ELECTRICITY', label: 'Électricité', icon: '⚡' },
+];
+
+// ─── Conversion de devises ──────────────────────────────────────────────────
+let cachedRates = null;
+async function getRate(from, to) {
+  if (from === to) return 1;
+  try {
+    if (!cachedRates) {
+      const resp = await fetch('https://api.frankfurter.app/latest?from=EUR');
+      const json = await resp.json();
+      cachedRates = json.rates;
+    }
+    if (from === 'EUR') return cachedRates[to] ?? 1;
+    if (to === 'EUR') return 1 / (cachedRates[from] ?? 1);
+    return (cachedRates[to] ?? 1) / (cachedRates[from] ?? 1);
+  } catch {
+    return 1;
+  }
+}
+
+async function convertValue(val, from, to) {
+  const n = parseFloat(val);
+  if (isNaN(n) || n === 0) return val;
+  const rate = await getRate(from, to);
+  return (n * rate).toFixed(2);
+}
+
+// ─── Format 2 décimales ─────────────────────────────────────────────────────
+function fmtPrice(val) {
+  if (!val) return '';
+  const n = parseFloat(val.toString().replace(',', '.'));
+  if (isNaN(n)) return val;
+  return n.toFixed(2);
+}
+
 const EMPTY_FORM = {
   type: 'HOTEL',
   name: '',
@@ -153,6 +199,11 @@ const EMPTY_FORM = {
   checkIn: '',
   checkOut: '',
   pricePerNight: '',
+  bookingRef: '',
+  totalPrice: '',
+  depositPaid: '',
+  currency: 'EUR',
+  amenities: '[]',
   notes: '',
 };
 
@@ -186,8 +237,15 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [dtPickerVisible, setDtPickerVisible] = useState(false);
   const [dtPickerTarget, setDtPickerTarget] = useState(null); // 'checkin' | 'checkout'
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const hasCoords = !!(latitude && longitude);
 
@@ -253,7 +311,12 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
       longitude: a.longitude ?? null,
       checkIn: a.checkIn || stepStartDate || '',
       checkOut: a.checkOut || stepEndDate || '',
-      pricePerNight: a.pricePerNight != null ? String(a.pricePerNight) : '',
+      pricePerNight: a.pricePerNight != null ? a.pricePerNight.toFixed(2) : '',
+      bookingRef: a.bookingRef ?? '',
+      totalPrice: a.totalPrice != null ? a.totalPrice.toFixed(2) : '',
+      depositPaid: a.depositPaid != null ? a.depositPaid.toFixed(2) : '',
+      currency: a.currency ?? 'EUR',
+      amenities: a.amenities ?? '[]',
       notes: a.notes ?? '',
     });
     setEditingId(a.id);
@@ -287,6 +350,11 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
         checkIn: form.checkIn.trim() || null,
         checkOut: form.checkOut.trim() || null,
         pricePerNight: form.pricePerNight ? parseFloat(form.pricePerNight) : null,
+        bookingRef: form.bookingRef.trim() || null,
+        totalPrice: form.totalPrice ? parseFloat(form.totalPrice) : null,
+        depositPaid: form.depositPaid ? parseFloat(form.depositPaid) : null,
+        currency: form.currency || 'EUR',
+        amenities: form.amenities || '[]',
         notes: form.notes.trim() || null,
       };
       if (editingId) {
@@ -295,6 +363,9 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
         await localCreateAccommodation({ ...data, stepId, roadtripId }, userId);
       }
       setModalVisible(false);
+    } catch (err) {
+      console.error('[AccomSection] Erreur sauvegarde:', err);
+      Alert.alert('Erreur', "Impossible d'enregistrer l'hébergement.");
     } finally {
       setSaving(false);
     }
@@ -380,8 +451,8 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
         animationType="slide"
         onRequestClose={() => { setDtPickerVisible(false); setModalVisible(false); }}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <Pressable style={styles.overlay} onPress={() => { setDtPickerVisible(false); setModalVisible(false); }}>
+        <View style={{ flex: 1 }}>
+          <Pressable style={[styles.overlay, { paddingBottom: keyboardHeight }]} onPress={() => { setDtPickerVisible(false); setModalVisible(false); }}>
             <Pressable style={styles.sheet} onPress={() => { }}>
               <View style={styles.handle} />
               <Text style={styles.sheetTitle}>
@@ -635,16 +706,111 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
                       </View>
                     </View>
 
-                    {/* Prix */}
-                    <Text style={styles.label}>Prix / nuit (€)</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={form.pricePerNight}
-                      onChangeText={(v) => setForm((f) => ({ ...f, pricePerNight: v }))}
-                      placeholder="89"
-                      placeholderTextColor={COLORS.textDim}
-                      keyboardType="decimal-pad"
-                    />
+                    {/* Devise */}
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>Devise</Text>
+                      {['EUR', 'CHF'].map((c) => (
+                        <TouchableOpacity key={c}
+                          onPress={async () => {
+                            if (form.currency === c) return;
+                            const oldCur = form.currency;
+                            setForm((f) => ({ ...f, currency: c }));
+                            const convertFields = ['totalPrice', 'depositPaid', 'pricePerNight'];
+                            for (const field of convertFields) {
+                              if (f[field] && parseFloat(f[field].replace(',', '.'))) {
+                                const converted = await convertValue(f[field], oldCur, c);
+                                setForm((prev) => ({ ...prev, [field]: converted }));
+                              }
+                            }
+                          }}
+                          style={{
+                            paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8,
+                            backgroundColor: form.currency === c ? 'rgba(232,164,53,0.2)' : 'rgba(255,255,255,0.06)',
+                            borderWidth: 1,
+                            borderColor: form.currency === c ? 'rgba(232,164,53,0.4)' : 'rgba(255,255,255,0.06)',
+                          }}
+                        >
+                          <Text style={{ fontSize: 13, fontWeight: '600', color: form.currency === c ? '#E8A435' : 'rgba(255,255,255,0.5)' }}>{c === 'EUR' ? 'EUR' : 'CHF'}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    {/* Total | Acompte | Solde */}
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Total</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={form.totalPrice}
+                          onChangeText={(v) => setForm((f) => ({ ...f, totalPrice: v.replace(',', '.') }))}
+                          onBlur={() => setForm((f) => ({ ...f, totalPrice: fmtPrice(f.totalPrice) }))}
+                          keyboardType="decimal-pad"
+                          placeholder={`ex: 250 ${form.currency === 'CHF' ? 'CHF' : '€'}`}
+                          placeholderTextColor={COLORS.textDim}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Acompte</Text>
+                        <TextInput
+                          style={[styles.input, { borderColor: 'rgba(34,197,94,0.3)' }]}
+                          value={form.depositPaid}
+                          onChangeText={(v) => setForm((f) => ({ ...f, depositPaid: v.replace(',', '.') }))}
+                          onBlur={() => setForm((f) => ({ ...f, depositPaid: fmtPrice(f.depositPaid) }))}
+                          keyboardType="decimal-pad"
+                          placeholder={`ex: 100 ${form.currency === 'CHF' ? 'CHF' : '€'}`}
+                          placeholderTextColor={COLORS.textDim}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Solde</Text>
+                        <View style={[styles.input, { borderColor: 'rgba(232,84,53,0.3)', justifyContent: 'center', paddingVertical: 12 }]}>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: form.totalPrice && parseFloat(form.totalPrice.replace(',', '.')) > parseFloat((form.depositPaid || '0').replace(',', '.')) ? '#ef4444' : '#4ade80' }}>
+                            {form.totalPrice
+                              ? `${Math.max(0, parseFloat(form.totalPrice.replace(',', '.')) - parseFloat((form.depositPaid || '0').replace(',', '.'))).toFixed(2)} ${form.currency === 'CHF' ? 'CHF' : '€'}`
+                              : '—'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Référence réservation */}
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Référence réservation</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={form.bookingRef}
+                        onChangeText={(v) => setForm((f) => ({ ...f, bookingRef: v }))}
+                        placeholder="Ex: ABC123XYZ"
+                        placeholderTextColor={COLORS.textDim}
+                      />
+                    </View>
+
+                    {/* Équipements */}
+                    <Text style={styles.label}>Équipements</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                      {AMENITY_TAGS.map((tag) => {
+                        const active = JSON.parse(form.amenities || '[]').includes(tag.key);
+                        return (
+                          <TouchableOpacity key={tag.key}
+                            onPress={() => {
+                              const current = JSON.parse(form.amenities || '[]');
+                              const next = active ? current.filter((k) => k !== tag.key) : [...current, tag.key];
+                              setForm((f) => ({ ...f, amenities: JSON.stringify(next) }));
+                            }}
+                            style={{
+                              flexDirection: 'row', alignItems: 'center', gap: 4,
+                              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+                              backgroundColor: active ? 'rgba(232,164,53,0.2)' : 'rgba(255,255,255,0.06)',
+                              borderWidth: 1,
+                              borderColor: active ? 'rgba(232,164,53,0.4)' : 'rgba(255,255,255,0.06)',
+                            }}
+                          >
+                            <Text style={{ fontSize: 13 }}>{tag.icon}</Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: active ? '#E8A435' : 'rgba(255,255,255,0.5)' }}>{tag.label}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
 
                     {/* Notes */}
                     <Text style={styles.label}>Notes</Text>
@@ -671,7 +837,7 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
               )}
             </Pressable>
           </Pressable>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );

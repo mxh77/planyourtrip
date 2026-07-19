@@ -133,7 +133,10 @@ model Accommodation {
   bookingRef    String?
   bookingUrl    String?
   pricePerNight Float?
+  totalPrice    Float?
+  depositPaid   Float?
   currency      String        @default("EUR")
+  amenities     String?
   notes         String?
   status        BookingStatus @default(PLANNED)
   createdAt     DateTime      @default(now())
@@ -168,6 +171,7 @@ model Activity {
   bookingRef String?
   bookingUrl String?
   cost       Float?
+  depositPaid Float?
   currency   String        @default("EUR")
   notes      String?
   status     BookingStatus @default(PLANNED)

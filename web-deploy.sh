@@ -51,6 +51,11 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # APK Android (fichier statique)
+    location /downloads/ {
+        alias /opt/PlanYourTrip/downloads/;
+    }
+
     # API backend (proxy vers Express port 3111)
     location /api/ {
         proxy_pass http://localhost:3111/api/;

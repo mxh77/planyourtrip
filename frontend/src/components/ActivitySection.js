@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput, Modal,
-  ScrollView, Alert, StyleSheet, Pressable, KeyboardAvoidingView, Platform,
+  ScrollView, Alert, StyleSheet, Pressable, Keyboard, Platform,
   Image, ActivityIndicator, Linking,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
@@ -147,6 +147,39 @@ const ACTIVITY_TYPES = [
   { key: 'OTHER', label: 'Autre', icon: '📌' },
 ];
 
+// ─── Conversion de devises ──────────────────────────────────────────────────
+let cachedRates = null;
+async function getRate(from, to) {
+  if (from === to) return 1;
+  try {
+    if (!cachedRates) {
+      const resp = await fetch('https://api.frankfurter.app/latest?from=EUR');
+      const json = await resp.json();
+      cachedRates = json.rates;
+    }
+    if (from === 'EUR') return cachedRates[to] ?? 1;
+    if (to === 'EUR') return 1 / (cachedRates[from] ?? 1);
+    return (cachedRates[to] ?? 1) / (cachedRates[from] ?? 1);
+  } catch {
+    return 1;
+  }
+}
+
+async function convertValue(val, from, to) {
+  const n = parseFloat(val);
+  if (isNaN(n) || n === 0) return val;
+  const rate = await getRate(from, to);
+  return (n * rate).toFixed(2);
+}
+
+// ─── Format 2 décimales ─────────────────────────────────────────────────────
+function fmtPrice(val) {
+  if (!val) return '';
+  const n = parseFloat(val.toString().replace(',', '.'));
+  if (isNaN(n)) return val;
+  return n.toFixed(2);
+}
+
 const EMPTY_FORM = {
   type: 'ACTIVITY',
   name: '',
@@ -155,6 +188,10 @@ const EMPTY_FORM = {
   longitude: null,
   startTime: '',
   endTime: '',
+  bookingRef: '',
+  cost: '',
+  depositPaid: '',
+  currency: 'EUR',
   notes: '',
 };
 
@@ -187,8 +224,15 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEditId, activities?.length]);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [dtPickerVisible, setDtPickerVisible] = useState(false);
   const [dtPickerTarget, setDtPickerTarget] = useState(null); // 'start' | 'end'
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const hasCoords = !!(latitude && longitude);
 
@@ -254,6 +298,10 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
       longitude: a.longitude ?? null,
       startTime: a.startTime || stepStartDate || '',
       endTime: a.endTime || stepEndDate || '',
+      bookingRef: a.bookingRef ?? '',
+      cost: a.cost != null ? a.cost.toFixed(2) : '',
+      depositPaid: a.depositPaid != null ? a.depositPaid.toFixed(2) : '',
+      currency: a.currency ?? 'EUR',
       notes: a.notes ?? '',
     });
     setEditingId(a.id);
@@ -286,6 +334,10 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
         longitude: form.longitude ?? null,
         startTime: form.startTime.trim() || null,
         endTime: form.endTime.trim() || null,
+        bookingRef: form.bookingRef.trim() || null,
+        cost: form.cost ? parseFloat(form.cost.replace(',', '.')) : null,
+        depositPaid: form.depositPaid ? parseFloat(form.depositPaid.replace(',', '.')) : null,
+        currency: form.currency || 'EUR',
         notes: form.notes.trim() || null,
       };
       if (editingId) {
@@ -398,8 +450,8 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
         animationType="slide"
         onRequestClose={() => { setDtPickerVisible(false); setModalVisible(false); }}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <Pressable style={styles.overlay} onPress={() => { setDtPickerVisible(false); setModalVisible(false); }}>
+        <View style={{ flex: 1 }}>
+        <Pressable style={[styles.overlay, { paddingBottom: keyboardHeight }]} onPress={() => { setDtPickerVisible(false); setModalVisible(false); }}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.handle} />
             <Text style={styles.sheetTitle}>
@@ -651,7 +703,87 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
                 </View>
               </View>
 
+                    {/* Devise */}
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>Devise</Text>
+                      {['EUR', 'CHF'].map((c) => (
+                        <TouchableOpacity key={c}
+                          onPress={async () => {
+                            if (form.currency === c) return;
+                            const oldCur = form.currency;
+                            setForm((f) => ({ ...f, currency: c }));
+                            const convertFields = ['cost', 'depositPaid'];
+                            for (const field of convertFields) {
+                              const val = form[field];
+                              if (val && parseFloat(val.replace(',', '.'))) {
+                                const converted = await convertValue(val.replace(',', '.'), oldCur, c);
+                                setForm((prev) => ({ ...prev, [field]: converted }));
+                              }
+                            }
+                          }}
+                          style={{
+                            paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8,
+                            backgroundColor: form.currency === c ? 'rgba(232,164,53,0.2)' : 'rgba(255,255,255,0.06)',
+                            borderWidth: 1,
+                            borderColor: form.currency === c ? 'rgba(232,164,53,0.4)' : 'rgba(255,255,255,0.06)',
+                          }}
+                        >
+                          <Text style={{ fontSize: 13, fontWeight: '600', color: form.currency === c ? '#E8A435' : 'rgba(255,255,255,0.5)' }}>{c === 'EUR' ? 'EUR' : 'CHF'}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Total</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={form.cost}
+                          onChangeText={(v) => setForm((f) => ({ ...f, cost: v.replace(',', '.') }))}
+                          onBlur={() => setForm((f) => ({ ...f, cost: fmtPrice(f.cost) }))}
+                          keyboardType="decimal-pad"
+                          placeholder={`ex: 35 ${form.currency === 'CHF' ? 'CHF' : '€'}`}
+                          placeholderTextColor={COLORS.textDim}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Acompte</Text>
+                        <TextInput
+                          style={[styles.input, { borderColor: 'rgba(34,197,94,0.3)' }]}
+                          value={form.depositPaid}
+                          onChangeText={(v) => setForm((f) => ({ ...f, depositPaid: v.replace(',', '.') }))}
+                          onBlur={() => setForm((f) => ({ ...f, depositPaid: fmtPrice(f.depositPaid) }))}
+                          keyboardType="decimal-pad"
+                          placeholder={`ex: 15 ${form.currency === 'CHF' ? 'CHF' : '€'}`}
+                          placeholderTextColor={COLORS.textDim}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Solde</Text>
+                        <View style={[styles.input, { borderColor: 'rgba(232,84,53,0.3)', justifyContent: 'center', paddingVertical: 12 }]}>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: form.cost && parseFloat(form.cost.replace(',', '.')) > parseFloat((form.depositPaid || '0').replace(',', '.')) ? '#ef4444' : '#4ade80' }}>
+                            {form.cost
+                              ? `${Math.max(0, parseFloat(form.cost.replace(',', '.')) - parseFloat((form.depositPaid || '0').replace(',', '.'))).toFixed(2)} ${form.currency === 'CHF' ? 'CHF' : '€'}`
+                              : '—'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Référence réservation */}
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Référence réservation</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={form.bookingRef}
+                        onChangeText={(v) => setForm((f) => ({ ...f, bookingRef: v }))}
+                        placeholder="Ex: ABC123XYZ"
+                        placeholderTextColor={COLORS.textDim}
+                      />
+                    </View>
+
               {/* Notes */}
+              <Text style={styles.label}>Notes</Text>
               <TextInput
                 style={[styles.input, styles.inputMulti]}
                 value={form.notes}
@@ -675,7 +807,7 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
             )}
           </Pressable>
         </Pressable>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );
