@@ -6,6 +6,7 @@ set -e
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 RESET='\033[0m'
 
 SERVER="ct117"
@@ -29,13 +30,18 @@ echo -e "${YELLOW}[1/3]${RESET} Git pull sur $SERVER..."
 ssh "$SERVER" "cd /opt/planyourtrip && git reset --hard HEAD && git clean -fd && git pull"
 echo -e "${GREEN}✓ Code mis à jour${RESET}"
 
+# ─── Copie du .env local vers le serveur ─────────────────────────────────────
+echo -e "${YELLOW}[2/4]${RESET} Copie du .env..."
+scp "$LOCAL_DIR/.env" "$SERVER:$REMOTE_DIR/.env"
+echo -e "${GREEN}✓ .env transféré${RESET}"
+
 # ─── npm install si package.json a changé ────────────────────────────────────
-echo -e "${YELLOW}[2/3]${RESET} npm install + prisma..."
+echo -e "${YELLOW}[3/4]${RESET} npm install + prisma..."
 ssh "$SERVER" "cd $REMOTE_DIR && npm install --omit=dev && npx prisma migrate deploy && npx prisma generate"
 echo -e "${GREEN}✓ Dépendances et schéma Prisma mis à jour${RESET}"
 
 # ─── Redémarre PM2 ───────────────────────────────────────────────────────────
-echo -e "${YELLOW}[3/3]${RESET} Redémarrage PM2..."
+echo -e "${YELLOW}[4/4]${RESET} Redémarrage PM2..."
 ssh "$SERVER" "cd $REMOTE_DIR && pm2 restart planyourtrip-api --update-env"
 echo -e "${GREEN}✓ Backend redémarré${RESET}"
 
