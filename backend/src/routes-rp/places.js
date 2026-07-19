@@ -126,7 +126,7 @@ router.get('/elevation/profile', async (req, res, next) => {
 // ─── Search by Category (for map category buttons) ──────────────────────────
 
 // POST /api/places/searchCategory
-// Body: { bounds: { ne: {lat,lng}, sw: {lat,lng} }, category, includedTypes, includeP4N, p4nTypeIds, maxResults, language }
+// Body: { bounds, category, includedTypes, includeP4N, p4nTypeIds, maxResults, language, trailMinKm, trailMaxKm }
 router.post('/searchCategory', async (req, res, next) => {
   try {
     const {
@@ -137,6 +137,8 @@ router.post('/searchCategory', async (req, res, next) => {
       p4nTypeIds = [],
       maxResults = 20,
       language = 'fr',
+      trailMinKm,
+      trailMaxKm,
     } = req.body;
 
     if (!bounds?.ne?.lat || !bounds?.sw?.lat) {
@@ -247,7 +249,24 @@ router.post('/searchCategory', async (req, res, next) => {
               alltrailsUrl: h.slug ? `https://www.alltrails.com/${h.slug}` : null,
             });
           }
-          log('SEARCH', `  ✓ Algolia: ${trailsOnly.length} résultats (${hits.length} total)`);
+
+          // Filtrer par distance min/max si spécifié
+          const minKm = parseFloat(trailMinKm);
+          const maxKm = parseFloat(trailMaxKm);
+          if (!isNaN(minKm) || !isNaN(maxKm)) {
+            const trailResults = results.filter(r => r.source === 'algolia' && r.overlayType === 'trails');
+            for (let i = results.length - 1; i >= 0; i--) {
+              const r = results[i];
+              if (r.source !== 'algolia' || r.overlayType !== 'trails') continue;
+              const km = r.lengthKm;
+              if (km == null) continue;
+              if (!isNaN(minKm) && km < minKm) { results.splice(i, 1); continue; }
+              if (!isNaN(maxKm) && km > maxKm) { results.splice(i, 1); }
+            }
+            log('SEARCH', `  🎯 Filtre distance: ${!isNaN(minKm) ? `min=${minKm}km ` : ''}${!isNaN(maxKm) ? `max=${maxKm}km` : ''} → ${results.filter(r => r.source === 'algolia').length} trails`);
+          }
+
+          log('SEARCH', `  ✓ Algolia: ${trailsOnly.length} résultats brut (${results.filter(r => r.source === 'algolia').length} après filtre)`);
         } else {
           log('SEARCH', '  ⚠️ Algolia: credentials manquants');
         }

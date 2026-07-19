@@ -457,6 +457,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // État local pour les catégories activées
   // Priorité : 1) API fraîche au focus, 2) PowerSync, 3) defaults
   const [enabledKeys, setEnabledKeys] = useState(null);
+  const [trailDistanceFilter, setTrailDistanceFilter] = useState({ min: null, max: null });
 
   // Au focus de l'écran (retour depuis Paramètres), recharger via API
   useEffect(() => {
@@ -471,6 +472,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             const data = await res.json();
             if (data.enabledQuickSearch) {
               setEnabledKeys(data.enabledQuickSearch);
+            }
+            if (data.trailDistanceFilter) {
+              setTrailDistanceFilter({
+                min: data.trailDistanceFilter.min || null,
+                max: data.trailDistanceFilter.max || null,
+              });
             }
           }
         } catch {}
@@ -494,6 +501,18 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     // Fallback : defaults
     return getEnabledCategories(null, true);
   }, [enabledKeys, psRoadtrip?.settings]);
+
+  // Charger le filtre distance depuis les settings (fallback PowerSync si jamais récupéré via API)
+  const effectiveTrailFilter = useMemo(() => {
+    if (trailDistanceFilter.min != null || trailDistanceFilter.max != null) return trailDistanceFilter;
+    try {
+      const settings = psRoadtrip?.settings;
+      const parsed = typeof settings === 'string' ? JSON.parse(settings) : settings;
+      const psFilter = parsed?.trailDistanceFilter;
+      if (psFilter) return { min: psFilter.min || null, max: psFilter.max || null };
+    } catch {}
+    return { min: null, max: null };
+  }, [trailDistanceFilter, psRoadtrip?.settings]);
 
   const [roadtrip, setRoadtrip] = useState({ title: psRoadtrip?.title ?? 'Europe', distance: 3610, id: psRoadtrip?.id ?? id });
   const [searchQuery, setSearchQuery] = useState('');
@@ -1344,6 +1363,10 @@ log('DIRECTIONS', `Routes à recalculer: ${routesNeedingRecalc.length} index: ${
           p4nTypeIds: cat.p4nTypes,
           maxResults: 20,
           language: 'fr',
+          ...(cat.key === 'trails' && {
+            trailMinKm: effectiveTrailFilter.min,
+            trailMaxKm: effectiveTrailFilter.max,
+          }),
         }),
       });
       const data = await res.json();

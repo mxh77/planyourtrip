@@ -1,13 +1,134 @@
-import React, { useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, PanResponder, Animated, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import API_URL from '../api/config';
 import ALL_CATEGORIES from '../constants/categories';
+
+const { width: SCREEN_W } = Dimensions.get('window');
+
+// ─── RangeSlider (double thumb) ──────────────────────────────────────────────
+const SLIDER_PAD = 28;
+const THUMB_SIZE = 28;
+const THUMB_HALF = THUMB_SIZE / 2;
+
+function RangeSlider({ min, max, step = 1, values, onChange }) {
+  const [trackWidth, setTrackWidth] = useState(200);
+  const trackRef = useRef(null);
+  const valsRef = useRef(values);
+  const minRef = useRef(min);
+  const maxRef = useRef(max);
+  const trackWRef = useRef(trackWidth);
+  // Synchroniser les refs à chaque render
+  valsRef.current = values;
+  minRef.current = min;
+  maxRef.current = max;
+  trackWRef.current = trackWidth;
+
+  const span = Math.max(1, trackWidth - THUMB_SIZE);
+  const range = max - min;
+  const valToPos = (v) => THUMB_HALF + ((v - min) / range) * span;
+  const posToVal = (px) => {
+    const s = Math.max(1, trackWRef.current - THUMB_SIZE);
+    const r2 = maxRef.current - minRef.current;
+    return Math.round(((px - THUMB_HALF) / s) * r2 / step) * step + minRef.current;
+  };
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  const leftPos = useRef(new Animated.Value(valToPos(values.min ?? min))).current;
+  const rightPos = useRef(new Animated.Value(valToPos(values.max ?? max))).current;
+
+  // Ajuster les positions quand trackWidth change (onLayout)
+  const syncPositions = useCallback(() => {
+    const tw = trackWRef.current;
+    const s = Math.max(1, tw - THUMB_SIZE);
+    const rr = maxRef.current - minRef.current;
+    const vp = (v) => THUMB_HALF + ((v - minRef.current) / rr) * s;
+    const l = vp(valsRef.current.min ?? minRef.current);
+    const r = vp(valsRef.current.max ?? maxRef.current);
+    leftPos.setValue(clamp(l, THUMB_HALF, r));
+    rightPos.setValue(clamp(r, l, tw - THUMB_HALF));
+  }, []);
+
+  const handleLayout = (e) => {
+    setTrackWidth(e.nativeEvent.layout.width);
+    // Sync sera fait au prochain render via l'effet ci-dessous
+  };
+
+  // Sync dès que trackWidth change
+  useEffect(() => { syncPositions(); }, [trackWidth, syncPositions]);
+
+  const createPan = (isLeft) => {
+    let startX = 0;
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        startX = isLeft ? leftPos.__getValue() : rightPos.__getValue();
+      },
+      onPanResponderMove: (_, gs) => {
+        const tw = trackWRef.current;
+        const v = valsRef.current;
+        const lo = minRef.current;
+        const hi = maxRef.current;
+        const s = Math.max(1, tw - THUMB_SIZE);
+        const p2v = (px) => {
+          const r2 = hi - lo;
+          return Math.round(((clamp(px, THUMB_HALF, tw - THUMB_HALF) - THUMB_HALF) / s) * r2 / step) * step + lo;
+        };
+        const v2p = (val) => THUMB_HALF + ((val - lo) / (hi - lo)) * s;
+
+        const newVal = p2v(startX + gs.dx);
+        if (isLeft) {
+          const clamped = clamp(newVal, lo, v.max ?? hi);
+          leftPos.setValue(v2p(clamped));
+          onChange({ min: clamped, max: v.max });
+        } else {
+          const clamped = clamp(newVal, v.min ?? lo, hi);
+          rightPos.setValue(v2p(clamped));
+          onChange({ min: v.min, max: clamped });
+        }
+      },
+      onPanResponderRelease: () => {},
+    });
+  };
+
+  const leftPan = useRef(createPan(true)).current;
+  const rightPan = useRef(createPan(false)).current;
+
+  return (
+    <View style={styles.sliderContainer}>
+      <View style={styles.sliderLabels}>
+        <Text style={styles.sliderLabelText}>{values.min ?? min} km</Text>
+        <Text style={styles.sliderLabelText}>{values.max ?? max} km</Text>
+      </View>
+      <View ref={trackRef} style={styles.sliderTrack} onLayout={handleLayout}>
+        <Animated.View
+          style={[styles.sliderSegment, {
+            left: Animated.add(leftPos, THUMB_HALF),
+            width: Animated.subtract(rightPos, leftPos),
+          }]}
+        />
+        <Animated.View
+          style={[styles.sliderThumb, { left: Animated.subtract(leftPos, THUMB_HALF) }]}
+          {...leftPan.panHandlers}
+        >
+          <View style={styles.sliderThumbInner} />
+        </Animated.View>
+        <Animated.View
+          style={[styles.sliderThumb, { left: Animated.subtract(rightPos, THUMB_HALF) }]}
+          {...rightPan.panHandlers}
+        >
+          <View style={styles.sliderThumbInner} />
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
 
 // ─── Composants UI ────────────────────────────────────────────────────────────
 
@@ -50,6 +171,7 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
   // Les keys activées par défaut
   const defaultKeys = ALL_CATEGORIES.filter((c) => c.default).map((c) => c.key);
   const [enabledKeys, setEnabledKeys] = useState(defaultKeys);
+  const [trailDistance, setTrailDistance] = useState({ min: '', max: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cloning, setCloning] = useState(false);
@@ -65,6 +187,12 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
       const data = await res.json();
       if (data.enabledQuickSearch && Array.isArray(data.enabledQuickSearch)) {
         setEnabledKeys(data.enabledQuickSearch);
+      }
+      if (data.trailDistanceFilter) {
+        setTrailDistance({
+          min: data.trailDistanceFilter.min != null ? String(data.trailDistanceFilter.min) : '',
+          max: data.trailDistanceFilter.max != null ? String(data.trailDistanceFilter.max) : '',
+        });
       }
     } catch {
       // On garde les valeurs par défaut silencieusement
@@ -117,8 +245,8 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
     const next = enabledKeys.includes(key)
       ? enabledKeys.filter((k) => k !== key)
       : [...enabledKeys, key];
-    save({ enabledQuickSearch: next });
-  }, [enabledKeys, save]);
+    save({ enabledQuickSearch: next, trailDistanceFilter: { min: trailDistance.min ? Number(trailDistance.min) : null, max: trailDistance.max ? Number(trailDistance.max) : null } });
+  }, [enabledKeys, trailDistance, save]);
 
   // ─── Clone ───────────────────────────────────────────────────────────────────
 
@@ -239,6 +367,29 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
             />
           ))}
         </View>
+
+        {/* ── Section : Filtre distance randonnées ──────────────────────── */}
+        <SectionHeader
+          icon="🥾"
+          title="Filtre distance randonnées"
+          subtitle="Limitez les résultats de randonnées à une tranche de distance"
+        />
+        <RangeSlider
+          min={0}
+          max={50}
+          step={1}
+          values={{
+            min: trailDistance.min ? Number(trailDistance.min) : 0,
+            max: trailDistance.max ? Number(trailDistance.max) : 50,
+          }}
+          onChange={(v) => {
+            setTrailDistance({ min: String(v.min), max: String(v.max) });
+            save({
+              enabledQuickSearch: enabledKeys,
+              trailDistanceFilter: { min: v.min, max: v.max },
+            });
+          }}
+        />
 
         <Divider />
 
@@ -432,5 +583,57 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.accent,
+  },
+
+  // ─── RangeSlider ──────────────────────────────────────────────────────────
+  sliderContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sliderLabelText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.accent,
+  },
+  sliderTrack: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 3,
+    position: 'relative',
+    justifyContent: 'center',
+    marginHorizontal: THUMB_HALF,
+  },
+  sliderSegment: {
+    position: 'absolute',
+    height: 6,
+    backgroundColor: COLORS.accent,
+    borderRadius: 3,
+    top: 0,
+  },
+  sliderThumb: {
+    position: 'absolute',
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: THUMB_SIZE / 2,
+    backgroundColor: '#1a1a26',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+  },
+  sliderThumbInner: {
+    width: THUMB_SIZE - 8,
+    height: THUMB_SIZE - 8,
+    borderRadius: (THUMB_SIZE - 8) / 2,
+    backgroundColor: COLORS.accent,
   },
 });
