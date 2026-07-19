@@ -182,12 +182,12 @@ if [ -f "$APK_RAW" ]; then
     echo -e "${YELLOW}⚠ Pas de téléphone connecté — installe manuellement l'APK.${RESET}"
   fi
 
-  echo -e "\n${YELLOW}[5/5]${RESET} Upload APK vers CT111..."
-  if ssh -o ConnectTimeout=5 ct111 "echo ok" &>/dev/null; then
-    scp "$APK_PATH" ct111:/opt/PlanYourTrip/downloads/planyourtrip.apk
-    echo -e "${GREEN}✓ APK uploadé sur CT111${RESET}"
+  echo -e "\n${YELLOW}[5/5]${RESET} Upload APK vers 192.168.1.117..."
+  if ssh -o ConnectTimeout=5 ct117 "echo ok" &>/dev/null; then
+    scp "$APK_PATH" ct117:/opt/planyourtrip/downloads/planyourtrip.apk
+    echo -e "${GREEN}✓ APK uploadé sur ct117${RESET}"
   else
-    echo -e "${YELLOW}⚠ CT111 inaccessible — upload ignoré.${RESET}"
+    echo -e "${YELLOW}⚠ ct117 inaccessible — upload ignoré.${RESET}"
   fi
 else
   echo -e "${RED}✗ APK introuvable.${RESET}"
