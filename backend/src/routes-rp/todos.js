@@ -14,20 +14,26 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 const TodoSchema = z.object({
-  text:      z.string().min(1).max(500),
+  text:       z.string().min(1).max(500),
   roadtripId: z.string().min(1),
-  done:      z.boolean().optional(),
-  category:  z.enum(['equipement','courses','admin','divers']).optional().nullable(),
-  priority:  z.number().int().min(0).max(2).optional(),
-  order:     z.number().int().min(0).optional(),
+  done:       z.boolean().optional(),
+  category:   z.enum(['equipement','courses','admin','divers']).optional().nullable(),
+  notes:      z.string().optional().nullable(),
+  dueDate:    z.string().datetime().optional().nullable(),
+  country:    z.string().optional().nullable(),
+  priority:   z.number().int().min(0).max(2).optional(),
+  order:      z.number().int().min(0).optional(),
 });
 
 const TodoPatchSchema = z.object({
-  text:     z.string().min(1).max(500).optional(),
-  done:     z.boolean().optional(),
-  category: z.enum(['equipement','courses','admin','divers']).optional().nullable(),
-  priority: z.number().int().min(0).max(2).optional(),
-  order:    z.number().int().min(0).optional(),
+  text:      z.string().min(1).max(500).optional(),
+  done:      z.boolean().optional(),
+  category:  z.enum(['equipement','courses','admin','divers']).optional().nullable(),
+  notes:     z.string().optional().nullable(),
+  dueDate:   z.string().datetime().optional().nullable(),
+  country:   z.string().optional().nullable(),
+  priority:  z.number().int().min(0).max(2).optional(),
+  order:     z.number().int().min(0).optional(),
 });
 
 // ── GET /api/todos?roadtripId=X ──────────────────────────────────────────────
@@ -59,6 +65,9 @@ router.post('/', async (req, res, next) => {
         roadtripId: data.roadtripId,
         done:       data.done ?? false,
         category:   data.category ?? null,
+        notes:      data.notes ?? null,
+        dueDate:    data.dueDate ? new Date(data.dueDate) : null,
+        country:    data.country ?? null,
         priority:   data.priority ?? 0,
         order:      data.order ?? (last ? last.order + 1 : 0),
       },
@@ -75,6 +84,9 @@ router.patch('/:id', async (req, res, next) => {
     if (data.text     !== undefined) patch.text     = data.text;
     if (data.done     !== undefined) patch.done     = data.done;
     if (data.category !== undefined) patch.category = data.category;
+    if (data.notes    !== undefined) patch.notes    = data.notes;
+    if (data.dueDate  !== undefined) patch.dueDate  = data.dueDate ? new Date(data.dueDate) : null;
+    if (data.country  !== undefined) patch.country  = data.country;
     if (data.priority !== undefined) patch.priority = data.priority;
     if (data.order    !== undefined) patch.order    = data.order;
     const item = await prisma.todoItem.update({

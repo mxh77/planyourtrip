@@ -490,6 +490,9 @@ model TodoItem {
   text        String
   done        Boolean   @default(false)
   category    String?
+  notes       String?         // Notes / commentaires
+  dueDate     DateTime?       // Date d'échéance
+  country     String?         // Pays lié
   priority    Int       @default(0)
   order       Int       @default(0)
   roadtripId  String
