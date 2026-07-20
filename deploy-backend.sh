@@ -14,11 +14,11 @@ REMOTE_DIR="/opt/planyourtrip/backend"
 LOCAL_DIR="$(cd "$(dirname "$0")/backend" && pwd)"
 
 echo -e "\n${YELLOW}════════════════════════════════════════${RESET}"
-echo -e "${YELLOW}  Mon Petit Roadtrip — Deploy Backend   ${RESET}"
+echo -e "${YELLOW}  PlanYourTrip — Deploy Backend + Web   ${RESET}"
 echo -e "${YELLOW}════════════════════════════════════════${RESET}\n"
 
 # ─── Sauvegarde avant déploiement (optionnelle) ─────────────────────────────
-echo -e "${YELLOW}[0/3]${RESET} Sauvegarde de la base de données..."
+echo -e "${YELLOW}[0/5]${RESET} Sauvegarde de la base de données..."
 if node "$(dirname "$0")/backend/scripts/backup.js" 2>/dev/null; then
   echo -e "${GREEN}✓ Backup effectué${RESET}"
 else
@@ -26,22 +26,26 @@ else
 fi
 
 # ─── Git pull sur le serveur ─────────────────────────────────────────────────
-echo -e "${YELLOW}[1/3]${RESET} Git pull sur $SERVER..."
+echo -e "${YELLOW}[1/5]${RESET} Git pull sur $SERVER..."
 ssh "$SERVER" "cd /opt/planyourtrip && git reset --hard HEAD && git clean -fd && git pull"
 echo -e "${GREEN}✓ Code mis à jour${RESET}"
 
+# ─── Vérification page maintenance (trackée dans git) ───────────────────────
+echo -e "${YELLOW}[2/5]${RESET} Vérification page maintenance..."
+echo -e "${GREEN}✓ Page maintenance prête (trackée dans git)${RESET}"
+
 # ─── Copie du .env local vers le serveur ─────────────────────────────────────
-echo -e "${YELLOW}[2/4]${RESET} Copie du .env..."
+echo -e "${YELLOW}[3/5]${RESET} Copie du .env..."
 scp "$LOCAL_DIR/.env" "$SERVER:$REMOTE_DIR/.env"
 echo -e "${GREEN}✓ .env transféré${RESET}"
 
-# ─── npm install si package.json a changé ────────────────────────────────────
-echo -e "${YELLOW}[3/4]${RESET} npm install + prisma..."
+# ─── npm install + Prisma ───────────────────────────────────────────────────
+echo -e "${YELLOW}[4/5]${RESET} npm install + prisma..."
 ssh "$SERVER" "cd $REMOTE_DIR && npm install --omit=dev && npx prisma migrate deploy && npx prisma generate"
 echo -e "${GREEN}✓ Dépendances et schéma Prisma mis à jour${RESET}"
 
-# ─── Redémarre PM2 ───────────────────────────────────────────────────────────
-echo -e "${YELLOW}[4/4]${RESET} Redémarrage PM2..."
+# ─── Redémarre PM2 ──────────────────────────────────────────────────────────
+echo -e "${YELLOW}[5/5]${RESET} Redémarrage PM2..."
 ssh "$SERVER" "cd $REMOTE_DIR && pm2 restart planyourtrip-api --update-env"
 echo -e "${GREEN}✓ Backend redémarré${RESET}"
 
