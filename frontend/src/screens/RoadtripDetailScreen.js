@@ -2225,6 +2225,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               )}
 
+              {/* Todo list */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('TodoList', { roadtripId: id, roadtripTitle: roadtrip?.title });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>✅</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Todo list</Text>
+                  <Text style={styles.menuItemDesc}>Gérer les tâches du roadtrip</Text>
+                </View>
+              </TouchableOpacity>
+
               {/* Rôle actuel */}
               <View style={styles.menuRoleRow}>
                 <Text style={styles.menuRoleLabel}>

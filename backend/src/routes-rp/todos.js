@@ -14,17 +14,31 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 const TodoSchema = z.object({
-  text:     z.string().min(1).max(500),
+  text:      z.string().min(1).max(500),
+  roadtripId: z.string().min(1),
+  done:      z.boolean().optional(),
+  category:  z.enum(['equipement','courses','admin','divers']).optional().nullable(),
+  priority:  z.number().int().min(0).max(2).optional(),
+  order:     z.number().int().min(0).optional(),
+});
+
+const TodoPatchSchema = z.object({
+  text:     z.string().min(1).max(500).optional(),
   done:     z.boolean().optional(),
   category: z.enum(['equipement','courses','admin','divers']).optional().nullable(),
   priority: z.number().int().min(0).max(2).optional(),
   order:    z.number().int().min(0).optional(),
 });
 
-// ── GET /api/todos ───────────────────────────────────────────────────────────
-router.get('/', async (_req, res, next) => {
+// ── GET /api/todos?roadtripId=X ──────────────────────────────────────────────
+router.get('/', async (req, res, next) => {
   try {
+    const { roadtripId } = req.query;
+    if (!roadtripId) {
+      return res.status(400).json({ error: 'roadtripId query parameter is required' });
+    }
     const items = await prisma.todoItem.findMany({
+      where: { roadtripId },
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     });
     res.json(items);
@@ -35,13 +49,18 @@ router.get('/', async (_req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const data = TodoSchema.parse(req.body);
-    const last = await prisma.todoItem.findFirst({ orderBy: { order: 'desc' } });
+    const last = await prisma.todoItem.findFirst({
+      where: { roadtripId: data.roadtripId },
+      orderBy: { order: 'desc' },
+    });
     const item = await prisma.todoItem.create({
       data: {
-        text:     data.text,
-        category: data.category ?? null,
-        priority: data.priority ?? 0,
-        order:    data.order ?? (last ? last.order + 1 : 0),
+        text:       data.text,
+        roadtripId: data.roadtripId,
+        done:       data.done ?? false,
+        category:   data.category ?? null,
+        priority:   data.priority ?? 0,
+        order:      data.order ?? (last ? last.order + 1 : 0),
       },
     });
     res.status(201).json(item);
@@ -51,7 +70,7 @@ router.post('/', async (req, res, next) => {
 // ── PATCH /api/todos/:id ────────────────────────────────────────────────────
 router.patch('/:id', async (req, res, next) => {
   try {
-    const data = TodoSchema.partial().parse(req.body);
+    const data = TodoPatchSchema.parse(req.body);
     const patch = {};
     if (data.text     !== undefined) patch.text     = data.text;
     if (data.done     !== undefined) patch.done     = data.done;
@@ -74,10 +93,14 @@ router.delete('/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// ── DELETE /api/todos ─── supprimer toutes les tâches faites ────────────────
-router.delete('/', async (_req, res, next) => {
+// ── DELETE /api/todos?roadtripId=X ── supprimer toutes les tâches faites ────
+router.delete('/', async (req, res, next) => {
   try {
-    const result = await prisma.todoItem.deleteMany({ where: { done: true } });
+    const { roadtripId } = req.query;
+    if (!roadtripId) {
+      return res.status(400).json({ error: 'roadtripId query parameter is required' });
+    }
+    const result = await prisma.todoItem.deleteMany({ where: { roadtripId, done: true } });
     res.json({ deleted: result.count });
   } catch (e) { next(e); }
 });

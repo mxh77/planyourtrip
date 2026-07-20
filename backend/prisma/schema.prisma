@@ -76,6 +76,7 @@ model Roadtrip {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   steps         Step[]
   members       RoadtripMember[]
+  todoitems     TodoItem[]
 
   @@map("roadtrips")
 }
@@ -485,14 +486,16 @@ model UserPreferences {
 }
 
 model TodoItem {
-  id        String    @id @default(cuid())
-  text      String
-  done      Boolean   @default(false)
-  category  String?
-  priority  Int       @default(0)
-  order     Int       @default(0)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  text        String
+  done        Boolean   @default(false)
+  category    String?
+  priority    Int       @default(0)
+  order       Int       @default(0)
+  roadtripId  String
+  roadtrip    Roadtrip  @relation(fields: [roadtripId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("todo_items")
 }
