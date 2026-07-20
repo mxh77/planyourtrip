@@ -27,6 +27,7 @@ const park4nightRouter  = require("./routes-rp/park4night");
 const preferencesRouter = require("./routes-rp/preferences");
 const documentsRouter   = require('./routes/documents');
 const todosRouter        = require("./routes-rp/todos");
+const exportRouter        = require("./routes-rp/export");
 const debugRoutes = require('./routes/debug');
 
 
@@ -86,6 +87,7 @@ app.use("/api/directions",  directionsRouter);
 app.use("/api/park4night",  park4nightRouter);
 app.use("/api/preferences", preferencesRouter);
 app.use("/api/todos",        todosRouter);
+app.use("/api/export",       exportRouter);
 app.use("/api/documents",   documentsRouter);
 app.use('/api/debug', debugRoutes);
 
