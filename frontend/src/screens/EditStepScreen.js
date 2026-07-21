@@ -166,8 +166,25 @@ export default function EditStepScreen({ route, navigation }) {
     ]);
   };
 
-  // Garde la fonction pour compatibilité (plus utilisée directement depuis le grid)
+  // Ajout photo avec détection du presse-papier
   const handleAddPhoto = async () => {
+    // Vérifier si une image est dans le presse-papier
+    try {
+      const hasImage = await Clipboard.hasImageAsync();
+      if (hasImage) {
+        // Proposer le collage OU la galerie
+        Alert.alert('Ajouter une photo', 'Le presse-papier contient une image.', [
+          { text: '📋 Coller', onPress: handlePastePhoto },
+          { text: '📁 Choisir dans la galerie', onPress: openGallery },
+          { text: 'Annuler', style: 'cancel' },
+        ]);
+        return;
+      }
+    } catch { /* Clipboard inaccessible → fallback galerie */ }
+    openGallery();
+  };
+
+  const openGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission refusée', "L'accès à la galerie est requis pour ajouter des photos.");
@@ -180,7 +197,6 @@ export default function EditStepScreen({ route, navigation }) {
     });
     if (result.canceled) return;
     const asset = result.assets[0];
-    // Insertion locale immédiate — PowerSync gère l'upload binaire quand le réseau revient
     await localInsertPhoto({
       id: generateId(),
       url: asset.uri,
@@ -191,20 +207,8 @@ export default function EditStepScreen({ route, navigation }) {
     });
   };
 
-  const handleDeletePhoto = (photo) => {
-    Alert.alert('Supprimer cette photo ?', null, [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: () => localDeletePhoto(photo.id) },
-    ]);
-  };
-
   const handlePastePhoto = async () => {
     try {
-      const hasImage = await Clipboard.hasImageAsync();
-      if (!hasImage) {
-        Alert.alert('Aucune image', 'Le presse-papier ne contient pas d\'image. Copie d\'abord une photo.');
-        return;
-      }
       const clipboardImg = await Clipboard.getImageAsync({ format: 'jpeg', jpegQuality: 0.8 });
       if (!clipboardImg) {
         Alert.alert('Erreur', 'Impossible de récupérer l\'image depuis le presse-papier.');
@@ -478,9 +482,6 @@ export default function EditStepScreen({ route, navigation }) {
             <TouchableOpacity onPress={handleAddPhoto} style={styles.photoAdd}>
               <Text style={styles.photoAddText}>+</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handlePastePhoto} style={styles.photoPaste}>
-              <Text style={styles.photoPasteText}>📋</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -623,8 +624,6 @@ const styles = StyleSheet.create({
   coverBadgeText: { color: COLORS.accent, fontSize: 11, fontWeight: '700' },
   photoAdd: { width: (SCREEN_W - SPACING.lg * 2 - 16) / 3, aspectRatio: 1, borderRadius: RADIUS.sm, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   photoAddText: { fontSize: 28, color: COLORS.textDim, lineHeight: 32 },
-  photoPaste: { width: (SCREEN_W - SPACING.lg * 2 - 16) / 3, aspectRatio: 1, borderRadius: RADIUS.sm, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' },
-  photoPasteText: { fontSize: 24 },
   // Photo action sheet
   photoMenuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   photoMenuSheet: {
