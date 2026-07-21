@@ -603,7 +603,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           edgePadding: {
             top: 80,
             right: 40,
-            bottom: SHEET_COLLAPSED + 20,
+            bottom: CAROUSEL_BOTTOM + 20,
             left: 40,
           },
           animated: true,

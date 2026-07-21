@@ -5,6 +5,7 @@ import {
   Image, Dimensions, Pressable, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useQuery } from '@powersync/react-native';
@@ -195,6 +196,32 @@ export default function EditStepScreen({ route, navigation }) {
       { text: 'Annuler', style: 'cancel' },
       { text: 'Supprimer', style: 'destructive', onPress: () => localDeletePhoto(photo.id) },
     ]);
+  };
+
+  const handlePastePhoto = async () => {
+    try {
+      const hasImage = await Clipboard.hasImageAsync();
+      if (!hasImage) {
+        Alert.alert('Aucune image', 'Le presse-papier ne contient pas d\'image. Copie d\'abord une photo.');
+        return;
+      }
+      const clipboardImg = await Clipboard.getImageAsync({ format: 'jpeg', jpegQuality: 0.8 });
+      if (!clipboardImg) {
+        Alert.alert('Erreur', 'Impossible de récupérer l\'image depuis le presse-papier.');
+        return;
+      }
+      await localInsertPhoto({
+        id: generateId(),
+        url: clipboardImg.data,
+        stepId: step.id,
+        roadtripId: step.roadtripId,
+        userId,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('[PastePhoto] Erreur:', err);
+      Alert.alert('Erreur', 'Impossible de coller l\'image.');
+    }
   };
 
   const openDtPicker = (target) => {
@@ -451,6 +478,9 @@ export default function EditStepScreen({ route, navigation }) {
             <TouchableOpacity onPress={handleAddPhoto} style={styles.photoAdd}>
               <Text style={styles.photoAddText}>+</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={handlePastePhoto} style={styles.photoPaste}>
+              <Text style={styles.photoPasteText}>📋</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -593,6 +623,8 @@ const styles = StyleSheet.create({
   coverBadgeText: { color: COLORS.accent, fontSize: 11, fontWeight: '700' },
   photoAdd: { width: (SCREEN_W - SPACING.lg * 2 - 16) / 3, aspectRatio: 1, borderRadius: RADIUS.sm, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   photoAddText: { fontSize: 28, color: COLORS.textDim, lineHeight: 32 },
+  photoPaste: { width: (SCREEN_W - SPACING.lg * 2 - 16) / 3, aspectRatio: 1, borderRadius: RADIUS.sm, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' },
+  photoPasteText: { fontSize: 24 },
   // Photo action sheet
   photoMenuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   photoMenuSheet: {
