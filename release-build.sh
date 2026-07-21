@@ -157,6 +157,20 @@ echo -e "${GREEN}✓ Signing configuré${RESET}"
 # ─── Build release ───────────────────────────────────────────────────────────
 echo -e "\n${YELLOW}[3/4]${RESET} Build APK release...\n"
 cd "$FRONTEND_DIR/android"
+
+# Nettoyage préventif du cache Gradle (évite les blocages Windows : verrous sur les caches Kotlin)
+echo -e "  → Nettoyage préventif des caches Gradle..."
+./gradlew --stop 2>/dev/null || true
+cmd //c "taskkill /F /IM java.exe 2>nul; exit 0" 2>/dev/null || true
+cmd //c "taskkill /F /IM javaw.exe 2>nul; exit 0" 2>/dev/null || true
+sleep 2
+# Supprimer le cache Gradle qui peut être corrompu
+rm -rf ".gradle/$(ls .gradle 2>/dev/null | head -1)/checksums" 2>/dev/null || true
+rm -rf ".gradle/$(ls .gradle 2>/dev/null | head -1)/fileHashes" 2>/dev/null || true
+# Clean build (via Gradle lui-même pour éviter les conflits de verrous)
+./gradlew clean 2>/dev/null || true
+echo -e "${GREEN}✓ Cache nettoyé${RESET}"
+
 # --build-cache : réutilise les artefacts Gradle entre builds
 # reactNativeArchitectures=arm64-v8a : une seule ABI pour le téléphone de test (~2× plus rapide)
 # Réduire le chemin .cxx pour éviter les limites de path length
@@ -182,12 +196,47 @@ if [ -f "$APK_RAW" ]; then
     echo -e "${YELLOW}⚠ Pas de téléphone connecté — installe manuellement l'APK.${RESET}"
   fi
 
-  echo -e "\n${YELLOW}[5/5]${RESET} Upload APK vers 192.168.1.117..."
-  if ssh -o ConnectTimeout=5 ct117 "echo ok" &>/dev/null; then
-    scp "$APK_PATH" ct117:/opt/planyourtrip/downloads/planyourtrip.apk
-    echo -e "${GREEN}✓ APK uploadé sur ct117${RESET}"
+  echo -e "\n${YELLOW}[5/6]${RESET} Upload APK vers le serveur..."
+  # Upload via Proxmox (copie dans le conteneur)
+  if ssh -o ConnectTimeout=5 proxmox "pct exec 117 -- ls /opt/planyourtrip/downloads" &>/dev/null; then
+    # Copier l'APK sur Proxmox d'abord, puis dans le conteneur
+    scp "$APK_PATH" proxmox:/tmp/planyourtrip.apk
+    ssh proxmox "pct push 117 /tmp/planyourtrip.apk /opt/planyourtrip/downloads/planyourtrip.apk && rm -f /tmp/planyourtrip.apk"
+    echo -e "${GREEN}✓ APK uploadé sur le serveur${RESET}"
   else
-    echo -e "${YELLOW}⚠ ct117 inaccessible — upload ignoré.${RESET}"
+    echo -e "${YELLOW}⚠ Serveur inaccessible — upload ignoré.${RESET}"
+  fi
+
+  # ─── Déploiement backend sur le serveur ─────────────────────────────────
+  echo -e "\n${YELLOW}[6/6]${RESET} Déploiement backend sur le serveur..."
+  if ssh -o ConnectTimeout=5 proxmox "pct exec 117 -- bash -c 'cd /opt/planyourtrip && echo ok'" &>/dev/null; then
+    ssh proxmox "pct exec 117 -- bash -c '
+      set -e
+      echo \"  → Git pull...\"
+      cd /opt/planyourtrip && git pull origin main 2>&1 | tail -2
+
+      echo \"  → Arrêt du backend (PM2)...\"
+      pm2 stop planyourtrip-api 2>&1 | tail -1
+
+      echo \"  → npm install...\"
+      cd /opt/planyourtrip/backend && npm install --omit=dev 2>&1 | tail -2
+
+      echo \"  → Migrations Prisma...\"
+      npx prisma migrate deploy 2>&1 | tail -3
+
+      echo \"  → Prisma generate...\"
+      npx prisma generate 2>&1 | tail -2
+
+      echo \"  → Redémarrage du backend...\"
+      pm2 start planyourtrip-api 2>&1 | tail -1
+
+      echo \"  → Vérification...\"
+      sleep 2
+      curl -s --connect-timeout 5 http://localhost:3111/health
+    '"
+    echo -e "${GREEN}✓ Backend déployé${RESET}"
+  else
+    echo -e "${YELLOW}⚠ Serveur inaccessible — déploiement ignoré.${RESET}"
   fi
 else
   echo -e "${RED}✗ APK introuvable.${RESET}"
