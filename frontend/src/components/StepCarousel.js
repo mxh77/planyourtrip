@@ -54,8 +54,6 @@ function durationDays(start, end) {
  *   onSelectStep        — callback(index) au tap sur une carte
  *   onEditStep          — callback(index) pour ouvrir l'édition de l'étape
  *   onScrollIndexChange — callback(index) déclenché quand une carte se centre au scroll
- *   onToggleMode        — callback() pour revenir en mode liste
- *   showCarousel        — booléen contrôlé par le parent
  */
 export default function StepCarousel({
   steps,
@@ -63,8 +61,6 @@ export default function StepCarousel({
   onSelectStep,
   onEditStep,
   onScrollIndexChange,
-  onToggleMode,
-  showCarousel,
 }) {
   const scrollRef = useRef(null);
   const isMomentum = useRef(false);
@@ -137,7 +133,7 @@ export default function StepCarousel({
     isExternalUpdate.current = false;
   }, []);
 
-  if (!showCarousel || !steps?.length) return null;
+  if (!steps?.length) return null;
 
   return (
     <View style={styles.wrapper}>

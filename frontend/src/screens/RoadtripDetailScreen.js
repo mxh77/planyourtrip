@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
-  ScrollView, Animated, StatusBar, Alert, ActivityIndicator,
-  Modal, TextInput, Platform, PanResponder, Pressable, Linking,
+  ScrollView, StatusBar, Alert, ActivityIndicator,
+  Modal, TextInput, Platform, Pressable, Linking,
   Image,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
@@ -22,9 +22,7 @@ import { getEnabledCategories } from '../constants/categories';
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
-const SHEET_COLLAPSED = 180;
-const SHEET_FULL = SCREEN_H - 200;
-const CAROUSEL_HEIGHT = 130; // Hauteur estimée du carrousel (wrapper + padding)
+const CAROUSEL_BOTTOM = 195; // Hauteur du carrousel (CARD_HEIGHT 175 + padding 20)
 
 const ORDER_COLORS = [
   '#f59e0b', '#3b82f6', '#22c55e', '#a855f7', '#ef4444',
@@ -333,10 +331,9 @@ function CurrentStepBar({ step, index, color, onPress, isOverview = false, roadt
 }
 
 // ─── Helpers for bounds adjustment ──────────────────────────────────────────
-// Le volet (180px) + le navigateur d'étape (~44px) masquent le bas de la carte.
-// On doit remonter la limite sud des bounds pour chercher uniquement dans la zone visible.
-const HEADER_HEIGHT_ESTIMATE = 100;  // searchArea + catBar (px)
-const BOTTOM_HIDDEN_PX = SHEET_COLLAPSED + 44; // volet + navigateur d'étape
+// Le carrousel (~195px) + le navigateur d'étape (~44px) masquent le bas de la carte.
+const HEADER_HEIGHT_ESTIMATE = 100;
+const BOTTOM_HIDDEN_PX = CAROUSEL_BOTTOM + 44;
 function adjustBoundsForSheet(bounds) {
   if (!bounds) return null;
   const mapTotalH = SCREEN_H - HEADER_HEIGHT_ESTIMATE; // hauteur estimée de la carte en px
@@ -441,7 +438,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   // États
   const [steps, setSteps] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [sheetExpanded, setSheetExpanded] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [activeOverlays, setActiveOverlays] = useState({});
   const [showSearchArea, setShowSearchArea] = useState(false);
@@ -523,7 +519,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [routesVersion, setRoutesVersion] = useState(0);  // Incrémenté pour forcer le re-render natif des Polyline
   const [loadingFromAPI, setLoadingFromAPI] = useState(false);
   const [showLogs, setShowLogs] = useState(false);  // Pour afficher le viewer de logs
-  const [showCarousel, setShowCarousel] = useState(false);  // Mode carrousel horizontal
   const [refreshingRoutes, setRefreshingRoutes] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [searchResultMarker, setSearchResultMarker] = useState(null);  // Marqueur de résultat de recherche
@@ -557,7 +552,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   useEffect(() => {
     console.log('[RoadtripDetail] 🔄 Roadtrip id:', id);
     setSelectedIndex(-1);  // -1 = vue globale du roadtrip
-    setSheetExpanded(false);
     setShowDetail(false);
     setActiveOverlays({});
     setShowSearchArea(false);
@@ -738,68 +732,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     loadPolylines();
   }, [stepsLength, id]);
 
-  // Animation de la bottom sheet
-  const sheetAnim = useRef(new Animated.Value(SHEET_COLLAPSED)).current;
   const mapRef = useRef(null);
-  const sheetExpandedRef = useRef(false);
   const searchInputRef = useRef(null);
   const searchTimeoutRef = useRef(null);
-  const stepListRef = useRef(null);
-
-  // Sync ref avec state pour PanResponder
-  useEffect(() => {
-    sheetExpandedRef.current = sheetExpanded;
-  }, [sheetExpanded]);
-
-  // Scroller vers l'étape sélectionnée quand le volet s'agrandit
-  useEffect(() => {
-    if (sheetExpanded && stepListRef.current && selectedIndex >= 0) {
-      // Chaque StepCard a une hauteur approximative de ~110px, scroll pour centrer l'étape
-      const offsetY = Math.max(0, selectedIndex * 110 - 150);
-      stepListRef.current.scrollTo({ y: offsetY, animated: true });
-    }
-  }, [sheetExpanded, selectedIndex]);
-
-  // PanResponder sur la poignée uniquement
-  const handlePanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 5,
-      onPanResponderMove: (_, gs) => {
-        const isExpanded = sheetExpandedRef.current;
-        const base = isExpanded ? SHEET_FULL : SHEET_COLLAPSED;
-        const next = Math.max(SHEET_COLLAPSED, Math.min(SHEET_FULL, base - gs.dy));
-        sheetAnim.setValue(next);
-      },
-      onPanResponderRelease: (_, gs) => {
-        const isExpanded = sheetExpandedRef.current;
-        // Si le mouvement est très petit (< 10px), on considère ça comme un clic → toggle
-        if (Math.abs(gs.dy) < 10) {
-          const toValue = isExpanded ? SHEET_COLLAPSED : SHEET_FULL;
-          Animated.spring(sheetAnim, {
-            toValue,
-            useNativeDriver: false,
-            tension: 65,
-            friction: 11,
-          }).start();
-          sheetExpandedRef.current = !isExpanded;
-          setSheetExpanded(!isExpanded);
-        } else {
-          // Sinon, on suit la logique du swipe : vers le haut (dy < -40) → ouvrir ; vers le bas (dy > 40) → fermer
-          const shouldExpand = gs.dy < -40;
-          const toValue = shouldExpand ? SHEET_FULL : SHEET_COLLAPSED;
-          Animated.spring(sheetAnim, {
-            toValue,
-            useNativeDriver: false,
-            tension: 65,
-            friction: 11,
-          }).start();
-          sheetExpandedRef.current = shouldExpand;
-          setSheetExpanded(shouldExpand);
-        }
-      },
-    })
-  ).current;
 
   // Dernière version des flags connue lors du dernier calcul des routes
   // Initialisé à null pour que depArrChanged soit true au premier chargement
@@ -1150,17 +1085,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     });
   }, [navigation, roadtrip.title]);
 
-  const toggleSheet = useCallback(() => {
-    const toValue = sheetExpanded ? SHEET_COLLAPSED : SHEET_FULL;
-    Animated.spring(sheetAnim, {
-      toValue,
-      useNativeDriver: false,
-      tension: 65,
-      friction: 11,
-    }).start();
-    setSheetExpanded(!sheetExpanded);
-  }, [sheetExpanded, sheetAnim]);
-
   // Calculer la région qui englobe une étape et tous ses items (hébergements + activités)
   // Récupérer les coordonnées d'une étape et tous ses items (pour fitToCoordinates)
   const getStepCoordinates = useCallback((step, accomList, activityList) => {
@@ -1301,15 +1225,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const openDetail = useCallback((index) => {
     setSelectedIndex(index);
 
-    // Fermer le volet avec animation
-    Animated.spring(sheetAnim, {
-      toValue: SHEET_COLLAPSED,
-      useNativeDriver: false,
-      tension: 65,
-      friction: 11,
-    }).start();
-    setSheetExpanded(false);
-
     // Centrer la carte sur le marqueur de l'étape avec un zoom adapté à ses items
     if (steps[index] && mapRef.current) {
       const region = getStepRegion(steps[index], psAccommodations, psActivities);
@@ -1317,7 +1232,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         mapRef.current.animateToRegion(region, 400);
       }
     }
-  }, [steps, sheetAnim, psAccommodations, psActivities, getStepRegion]);
+  }, [steps, psAccommodations, psActivities, getStepRegion]);
 
   const openEditStep = useCallback((index) => {
     const step = steps[index];
@@ -1722,7 +1637,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
           {/* ─── NAVIGATEUR D'ÉTAPE ── */}
           {steps.length > 0 && (
-            <View style={[styles.stepNav, showCarousel && { bottom: 120 }]}>
+            <View style={[styles.stepNav, { bottom: CAROUSEL_BOTTOM + 8 }]}>
               <TouchableOpacity
                 style={styles.stepNavBtn}
                 onPress={() => {
@@ -1759,7 +1674,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* ─── OVERLAY BUTTONS (absolute within map) — zoom + global + carousel ── */}
+          {/* ─── OVERLAY BUTTONS (absolute within map) — zoom + global ── */}
           <View style={[styles.overlayCol, { top: 12 }]}>
             {/* Bouton zoom sur l'étape sélectionnée */}
             {selectedIndex >= 0 && (
@@ -1791,7 +1706,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                       edgePadding: {
                         top: 80,
                         right: 40,
-                        bottom: SHEET_COLLAPSED + 20,
+                        bottom: CAROUSEL_BOTTOM + 20,
                         left: 40,
                       },
                       animated: true,
@@ -1803,134 +1718,16 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 <Text style={styles.ovBtnIcon}>🗺️</Text>
               </TouchableOpacity>
             )}
-
-            {/* Bouton bascule carrousel horizontal / liste */}
-            <TouchableOpacity
-              key="carousel-toggle"
-              onPress={() => setShowCarousel(prev => !prev)}
-              style={[
-                styles.ovBtn,
-                showCarousel
-                  ? { backgroundColor: 'rgba(245,158,11,0.25)', borderColor: 'rgba(245,158,11,0.4)' }
-                  : { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.06)' },
-              ]}
-            >
-              <Text style={styles.ovBtnIcon}>🎠</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
-        {/* ─── BOTTOM SHEET (masqué en mode carrousel) ──────────────────── */}
-        {!showCarousel && (
-          <Animated.View style={[styles.sheet, { height: sheetAnim }]} pointerEvents="box-none">
-            {/* Handle — tap ET swipe pour toggle */}
-            <View
-              style={styles.sheetHandle}
-              {...handlePanResponder.panHandlers}
-            >
-              <TouchableOpacity onPress={toggleSheet} style={{ alignItems: 'center', paddingVertical: 12 }}>
-                <View style={styles.handleBar} />
-              </TouchableOpacity>
-            </View>
-            {sheetExpanded && (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 12, alignItems: 'center' }}>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      log('REFRESH', '🔄 Bouton refresh cliqué');
-                      setRefreshingRoutes(true);
-                    }}
-                    style={{ padding: 8 }}
-                  >
-                    <Text style={{ fontSize: 18 }}>🔄</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setShowLogs(true)}
-                    style={{ padding: 8 }}
-                  >
-                    <Text style={{ fontSize: 18 }}>📋</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity onPress={toggleSheet} style={styles.sheetCloseBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Text style={styles.sheetCloseText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            <View style={styles.sheetContent} pointerEvents="auto">
-              {!sheetExpanded && selectedIndex === -1 ? (
-                // Mode vue globale du roadtrip
-                <CurrentStepBar
-                  isOverview={true}
-                  roadtrip={roadtrip}
-                  totalDays={totalDays}
-                  onPress={() => {
-                    // Clic sur la vue globale → ouvrir le volet complet
-                    const toValue = SHEET_FULL;
-                    Animated.spring(sheetAnim, {
-                      toValue,
-                      useNativeDriver: false,
-                      tension: 65,
-                      friction: 11,
-                    }).start();
-                    setSheetExpanded(true);
-                  }}
-                />
-              ) : !sheetExpanded && selectedStep ? (
-                // Mode détail d'une étape (volet fermé)
-                <StepCard
-                  step={selectedStep}
-                  index={selectedIndex}
-                  isActive={true}
-                  color={color}
-                  onPress={() => openDetail(selectedIndex)}
-                  onDetailPress={() => openEditStep(selectedIndex)}
-                />
-              ) : sheetExpanded ? (
-                // Mode liste d'étapes (volet ouvert)
-                <View style={styles.sheetFull} pointerEvents="auto">
-                  {/* En-tête */}
-                  <View style={styles.sheetFullHeader}>
-                    <Text style={styles.sheetStepCount}>
-                      {steps.length} étapes · {roadtrip.distance} km
-                    </Text>
-                  </View>
-
-                  {/* Liste */}
-                  <ScrollView
-                    ref={stepListRef}
-                    style={styles.stepList}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-                    scrollEnabled={sheetExpanded}
-                    pointerEvents="auto"
-                  >
-                    {steps.map((s, i) => (
-                      <StepCard
-                        key={s.id}
-                        step={s}
-                        index={i}
-                        isActive={i === selectedIndex}
-                        color={ORDER_COLORS[i % ORDER_COLORS.length]}
-                        onPress={() => openDetail(i)}
-                        onDetailPress={() => openEditStep(i)}
-                      />
-                    ))}
-                  </ScrollView>
-                </View>
-              ) : null}
-            </View>
-          </Animated.View>
-        )}
-
-        {/* ─── CARROUSEL HORIZONTAL (remplace le bottom sheet) ───────────── */}
+        {/* ─── CARROUSEL HORIZONTAL (permanent) ────────────────────────── */}
         <StepCarousel
           steps={steps}
           selectedIndex={selectedIndex}
           onSelectStep={(index) => openDetail(index)}
           onEditStep={(index) => openEditStep(index)}
           onScrollIndexChange={(index) => {
-            // Mettre à jour selectedIndex sans animation sheet
             setSelectedIndex(index);
             if (steps[index] && mapRef.current) {
               const region = getStepRegion(steps[index], psAccommodations, psActivities);
@@ -1939,8 +1736,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               }
             }
           }}
-          onToggleMode={() => setShowCarousel(false)}
-          showCarousel={showCarousel}
         />
 
         {/* ─── SEARCH RESULT MODAL ──────────────────────────────────────────── */}
@@ -2666,7 +2461,7 @@ const styles = StyleSheet.create({
   // Step navigator (au-dessus du volet)
   stepNav: {
     position: 'absolute',
-    bottom: SHEET_COLLAPSED + 8,
+    bottom: CAROUSEL_BOTTOM + 8,
     left: 0,
     right: 0,
     flexDirection: 'row',
