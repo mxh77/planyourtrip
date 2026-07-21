@@ -2178,6 +2178,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
 
 
+              {/* Todo list */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('TodoList', { roadtripId: id, roadtripTitle: roadtrip?.title });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>✅</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Todo list</Text>
+                  <Text style={styles.menuItemDesc}>Gérer les tâches du roadtrip</Text>
+                </View>
+              </TouchableOpacity>
+
               {/* Infos générales */}
               <TouchableOpacity
                 style={styles.menuItem}
@@ -2189,22 +2204,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 <Text style={styles.menuItemIcon}>📋</Text>
                 <View style={styles.menuItemContent}>
                   <Text style={styles.menuItemLabel}>Infos générales</Text>
-                  <Text style={styles.menuItemDesc}>Modifier le titre, les dates, dupliquer ou supprimer</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Paramètres du roadtrip */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                  navigation.navigate('RoadtripSettings', { roadtripId: id });
-                }}
-              >
-                <Text style={styles.menuItemIcon}>⚙️</Text>
-                <View style={styles.menuItemContent}>
-                  <Text style={styles.menuItemLabel}>Paramètres</Text>
-                  <Text style={styles.menuItemDesc}>Boutons de recherche rapide, filtre distances de randonnée</Text>
+                  <Text style={styles.menuItemDesc}>Modifier le titre, les dates, le statut</Text>
                 </View>
               </TouchableOpacity>
 
@@ -2225,18 +2225,18 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 </TouchableOpacity>
               )}
 
-              {/* Todo list */}
+              {/* Paramètres du roadtrip */}
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
                   setMenuVisible(false);
-                  navigation.navigate('TodoList', { roadtripId: id, roadtripTitle: roadtrip?.title });
+                  navigation.navigate('RoadtripSettings', { roadtripId: id });
                 }}
               >
-                <Text style={styles.menuItemIcon}>✅</Text>
+                <Text style={styles.menuItemIcon}>⚙️</Text>
                 <View style={styles.menuItemContent}>
-                  <Text style={styles.menuItemLabel}>Todo list</Text>
-                  <Text style={styles.menuItemDesc}>Gérer les tâches du roadtrip</Text>
+                  <Text style={styles.menuItemLabel}>Paramètres</Text>
+                  <Text style={styles.menuItemDesc}>Boutons de recherche rapide, filtres, actions</Text>
                 </View>
               </TouchableOpacity>
 

@@ -175,6 +175,7 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cloning, setCloning] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // ─── Chargement ─────────────────────────────────────────────────────────────
 
@@ -288,7 +289,7 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
   const handleDelete = useCallback(() => {
     Alert.alert(
       'Supprimer ce roadtrip',
-      'Cette action est irréversible. Toutes les étapes, hébergements et activités seront définitivement supprimés.',
+      '⚠️ Cette action est irréversible et réservée au propriétaire.\n\nToutes les étapes, hébergements et activités seront définitivement supprimés.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -300,16 +301,61 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
               });
-              if (!res.ok) throw new Error();
+              if (!res.ok) {
+                let msg = 'Impossible de supprimer le roadtrip.';
+                try {
+                  const body = await res.json();
+                  if (body.error === 'Role OWNER required' || body.error === 'Access denied') {
+                    msg = 'Seul le propriétaire du roadtrip peut le supprimer.';
+                  } else if (body.error) {
+                    msg = body.error;
+                  }
+                } catch {}
+                throw new Error(msg);
+              }
               navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-            } catch {
-              Alert.alert('Erreur', 'Impossible de supprimer le roadtrip.');
+            } catch (e) {
+              Alert.alert('Suppression impossible', e.message || 'Impossible de supprimer le roadtrip.');
             }
           },
         },
       ]
     );
   }, [roadtripId, token, navigation]);
+
+  // ─── Export ──────────────────────────────────────────────────────────────────
+
+  const handleExport = useCallback(() => {
+    Alert.alert(
+      'Exporter ce roadtrip',
+      'Une sauvegarde complète au format JSON sera créée sur le serveur (fichier horodaté).',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Exporter',
+          onPress: async () => {
+            setExporting(true);
+            try {
+              const res = await fetch(`${API_URL}/api/export/${roadtripId}/save`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (!res.ok) throw new Error();
+              const data = await res.json();
+              Alert.alert(
+                '✅ Export réussi',
+                `Fichier créé :\n${data.filename}\n\n${(data.fileSize / 1024).toFixed(1)} Ko`
+              );
+            } catch {
+              Alert.alert('Erreur', 'Impossible d\'exporter le roadtrip.');
+            } finally {
+              setExporting(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [roadtripId, token]);
 
   // ─── Rendu ───────────────────────────────────────────────────────────────────
 
@@ -408,6 +454,20 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
             <Text style={styles.actionBtnIcon}>📋</Text>
           )}
           <Text style={styles.actionBtnText}>Cloner ce roadtrip</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={handleExport}
+          disabled={exporting}
+          activeOpacity={0.75}
+        >
+          {exporting ? (
+            <ActivityIndicator color={COLORS.accent} size="small" />
+          ) : (
+            <Text style={styles.actionBtnIcon}>💾</Text>
+          )}
+          <Text style={styles.actionBtnText}>Exporter en JSON (serveur)</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
