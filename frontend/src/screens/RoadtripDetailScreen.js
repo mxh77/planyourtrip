@@ -176,89 +176,7 @@ function getStepArrival(step, accommodations, activities) {
 
 // ─── Données mock pour prototype ─────────────────────────────────────────────
 // ─── StepCard (compact pour la liste) ────────────────────────────────────────
-const StepCard = React.memo(function StepCard({ step, index, isActive, onPress, onDetailPress, color }) {
-  const nights = durationDays(step.startDate, step.endDate);
-  const hasAccom = !!step.accommodation;
-
-  return (
-    <View style={[styles.stepCard, isActive && styles.stepCardActive]}>
-      <TouchableOpacity
-        onPress={onPress}
-        style={{ flex: 1 }}
-        activeOpacity={0.7}
-      >
-        {/* Timeline + Content */}
-        <View style={{ flexDirection: 'row', flex: 1 }}>
-          {/* Timeline dot */}
-          <View style={styles.timelineCol}>
-            <View style={[styles.timelineDot, { backgroundColor: color }]} />
-            <View style={styles.timelineLine} />
-          </View>
-
-          {/* Content */}
-          <View style={styles.stepContent}>
-            {/* Ligne 1: Nom + Distance/Temps trajet (space-between) */}
-            <View style={styles.stepTopRow}>
-              <Text style={[styles.stepName, isActive && styles.stepNameActive]} numberOfLines={1}>
-                {step.name}
-              </Text>
-              {(step.distanceFromPrev || 0) > 0 && (
-                <Text style={styles.stepTrajet} numberOfLines={1}>
-                  🚐 {step.distanceFromPrev || 0}km{(step.durationFromPrev || 0) > 0 ? ` • ${(step.durationFromPrev || 0) >= 60 ? `${Math.floor((step.durationFromPrev || 0) / 60)}h${String(Math.round((step.durationFromPrev || 0) % 60)).padStart(2, '0')}` : `${Math.round(step.durationFromPrev || 0)}min`}` : ''}
-                </Text>
-              )}
-            </View>
-
-            {/* Ligne 2: Adresse */}
-            <Text style={styles.stepLocation} numberOfLines={1}>{step.location}</Text>
-
-            {/* Ligne 3: Date arrivée | Date départ | Nb Nuits (row) */}
-            <View style={styles.stepMeta}>
-              {/* Date/Heure arrivée */}
-              {step.startDate && (
-                <Text style={[styles.stepMetaText, { flex: 1 }]} numberOfLines={1}>
-                  📍 {formatDate(step.startDate)} {step.arrivalTime ? `• ${formatTime(step.arrivalTime)}` : ''}
-                </Text>
-              )}
-
-              {/* Date/Heure départ */}
-              {step.endDate && (
-                <Text style={[styles.stepMetaText, { flex: 1 }]} numberOfLines={1}>
-                  ↗️ {formatDate(step.endDate)} {step.departureTime ? `• ${formatTime(step.departureTime)}` : ''}
-                </Text>
-              )}
-
-              {/* Nb Nuits */}
-              {nights > 0 && (
-                <Text style={[styles.stepMetaText, { flex: 0.6 }]} numberOfLines={1}>
-                  🌙 {nights}n
-                </Text>
-              )}
-            </View>
-
-            {/* Ligne 4: Hébergement */}
-            {hasAccom && (
-              <View style={styles.tagRow}>
-                <Text style={styles.tagAccom} numberOfLines={1}>
-                  {ACCOM_ICONS[step.accommodation.type] || '🏕️'} {step.accommodation.name}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-
-      {/* Bouton Edition */}
-      <TouchableOpacity
-        onPress={onDetailPress}
-        style={styles.stepDetailBtn}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text style={styles.stepDetailBtnText}>✎</Text>
-      </TouchableOpacity>
-    </View>
-  );
-});  // React.memo(StepCard)
+// ─── StepCard (compact pour la liste) — SUPPRIMÉE, utiliser StepCarousel ─────
 
 // ─── Detail card pour l'étape active (mode collapsed) ────────────────────────
 function CurrentStepBar({ step, index, color, onPress, isOverview = false, roadtrip = null, totalDays = 0 }) {
@@ -441,6 +359,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [showDetail, setShowDetail] = useState(false);
   const [activeOverlays, setActiveOverlays] = useState({});
   const [showSearchArea, setShowSearchArea] = useState(false);
+  const [mapType, setMapType] = useState('standard');  // 'standard' | 'satellite'
   // Recherche par catégorie (boutons Google Maps style)
   const [categoryResults, setCategoryResults] = useState({});     // { campings: [...], trails: [...], ... }
   const [categoryLoading, setCategoryLoading] = useState({});     // { campings: true, ... }
@@ -1225,14 +1144,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const openDetail = useCallback((index) => {
     setSelectedIndex(index);
 
-    // Centrer la carte sur le marqueur de l'étape avec un zoom adapté à ses items
+    // Zoomer pour englober tous les items de l'étape (avec padding)
     if (steps[index] && mapRef.current) {
-      const region = getStepRegion(steps[index], psAccommodations, psActivities);
-      if (region) {
-        mapRef.current.animateToRegion(region, 400);
+      const coords = getStepCoordinates(steps[index], psAccommodations, psActivities);
+      if (coords.length > 0) {
+        mapRef.current.fitToCoordinates(coords, {
+          edgePadding: { top: 60, right: 30, bottom: 60, left: 30 },
+          animated: true,
+        });
       }
     }
-  }, [steps, psAccommodations, psActivities, getStepRegion]);
+  }, [steps, psAccommodations, psActivities, getStepCoordinates]);
 
   const openEditStep = useCallback((index) => {
     const step = steps[index];
@@ -1486,10 +1408,10 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         <View style={styles.mapContainer}>
           <MapView
             ref={mapRef}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { bottom: CAROUSEL_BOTTOM + 30 }]}
             initialRegion={region}
             provider={PROVIDER_GOOGLE}
-            mapType="standard"
+            mapType={mapType}
             onPoiClick={(e) => {
               const { coordinate, name, placeId } = e.nativeEvent;
               setSearchResultMarker({
@@ -1528,6 +1450,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   key={s.id}
                   coordinate={{ latitude: parseFloat(s.latitude), longitude: parseFloat(s.longitude) }}
                   anchor={{ x: 0.5, y: 0.5 }}
+                  onPress={() => openDetail(i)}
                 >
                   <View style={[styles.marker, { backgroundColor: ORDER_COLORS[i % ORDER_COLORS.length] }]}>
                     <Text style={styles.markerText}>{i + 1}</Text>
@@ -1577,6 +1500,38 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   </View>
                 </Marker>
               ))}
+
+            {/* Marqueurs Parking — reliés en pointillé à leur activité */}
+            {selectedIndex >= 0 && psActivities
+              .filter(a => a.parkingAddress && a.latitude && a.longitude)
+              .map(activity => {
+                const hasCoords = activity.parkingLatitude && activity.parkingLongitude;
+                const parkLat = hasCoords ? activity.parkingLatitude : parseFloat(activity.latitude) + 0.001;
+                const parkLng = hasCoords ? activity.parkingLongitude : parseFloat(activity.longitude) + 0.001;
+                return (
+                  <React.Fragment key={`parking-${activity.id}`}>
+                    {hasCoords && (
+                      <Polyline
+                        coordinates={[
+                          { latitude: parkLat, longitude: parkLng },
+                          { latitude: parseFloat(activity.latitude), longitude: parseFloat(activity.longitude) },
+                        ]}
+                        strokeColor="rgba(96,165,250,0.5)"
+                        strokeWidth={2}
+                        lineDashPattern={[4, 6]}
+                      />
+                    )}
+                    <Marker
+                      coordinate={{ latitude: parkLat, longitude: parkLng }}
+                      anchor={{ x: 0.5, y: 0.5 }}
+                    >
+                      <View style={styles.parkingMarker}>
+                        <Text style={styles.parkingMarkerText}>🅿️</Text>
+                      </View>
+                    </Marker>
+                  </React.Fragment>
+                );
+              })}
 
             {/* Marqueurs de résultats par catégorie */}
             {Object.entries(categoryResults).map(([catKey, results]) => {
@@ -1635,45 +1590,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             )}
           </MapView>
 
-          {/* ─── NAVIGATEUR D'ÉTAPE ── */}
-          {steps.length > 0 && (
-            <View style={[styles.stepNav, { bottom: CAROUSEL_BOTTOM + 8 }]}>
-              <TouchableOpacity
-                style={styles.stepNavBtn}
-                onPress={() => {
-                  if (selectedIndex === -1) {
-                    // En vue globale, aller à la première étape
-                    openDetail(0);
-                  } else {
-                    const prev = Math.max(0, selectedIndex - 1);
-                    if (prev !== selectedIndex) openDetail(prev);
-                  }
-                }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.stepNavBtnText}>◀</Text>
-              </TouchableOpacity>
-              <Text style={styles.stepNavCounter}>
-                {selectedIndex === -1 ? '🗺️' : `${selectedIndex + 1} / ${steps.length}`}
-              </Text>
-              <TouchableOpacity
-                style={styles.stepNavBtn}
-                onPress={() => {
-                  if (selectedIndex === -1) {
-                    // En vue globale, aller à la première étape
-                    openDetail(0);
-                  } else {
-                    const next = Math.min(steps.length - 1, selectedIndex + 1);
-                    if (next !== selectedIndex) openDetail(next);
-                  }
-                }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.stepNavBtnText}>▶</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
           {/* ─── OVERLAY BUTTONS (absolute within map) — zoom + global ── */}
           <View style={[styles.overlayCol, { top: 12 }]}>
             {/* Bouton zoom sur l'étape sélectionnée */}
@@ -1683,9 +1599,12 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 onPress={() => {
                   const step = steps[selectedIndex];
                   if (!step || !mapRef.current) return;
-                  const region = getStepRegion(step, psAccommodations, psActivities);
-                  if (region) {
-                    mapRef.current.animateToRegion(region, 400);
+                  const coords = getStepCoordinates(step, psAccommodations, psActivities);
+                  if (coords.length > 0) {
+                    mapRef.current.fitToCoordinates(coords, {
+                      edgePadding: { top: 60, right: 30, bottom: 60, left: 30 },
+                      animated: true,
+                    });
                   }
                 }}
                 style={[styles.ovBtn, { backgroundColor: 'rgba(59,130,246,0.25)', borderColor: 'rgba(59,130,246,0.4)' }]}
@@ -1718,21 +1637,41 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 <Text style={styles.ovBtnIcon}>🗺️</Text>
               </TouchableOpacity>
             )}
+
+            {/* Toggle satellite — toujours visible */}
+            <TouchableOpacity
+              key="satellite-toggle"
+              onPress={() => setMapType(prev => prev === 'satellite' ? 'standard' : 'satellite')}
+              style={[
+                styles.ovBtn,
+                mapType === 'satellite' && {
+                  backgroundColor: 'rgba(34,197,94,0.25)',
+                  borderColor: 'rgba(34,197,94,0.4)',
+                },
+              ]}
+            >
+              <Text style={styles.ovBtnIcon}>
+                {mapType === 'satellite' ? '🗺️' : '🛰️'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
         </View>
 
         {/* ─── CARROUSEL HORIZONTAL (permanent) ────────────────────────── */}
         <StepCarousel
           steps={steps}
           selectedIndex={selectedIndex}
-          onSelectStep={(index) => openDetail(index)}
           onEditStep={(index) => openEditStep(index)}
           onScrollIndexChange={(index) => {
             setSelectedIndex(index);
             if (steps[index] && mapRef.current) {
-              const region = getStepRegion(steps[index], psAccommodations, psActivities);
-              if (region) {
-                mapRef.current.animateToRegion(region, 350);
+              const coords = getStepCoordinates(steps[index], psAccommodations, psActivities);
+              if (coords.length > 0) {
+                mapRef.current.fitToCoordinates(coords, {
+                  edgePadding: { top: 60, right: 30, bottom: 60, left: 30 },
+                  animated: true,
+                });
               }
             }
           }}
@@ -1800,6 +1739,35 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                       setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery('');
                     } catch (err) { Alert.alert('Erreur', 'Impossible d\'ajouter.'); }
                   }} />
+                <MarkerAction icon="🅿️" label="Parking" color="#60a5fa" bg="rgba(96,165,250,0.2)"
+                  onPress={async () => {
+                    const cs = steps[selectedIndex];
+                    if (!cs) { Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.'); return; }
+                    const stepActivities = psActivities.filter(a => a.stepId === cs.id);
+                    if (stepActivities.length === 0) {
+                      Alert.alert('Aucune activité', 'Crée d\'abord une activité dans cette étape.'); return;
+                    }
+                    const parkingStr = searchResultMarker.description || searchResultMarker.title;
+                    const parkingData = {
+                      parkingAddress: parkingStr,
+                      parkingLatitude: searchResultMarker.latitude ?? null,
+                      parkingLongitude: searchResultMarker.longitude ?? null,
+                    };
+                    if (stepActivities.length === 1) {
+                      await localUpdateActivity(stepActivities[0].id, parkingData);
+                      setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery('');
+                    } else {
+                      Alert.alert('Associer à quelle activité ?', null,
+                        stepActivities.map(act => ({
+                          text: act.name,
+                          onPress: async () => {
+                            await localUpdateActivity(act.id, parkingData);
+                            setShowSearchResultModal(false); setSearchResultMarker(null); setSearchQuery('');
+                          },
+                        })).concat({ text: 'Annuler', style: 'cancel' })
+                      );
+                    }
+                  }} />
               </View>
               <View style={styles.searchResultDivider} />
               <TouchableOpacity style={styles.searchResultAction}
@@ -1828,6 +1796,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 {menuMarker.stepId ? ` · Étape ${steps.findIndex(s => s.id === menuMarker.stepId) + 1}` : ''}
               </Text>
 
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ maxHeight: 400 }}>
               {/* ── INFOS + PHOTO ── */}
               {/* AllTrails stats */}
               {menuMarker.item.source === 'algolia' && menuMarker.item.lengthKm && (
@@ -1925,6 +1894,37 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                         });
                         setShowMarkerMenu(false);
                       }} />
+                    <MarkerAction icon="🅿️" label="Parking" color="#60a5fa" bg="rgba(96,165,250,0.2)"
+                      onPress={async () => {
+                        const cs = steps[selectedIndex];
+                        if (!cs) { Alert.alert('Aucune étape sélectionnée', 'Sélectionne d\'abord une étape.'); setShowMarkerMenu(false); return; }
+                        const stepActivities = psActivities.filter(a => a.stepId === cs.id);
+                        if (stepActivities.length === 0) {
+                          Alert.alert('Aucune activité', 'Crée d\'abord une activité dans cette étape.'); setShowMarkerMenu(false); return;
+                        }
+                        const parkingStr = menuMarker.item.address || menuMarker.item.description || menuMarker.item.name;
+                        const itemLat = parseFloat(menuMarker.item.latitude);
+                        const itemLng = parseFloat(menuMarker.item.longitude);
+                        const parkingData = {
+                          parkingAddress: parkingStr,
+                          parkingLatitude: isNaN(itemLat) ? null : itemLat,
+                          parkingLongitude: isNaN(itemLng) ? null : itemLng,
+                        };
+                        if (stepActivities.length === 1) {
+                          await localUpdateActivity(stepActivities[0].id, parkingData);
+                          setShowMarkerMenu(false); setRefreshCounter(c => c + 1);
+                        } else {
+                          Alert.alert('Associer à quelle activité ?', null,
+                            stepActivities.map(act => ({
+                              text: act.name,
+                              onPress: async () => {
+                                await localUpdateActivity(act.id, parkingData);
+                                setShowMarkerMenu(false); setRefreshCounter(c => c + 1);
+                              },
+                            })).concat({ text: 'Annuler', style: 'cancel' })
+                          );
+                        }
+                      }} />
                   </View>
                 </>
               )}
@@ -1967,6 +1967,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                   </View>
                 </>
               )}
+              </ScrollView>
             </Pressable>
           </Pressable>
         )}
@@ -2458,44 +2459,9 @@ const styles = StyleSheet.create({
   },
   ovBtnIcon: { fontSize: 16 },
 
-  // Step navigator (au-dessus du volet)
-  stepNav: {
-    position: 'absolute',
-    bottom: CAROUSEL_BOTTOM + 8,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    zIndex: 15,
-  },
-  stepNavBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(26,26,38,0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  stepNavBtnText: {
-    fontSize: 14,
-    color: '#fff',
-  },
-  stepNavCounter: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
-    backgroundColor: 'rgba(26,26,38,0.8)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    overflow: 'hidden',
-  },
+  // ─── (satToggle supprimé, utilise ovBtn) ─────────────────────────────
+
+  // ─── (stepNav supprimé) ──────────────────────────────────────────────
 
   // Map markers
   marker: {
@@ -2640,6 +2606,24 @@ const styles = StyleSheet.create({
   },
   activityMarkerText: { fontSize: 20 },
 
+  // Parking marker
+  parkingMarker: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(96, 165, 250, 0.9)',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  parkingMarkerText: { fontSize: 16 },
+
   // Bottom sheet
   sheet: {
     position: 'absolute',
@@ -2747,13 +2731,7 @@ const styles = StyleSheet.create({
   travelCol: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 8, minWidth: 48 },
   travelTime: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.7)' },
   travelDist: { fontSize: 10, color: 'rgba(255,255,255,0.3)' },
-  stepDetailBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center', justifyContent: 'center',
-    marginLeft: 8,
-  },
-  stepDetailBtnText: { fontSize: 14 },
+
 
   // Detail modal
   detailContainer: { flex: 1, backgroundColor: '#1a1a26' },
@@ -2939,10 +2917,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: SPACING.md,
     paddingTop: SPACING.lg,
-    maxHeight: '75%',
+    maxHeight: '70%',
     borderTopWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
-    overflow: 'hidden',
     elevation: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
@@ -3207,23 +3184,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   markerGridItem: {
-    width: '30%',
+    width: '22%',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   markerGridIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   markerGridIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   markerGridLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
   },

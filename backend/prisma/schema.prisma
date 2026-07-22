@@ -3,9 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
@@ -165,6 +166,9 @@ model Activity {
   location   String?
   latitude   Float?
   longitude  Float?
+  parkingAddress String?
+  parkingLatitude  Float?
+  parkingLongitude Float?
   isDeparture   Boolean       @default(false)
   isArrival     Boolean       @default(false)
   startTime  DateTime?

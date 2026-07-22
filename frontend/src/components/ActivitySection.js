@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput, Modal,
   ScrollView, Alert, StyleSheet, Pressable, Keyboard, Platform,
-  Image, ActivityIndicator, Linking,
+  Image, ActivityIndicator, Linking, FlatList,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -186,6 +186,9 @@ const EMPTY_FORM = {
   location: '',
   latitude: null,
   longitude: null,
+  parkingAddress: '',
+  parkingLatitude: null,
+  parkingLongitude: null,
   startTime: '',
   endTime: '',
   bookingRef: '',
@@ -224,6 +227,11 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEditId, activities?.length]);
+  const [parkingSuggestions, setParkingSuggestions] = useState([]);
+  const [parkingLoading, setParkingLoading] = useState(false);
+  const [parkingShowDropdown, setParkingShowDropdown] = useState(false);
+  const parkingTimeoutRef = useRef(null);
+
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [dtPickerVisible, setDtPickerVisible] = useState(false);
   const [dtPickerTarget, setDtPickerTarget] = useState(null); // 'start' | 'end'
@@ -296,6 +304,9 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
       location: a.location ?? '',
       latitude: a.latitude ?? null,
       longitude: a.longitude ?? null,
+      parkingAddress: a.parkingAddress ?? '',
+      parkingLatitude: a.parkingLatitude ?? null,
+      parkingLongitude: a.parkingLongitude ?? null,
       startTime: a.startTime || stepStartDate || '',
       endTime: a.endTime || stepEndDate || '',
       bookingRef: a.bookingRef ?? '',
@@ -332,6 +343,9 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
         location: form.location.trim() || null,
         latitude: form.latitude ?? null,
         longitude: form.longitude ?? null,
+        parkingAddress: form.parkingAddress.trim() || null,
+        parkingLatitude: form.parkingLatitude ?? null,
+        parkingLongitude: form.parkingLongitude ?? null,
         startTime: form.startTime.trim() || null,
         endTime: form.endTime.trim() || null,
         bookingRef: form.bookingRef.trim() || null,
@@ -401,6 +415,11 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
                     {activity.location && activity.location !== activity.name ? (
                       <Text style={styles.rowSub} numberOfLines={1}>
                         📍 {activity.location}
+                      </Text>
+                    ) : null}
+                    {activity.parkingAddress ? (
+                      <Text style={styles.rowSub} numberOfLines={1}>
+                        🅿️ {activity.parkingAddress}
                       </Text>
                     ) : null}
                   </View>
@@ -648,6 +667,97 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
               initialValue={form.location}
               onSelect={({ location, latitude, longitude }) => setForm((f) => ({ ...f, location, latitude: latitude ?? null, longitude: longitude ?? null }))}
             />
+
+            {/* Parking (facultatif) avec autocomplétion */}
+            <View style={{ marginBottom: SPACING.md, zIndex: 50 }}>
+              <Text style={styles.label}>Parking (facultatif)</Text>
+              <View style={{ position: 'relative' }}>
+                <TextInput
+                  style={[styles.input, { paddingRight: 44 }]}
+                  value={form.parkingAddress}
+                  onChangeText={(text) => {
+                    setForm((f) => ({ ...f, parkingAddress: text }));
+                    if (parkingTimeoutRef.current) clearTimeout(parkingTimeoutRef.current);
+                    if (!text || text.length < 2) { setParkingSuggestions([]); return; }
+                    parkingTimeoutRef.current = setTimeout(async () => {
+                      setParkingLoading(true);
+                      try {
+                        const token = useAuthStore.getState().token;
+                        const res = await fetch(`${API_URL}/api/places/autocomplete?input=${encodeURIComponent(text)}&language=fr`, {
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        const data = await res.json();
+                        const raw = Array.isArray(data) ? data : data.predictions || [];
+                        setParkingSuggestions(raw.map(p => ({
+                          placeId: p.place_id || p.placeId,
+                          description: p.description || p.mainText || '',
+                          mainText: p.main_text || '',
+                        })));
+                        setParkingShowDropdown(true);
+                      } catch { setParkingSuggestions([]); }
+                      finally { setParkingLoading(false); }
+                    }, 300);
+                  }}
+                  placeholder="Adresse du parking…"
+                  placeholderTextColor={COLORS.textDim}
+                />
+                {parkingLoading && (
+                  <ActivityIndicator size="small" color={COLORS.accent} style={{ position: 'absolute', right: 12, top: 0, bottom: 0 }} />
+                )}
+                {form.parkingAddress && !parkingLoading ? (
+                  <TouchableOpacity
+                    onPress={() => { setForm((f) => ({ ...f, parkingAddress: '' })); setParkingSuggestions([]); }}
+                    style={{
+                      position: 'absolute', right: 0, top: 0, bottom: 0,
+                      width: 44, alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: COLORS.textDim, fontSize: 16 }}>✕</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {parkingShowDropdown && parkingSuggestions.length > 0 && (
+                <View style={{
+                  backgroundColor: COLORS.surfaceElevated, borderRadius: RADIUS.md,
+                  borderWidth: 1, borderColor: COLORS.border, marginTop: 4,
+                  maxHeight: 200, overflow: 'hidden',
+                }}>
+                  <FlatList
+                    data={parkingSuggestions}
+                    keyExtractor={(item, i) => `${item.placeId || i}`}
+                    scrollEnabled={parkingSuggestions.length > 4}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={{ paddingVertical: 12, paddingHorizontal: SPACING.md }}
+                        onPress={async () => {
+                          const addr = item.description || item.mainText || '';
+                          let lat = null, lng = null;
+                          if (item.placeId) {
+                            try {
+                              const token = useAuthStore.getState().token;
+                              const res = await fetch(`${API_URL}/api/places/${encodeURIComponent(item.placeId)}?language=fr`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                              });
+                              const data = await res.json();
+                              lat = data.lat ?? null;
+                              lng = data.lng ?? null;
+                            } catch {}
+                          }
+                          setForm((f) => ({ ...f, parkingAddress: addr, parkingLatitude: lat, parkingLongitude: lng }));
+                          setParkingShowDropdown(false);
+                          setParkingSuggestions([]);
+                          Keyboard.dismiss();
+                        }}
+                      >
+                        <Text style={{ color: COLORS.text, fontSize: 15, fontWeight: '500' }} numberOfLines={1}>
+                          {item.mainText || item.description}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              )}
+            </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}

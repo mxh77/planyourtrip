@@ -27,6 +27,8 @@
     "nodemailer": "^8.0.2",
     "openai": "^6.46.0",
     "pdf-parse": "^2.4.5",
+    "puppeteer": "^24.43.1",
+    "sharp": "^0.35.3",
     "socket.io": "^4.8.3",
     "uuid": "^14.0.1",
     "zod": "^4.4.3"

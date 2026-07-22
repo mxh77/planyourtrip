@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
 
 // POST /api/activities — écriture : EDITOR+
 router.post('/', async (req, res) => {
-  const { stepId, type, name, location, latitude, longitude, startTime, endTime, bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, order } = req.body;
+  const { stepId, type, name, location, latitude, longitude, parkingAddress, parkingLatitude, parkingLongitude, startTime, endTime, bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, order } = req.body;
 
   if (!stepId || !name) {
     return res.status(400).json({ error: 'stepId and name are required' });
@@ -66,6 +66,9 @@ router.post('/', async (req, res) => {
       location: location || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
+      parkingAddress: parkingAddress || null,
+      parkingLatitude: parkingLatitude ?? null,
+      parkingLongitude: parkingLongitude ?? null,
       startTime: startTime ? toUTCDate(startTime) : null,
       endTime: endTime ? toUTCDate(endTime) : null,
       bookingRef: bookingRef || null,
@@ -86,7 +89,7 @@ router.post('/', async (req, res) => {
 
 // PUT /api/activities/:id — upsert (EDITOR+, ID généré côté client)
 router.put('/:id', async (req, res) => {
-  const { stepId, type, name, location, latitude, longitude, isDeparture, isArrival, startTime, endTime, bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, order } = req.body;
+  const { stepId, type, name, location, latitude, longitude, parkingAddress, parkingLatitude, parkingLongitude, isDeparture, isArrival, startTime, endTime, bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, order } = req.body;
 
   if (!stepId) return res.status(400).json({ error: 'stepId is required' });
 
@@ -108,6 +111,9 @@ router.put('/:id', async (req, res) => {
       location: location || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
+      parkingAddress: parkingAddress || null,
+      parkingLatitude: parkingLatitude ?? null,
+      parkingLongitude: parkingLongitude ?? null,
       isDeparture: !!isDeparture ?? false,
       isArrival: !!isArrival ?? false,
       startTime: startTime ? toUTCDate(startTime) : null,
@@ -127,6 +133,9 @@ router.put('/:id', async (req, res) => {
       ...(location !== undefined && { location }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
+      ...(parkingAddress !== undefined && { parkingAddress }),
+      ...(parkingLatitude !== undefined && { parkingLatitude }),
+      ...(parkingLongitude !== undefined && { parkingLongitude }),
       ...(isDeparture !== undefined && { isDeparture: !!isDeparture }),
       ...(isArrival !== undefined && { isArrival: !!isArrival }),
       ...(startTime !== undefined && { startTime: startTime ? toUTCDate(startTime) : null }),
@@ -160,7 +169,7 @@ router.patch('/:id', async (req, res) => {
   if (!role) return res.status(403).json({ error: 'Access denied' });
   if (role === 'VIEWER') return res.status(403).json({ error: 'Role EDITOR required' });
 
-  const { type, name, location, latitude, longitude, isDeparture, isArrival, startTime, endTime, bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, order } = req.body;
+  const { type, name, location, latitude, longitude, parkingAddress, parkingLatitude, parkingLongitude, isDeparture, isArrival, startTime, endTime, bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, order } = req.body;
 
   const updated = await prisma.activity.update({
     where: { id: req.params.id },
@@ -170,6 +179,9 @@ router.patch('/:id', async (req, res) => {
       ...(location !== undefined && { location }),
       ...(latitude !== undefined && { latitude }),
       ...(longitude !== undefined && { longitude }),
+      ...(parkingAddress !== undefined && { parkingAddress }),
+      ...(parkingLatitude !== undefined && { parkingLatitude }),
+      ...(parkingLongitude !== undefined && { parkingLongitude }),
       ...(isDeparture !== undefined && { isDeparture: !!isDeparture }),
       ...(isArrival !== undefined && { isArrival: !!isArrival }),
       ...(startTime !== undefined && { startTime: startTime ? toUTCDate(startTime) : null }),

@@ -43,6 +43,19 @@ function durationDays(start, end) {
   return d > 0 ? d : 0;
 }
 
+function formatTime(t) {
+  if (!t) return null;
+  if (typeof t === 'string') {
+    const hhmm = t.match(/^(\d{2}:\d{2})/);
+    if (hhmm?.[1]) return hhmm[1];
+  }
+  const parsed = new Date(t);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  return null;
+}
+
 /**
  * StepCarousel — bandeau horizontal d'étapes défilable en bas de l'écran.
  * Met à jour la carte au scroll via onScrollIndexChange.
@@ -51,14 +64,12 @@ function durationDays(start, end) {
  * Props :
  *   steps               — tableau des étapes transformées
  *   selectedIndex       — index actuellement sélectionné (-1 = vue globale)
- *   onSelectStep        — callback(index) au tap sur une carte
- *   onEditStep          — callback(index) pour ouvrir l'édition de l'étape
+ *   onEditStep          — callback(index) au tap sur une carte (ouvre l'édition)
  *   onScrollIndexChange — callback(index) déclenché quand une carte se centre au scroll
  */
 export default function StepCarousel({
   steps,
   selectedIndex,
-  onSelectStep,
   onEditStep,
   onScrollIndexChange,
 }) {
@@ -212,7 +223,7 @@ export default function StepCarousel({
                 isActive && !hasPhoto && styles.cardActive,
               ]}
               onPress={() => {
-                if (onSelectStep) onSelectStep(index);
+                if (onEditStep) onEditStep(index);
               }}
               activeOpacity={0.8}
             >
@@ -230,34 +241,35 @@ export default function StepCarousel({
                 >
                   {step.name || `Étape ${index + 1}`}
                 </Text>
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => { if (onEditStep) onEditStep(index); }}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Text style={styles.editBtnText}>✎</Text>
-                </TouchableOpacity>
+                {/* Bouton supprimé — le clic sur la carte ouvre l'édition */}
               </View>
 
               {/* Espace vide au milieu = la photo respire */}
               <View style={{ flex: 1 }} />
 
-              {/* Barre inférieure : date à gauche · nuits à droite */}
+              {/* Barre inférieure : date + heures sur une ligne */}
               <View style={styles.bottomBar}>
                 {step.startDate ? (
-                  <Text style={styles.bottomDate} numberOfLines={1}>
-                    📅 {formatDayMonth(step.startDate)}
-                    {step.endDate ? ` → ${formatDayMonth(step.endDate)}` : ''}
-                  </Text>
-                ) : (
-                  <Text style={styles.bottomDate}>📅 Date libre</Text>
-                )}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <Text style={styles.bottomDate} numberOfLines={1}>
+                      📅 {formatDayMonth(step.startDate)}
+                      {step.arrivalTime ? ` ${formatTime(step.arrivalTime)}` : ''}
+                      {step.endDate ? ` → ${formatDayMonth(step.endDate)}` : ''}
+                      {step.departureTime && !step.endDate ? ` → ${formatTime(step.departureTime)}` : ''}
+                      {step.endDate && step.departureTime ? ` ${formatTime(step.departureTime)}` : ''}
+                    </Text>
 
-                {nights > 0 ? (
-                  <Text style={styles.bottomNights}>🌙 {nights}n</Text>
-                ) : isFirst ? (
-                  <Text style={styles.bottomStart}>🏁 Départ</Text>
-                ) : null}
+                    {nights > 0 ? (
+                      <Text style={styles.bottomNights}>🌙 {nights}n</Text>
+                    ) : isFirst ? (
+                      <Text style={styles.bottomStart}>🏁 Départ</Text>
+                    ) : null}
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <Text style={styles.bottomDate}>📅 Date libre</Text>
+                  </View>
+                )}
               </View>
 
               {/* Glow actif (positionné dans la carte) */}
@@ -431,11 +443,10 @@ const styles = StyleSheet.create({
     color: '#f59e0b',
   },
 
-  // ─── Barre inférieure (date à gauche · nuits à droite) ──────────────
+  // ─── Barre inférieure (dates + heures sur une ligne) ──────────────
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -458,7 +469,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-
   activeGlow: {
     position: 'absolute',
     top: 0,
@@ -471,19 +481,7 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   cardWrapper: {},
-  editBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 2,
-  },
-  editBtnText: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
-  },
+
 
   // ─── Connecteur de trajet entre les cartes ──────────────────────────
   connectorWrapper: {

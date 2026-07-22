@@ -96,31 +96,32 @@ export async function localDeleteStep(id) {
 // ─── Activities ───────────────────────────────────────────────────────────────
 
 export async function localCreateActivity({
-  stepId, roadtripId, type, name, location, latitude, longitude, startTime, endTime,
+  stepId, roadtripId, type, name, location, latitude, longitude, parkingAddress, parkingLatitude, parkingLongitude, startTime, endTime,
   bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, order,
 }, userId) {
   const id = generateId();
   const createdAt = now();
   await db.execute(
-    `INSERT INTO activities (id, stepId, roadtripId, userId, type, name, location, latitude, longitude, startTime, endTime,
+    `INSERT INTO activities (id, stepId, roadtripId, userId, type, name, location, latitude, longitude, parkingAddress, parkingLatitude, parkingLongitude, startTime, endTime,
       bookingRef, bookingUrl, cost, depositPaid, currency, notes, status, "order", createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, stepId, roadtripId ?? null, userId, type ?? 'OTHER', name, location ?? null,
-     latitude ?? null, longitude ?? null,
+     latitude ?? null, longitude ?? null, parkingAddress ?? null, parkingLatitude ?? null, parkingLongitude ?? null,
      startTime ?? null, endTime ?? null, bookingRef ?? null, bookingUrl ?? null,
      cost ?? null, depositPaid ?? null, currency ?? 'EUR', notes ?? null, status ?? 'PLANNED',
      order ?? 0, createdAt, createdAt]
   );
   return {
     id, stepId, roadtripId: roadtripId ?? null, userId, type: type ?? 'OTHER', name, location,
-    latitude: latitude ?? null, longitude: longitude ?? null,
+    latitude: latitude ?? null, longitude: longitude ?? null, parkingAddress: parkingAddress ?? null,
+    parkingLatitude: parkingLatitude ?? null, parkingLongitude: parkingLongitude ?? null,
     startTime, endTime, bookingRef, bookingUrl, cost, depositPaid, currency: currency ?? 'EUR',
     notes, status: status ?? 'PLANNED', order: order ?? 0, createdAt, updatedAt: createdAt,
   };
 }
 
 export async function localUpdateActivity(id, data) {
-  const allowed = ['type', 'name', 'location', 'latitude', 'longitude', 'isDeparture', 'isArrival', 'startTime', 'endTime', 'bookingRef', 'bookingUrl', 'cost', 'depositPaid', 'currency', 'notes', 'status', 'order'];
+  const allowed = ['type', 'name', 'location', 'latitude', 'longitude', 'parkingAddress', 'parkingLatitude', 'parkingLongitude', 'isDeparture', 'isArrival', 'startTime', 'endTime', 'bookingRef', 'bookingUrl', 'cost', 'depositPaid', 'currency', 'notes', 'status', 'order'];
   const fields = [];
   const values = [];
   for (const key of allowed) {
