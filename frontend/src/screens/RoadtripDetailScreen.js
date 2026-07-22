@@ -683,7 +683,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         if (isDep) currFlags[`dep:${item.stepId}:${item.id}`] = true;
         if (isArr) currFlags[`arr:${item.stepId}:${item.id}`] = true;
       });
-
       // Si le cache des polylines n'est pas encore rempli, attendre (loadPolylines async pas fini)
       if (polylinesRef.current.length === 0) {
         log('DIRECTIONS', '[WAIT] Cache polylines vide, on attend loadPolylines');
@@ -697,10 +696,8 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       // Vérifier s'il y a des flags actifs en base (besoin de recalcul au premier chargement uniquement)
       const hasActiveFlags = lastDepArrKeyRef.current === null && Object.keys(currFlags).length > 0;
       const shouldProcess = needsRefresh || needsFlagRecalc || hasOverride || hasActiveFlags;
-
       // 🎯 GARDE : skip si tout va bien, SAUF si besoin de recalcul
       if (!shouldProcess && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
-        log('DIRECTIONS', '[SKIP] Polylines OK, pas de flags à appliquer');
         directionsCalculatedRef.current = true;
         lastDepArrKeyRef.current = psDepArrKey;
         lastDepArrKeysRef.current = currFlags;
@@ -709,7 +706,6 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
       // 🎯 GARDE 2 : directions déjà calculées et rien à traiter
       if (directionsCalculatedRef.current && !shouldProcess) {
-        console.log('[Directions] ✓ Directions déjà calculées, skip');
         if (polylinesRef.current.length > 0) {
           setRoutes(polylinesRef.current);
         }
@@ -809,7 +805,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
       if (routesNeedingRecalc.length === 0) {
         log('DIRECTIONS', '✓ Toutes les routes OK (polyline + distance > 0)');
-        if (!needsRefresh && polylinesRef.current.length > 0) {
+        if (!needsRefresh && !needsFlagRecalc && !hasOverride && !hasActiveFlags && polylinesRef.current.length > 0) {
           setRoutes(polylinesRef.current);
         } else {
           setRoutes(newRoutes);
@@ -888,9 +884,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
           console.log('[Directions] ✓', apiSuccessCount, 'routes calculées via API');
         }
         console.log('[Directions] Final:', newRoutes.length, 'routes, à sauvegarder:', Object.keys(polylinesToSave).length);
-        // 🎯 Ne jamais écraser les polylines du premier useEffect sauf si refresh explicite ou flag changé
-        if (!needsRefresh && !needsFlagRecalc && polylinesRef.current.length > 0) {
-          console.log('[Directions] ✓ Polylines protégées, on garde celles du premier useEffect');
+        // 🎯 Ne jamais écraser les polylines du premier useEffect sauf si refresh explicite ou flag changé ou override actif
+        const hasAnyChanges = needsRefresh || needsFlagRecalc || hasOverride || hasActiveFlags;
+        if (!hasAnyChanges && polylinesRef.current.length > 0) {
           setRoutes(polylinesRef.current);
         } else {
           polylinesRef.current = newRoutes;
@@ -1503,14 +1499,15 @@ export default function RoadtripDetailScreen({ route, navigation }) {
 
             {/* Marqueurs Parking — reliés en pointillé à leur activité */}
             {selectedIndex >= 0 && psActivities
-              .filter(a => a.parkingAddress && a.latitude && a.longitude)
+              .filter(a => a.parkingAddress)
               .map(activity => {
-                const hasCoords = activity.parkingLatitude && activity.parkingLongitude;
-                const parkLat = hasCoords ? activity.parkingLatitude : parseFloat(activity.latitude) + 0.001;
-                const parkLng = hasCoords ? activity.parkingLongitude : parseFloat(activity.longitude) + 0.001;
+                const hasActCoords = activity.latitude && activity.longitude;
+                const hasParkCoords = activity.parkingLatitude && activity.parkingLongitude;
+                const parkLat = hasParkCoords ? activity.parkingLatitude : (hasActCoords ? parseFloat(activity.latitude) + 0.001 : 0);
+                const parkLng = hasParkCoords ? activity.parkingLongitude : (hasActCoords ? parseFloat(activity.longitude) + 0.001 : 0);
                 return (
                   <React.Fragment key={`parking-${activity.id}`}>
-                    {hasCoords && (
+                    {hasParkCoords && hasActCoords && (
                       <Polyline
                         coordinates={[
                           { latitude: parkLat, longitude: parkLng },
@@ -1521,14 +1518,16 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                         lineDashPattern={[4, 6]}
                       />
                     )}
-                    <Marker
-                      coordinate={{ latitude: parkLat, longitude: parkLng }}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                      <View style={styles.parkingMarker}>
-                        <Text style={styles.parkingMarkerText}>🅿️</Text>
-                      </View>
-                    </Marker>
+                    {parkLat !== 0 && parkLng !== 0 && (
+                      <Marker
+                        coordinate={{ latitude: parkLat, longitude: parkLng }}
+                        anchor={{ x: 0.5, y: 0.5 }}
+                      >
+                        <View style={styles.parkingMarker}>
+                          <Text style={styles.parkingMarkerText}>🅿️</Text>
+                        </View>
+                      </Marker>
+                    )}
                   </React.Fragment>
                 );
               })}
@@ -1902,9 +1901,14 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                         if (stepActivities.length === 0) {
                           Alert.alert('Aucune activité', 'Crée d\'abord une activité dans cette étape.'); setShowMarkerMenu(false); return;
                         }
-                        const parkingStr = menuMarker.item.address || menuMarker.item.description || menuMarker.item.name;
+                        // L'adresse P4N peut être un objet {street, zipcode, city, country} → la convertir en string
+                        const rawAddr = menuMarker.item.address;
+                        const parkingStr = typeof rawAddr === 'object' && rawAddr !== null
+                          ? [rawAddr.street, rawAddr.zipcode, rawAddr.city, rawAddr.country].filter(Boolean).join(', ')
+                          : (rawAddr || menuMarker.item.description || menuMarker.item.name);
                         const itemLat = parseFloat(menuMarker.item.latitude);
                         const itemLng = parseFloat(menuMarker.item.longitude);
+                        console.log('[Parking] Sauvegarde parking for activity:', stepActivities[0]?.name, 'parkingStr:', parkingStr, 'lat:', itemLat, 'lng:', itemLng, 'item:', menuMarker.item?.source, menuMarker.item?.id);
                         const parkingData = {
                           parkingAddress: parkingStr,
                           parkingLatitude: isNaN(itemLat) ? null : itemLat,
@@ -1945,9 +1949,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                         const idx = steps.findIndex(s => s.id === menuMarker.stepId);
                         if (idx <= 0) { Alert.alert('Aucune étape précédente', ''); setShowMarkerMenu(false); return; }
                         const id2 = menuMarker.item.id;
-                        for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== id2)) await localUpdateAccommodation(a.id, { isArrival: false });
+                        // Déflaguer les anciens items ET ajouter override mémoire pour éviter
+                        // que getStepArrival ne lise des données PowerSync stales
+                        for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== id2)) {
+                          _depArrOverride.current[a.id] = { ..._depArrOverride.current[a.id], isArrival: false };
+                          await localUpdateAccommodation(a.id, { isArrival: false });
+                        }
                         const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== id2);
-                        for (const a of otherActs) await localUpdateActivity(a.id, { isArrival: false });
+                        for (const a of otherActs) {
+                          _depArrOverride.current[a.id] = { ..._depArrOverride.current[a.id], isArrival: false };
+                          await localUpdateActivity(a.id, { isArrival: false });
+                        }
                         const fn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
                         _depArrOverride.current[id2] = { ..._depArrOverride.current[id2], isArrival: true };
                         await fn(id2, { isArrival: true }); setShowMarkerMenu(false); setRefreshCounter(c => c + 1);
@@ -1957,9 +1969,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                         const idx = steps.findIndex(s => s.id === menuMarker.stepId);
                         if (idx < 0 || idx >= steps.length - 1) { Alert.alert('Aucune étape suivante', ''); setShowMarkerMenu(false); return; }
                         const id2 = menuMarker.item.id;
-                        for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== id2)) await localUpdateAccommodation(a.id, { isDeparture: false });
+                        // Déflaguer les anciens items ET ajouter override mémoire pour éviter
+                        // que getStepDeparture ne lise des données PowerSync stales
+                        for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== id2)) {
+                          _depArrOverride.current[a.id] = { ..._depArrOverride.current[a.id], isDeparture: false };
+                          await localUpdateAccommodation(a.id, { isDeparture: false });
+                        }
                         const otherActs = psActivities.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== id2);
-                        for (const a of otherActs) await localUpdateActivity(a.id, { isDeparture: false });
+                        for (const a of otherActs) {
+                          _depArrOverride.current[a.id] = { ..._depArrOverride.current[a.id], isDeparture: false };
+                          await localUpdateActivity(a.id, { isDeparture: false });
+                        }
                         const fn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
                         _depArrOverride.current[id2] = { ..._depArrOverride.current[id2], isDeparture: true };
                         await fn(id2, { isDeparture: true }); setShowMarkerMenu(false); setRefreshCounter(c => c + 1);

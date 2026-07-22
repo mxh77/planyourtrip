@@ -151,22 +151,61 @@ function simplifyPolyline(encoded, targetChars) {
 }
 
 /**
- * Génère l'URL Google Maps Static pour une étape
+ * Trouve le point de départ effectif pour une étape :
+ * item avec isDeparture, puis departureLatitude, puis l'étape elle-même
+ */
+function getEffectiveDeparture(step) {
+  if (!step) return null;
+  const items = [...(step.accommodations || []), ...(step.activities || [])];
+  const depItem = items.find(item => item.isDeparture && item.latitude && item.longitude);
+  if (depItem) return { lat: depItem.latitude, lng: depItem.longitude };
+  if (step.departureLatitude && step.departureLongitude) return { lat: step.departureLatitude, lng: step.departureLongitude };
+  if (step.latitude && step.longitude) return { lat: step.latitude, lng: step.longitude };
+  return null;
+}
+
+/**
+ * Trouve le point d'arrivée effectif pour une étape :
+ * item avec isArrival, puis arrivalLatitude, puis l'étape elle-même
+ */
+function getEffectiveArrival(step) {
+  if (!step) return null;
+  const items = [...(step.accommodations || []), ...(step.activities || [])];
+  const arrItem = items.find(item => item.isArrival && item.latitude && item.longitude);
+  if (arrItem) return { lat: arrItem.latitude, lng: arrItem.longitude };
+  if (step.arrivalLatitude && step.arrivalLongitude) return { lat: step.arrivalLatitude, lng: step.arrivalLongitude };
+  if (step.latitude && step.longitude) return { lat: step.latitude, lng: step.longitude };
+  return null;
+}
+
+/**
+ * Génère l'URL Google Maps Static pour une étape du roadbook.
+ *
+ * Logique de tracé :
+ * - Départ  → point de départ EFFECTIF de l'étape PRÉCÉDENTE
+ *              (item isDeparture de prevStep, ou prevStep.departureLatitude, ou prevStep lui-même)
+ * - Arrivée → point d'arrivée EFFECTIF de l'étape COURANTE
+ *              (item isArrival de step, ou step.arrivalLatitude, ou step lui-même)
+ * - Polyline → routeEncodedPolyline de l'étape PRÉCÉDENTE
+ *              (stockée sur prevStep = route FROM prevStep TO step)
+ *
  * @param {object} step - L'étape courante
- * @param {object|null} prevStep - L'étape précédente (pour le départ si manquant)
- * @param {object|null} nextStep - L'étape suivante (pour l'arrivée : la polyline va du departure vers l'étape suivante)
+ * @param {object|null} prevStep - L'étape précédente
+ * @param {object|null} nextStep - Non utilisé (conservé pour signature)
  */
 function buildStepMapUrl(step, prevStep, nextStep) {
   if (!step.latitude && !step.longitude) return '';
   const key = process.env.GOOGLE_MAPS_API_KEY || '';
 
-  // Départ : departureLatitude de l'étape (point de départ réel de la polyline)
-  const depLat = step.departureLatitude || prevStep?.latitude || step.latitude || null;
-  const depLng = step.departureLongitude || prevStep?.longitude || step.longitude || null;
+  // ── Départ : item isDeparture de l'étape précédente, ou prevStep lui-même ──
+  const dep = getEffectiveDeparture(prevStep);
+  const depLat = dep?.lat ?? step.departureLatitude ?? step.latitude ?? null;
+  const depLng = dep?.lng ?? step.departureLongitude ?? step.longitude ?? null;
 
-  // Arrivée : l'étape suivante (la polyline va du departure vers l'étape suivante)
-  const arrLat = nextStep?.latitude || step.latitude;
-  const arrLng = nextStep?.longitude || step.longitude;
+  // ── Arrivée : item isArrival de l'étape courante, ou l'étape elle-même ──
+  const arr = getEffectiveArrival(step);
+  const arrLat = arr?.lat ?? step.latitude ?? null;
+  const arrLng = arr?.lng ?? step.longitude ?? null;
 
   const markers = [];
   if (depLat && depLng) {
@@ -174,11 +213,12 @@ function buildStepMapUrl(step, prevStep, nextStep) {
   }
   markers.push(`color:red|label:A|${arrLat},${arrLng}`);
 
-  // Polyline encodée du trajet (simplifiée si trop longue)
+  // ── Polyline : celle de l'étape PRÉCÉDENTE (route FROM prevStep TO step) ──
   let pathParam = '';
-  if (step.routeEncodedPolyline) {
-    const simplified = simplifyPolyline(step.routeEncodedPolyline, 6000);
-    pathParam = `&path=color:0xEA4335|weight:3|enc:${encodeURIComponent(simplified)}`;
+  const sourcePolyline = prevStep?.routeEncodedPolyline || step.routeEncodedPolyline;
+  if (sourcePolyline) {
+    const simplified = simplifyPolyline(sourcePolyline, 6000);
+    pathParam = `&path=color:red|weight:4|enc:${encodeURIComponent(simplified)}`;
   }
 
   // visible= pour que départ ET arrivée soient visibles
@@ -211,7 +251,7 @@ function buildOverviewMapUrl(coords) {
   return `https://maps.googleapis.com/maps/api/staticmap` +
     `?center=${center}` +
     `&zoom=${zoom}&size=700x300&scale=2&maptype=roadmap` +
-    `&path=color:0xEA4335|weight:3|${pathCoords}` +
+    `&path=color:red|weight:4|${pathCoords}` +
     markers +
     `&key=${key}`;
 }

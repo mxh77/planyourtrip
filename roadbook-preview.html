@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Roadbook — Europe 2026</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #1a202c;
+    line-height: 1.6;
+    background: #f7fafc;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ═══ COVER PAGE ═══ */
+  .cover-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 40px 50px;
+    position: relative;
+  }
+
+  .cover-page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.1) 100%);
+  }
+
+  .cover-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .cover-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+  .cover-subtitle {
+    font-size: 20px;
+    font-weight: 300;
+    opacity: 0.9;
+    margin-bottom: 30px;
+  }
+
+  .cover-dates {
+    font-size: 16px;
+    opacity: 0.8;
+    font-weight: 300;
+  }
+
+  .cover-divider {
+    width: 60px;
+    height: 3px;
+    background: white;
+    margin: 15px 0;
+    border-radius: 2px;
+  }
+
+  .cover-footer {
+    margin-top: 40px;
+    font-size: 13px;
+    opacity: 0.6;
+  }
+
+  /* ═══ OVERVIEW PAGE ═══ */
+  .overview-page {
+    padding: 40px 50px;
+    background: white;
+  }
+
+  .page-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 32px;
+    color: #1a365d;
+    margin-bottom: 5px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 30px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 35px;
+  }
+
+  .stat-card {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+  }
+
+  .stat-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2d3748;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .overview-map-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+    background: #f0f0f0;
+  }
+
+  .overview-map-container img {
+    width: 100%;
+    display: block;
+  }
+
+  .map-placeholder {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #718096;
+    font-size: 14px;
+  }
+
+  .itineraire-list {
+    list-style: none;
+  }
+
+  .itineraire-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .itineraire-item:last-child { border-bottom: none; }
+
+  .itineraire-day {
+    width: 40px;
+    height: 40px;
+    background: #1a365d;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    margin-right: 15px;
+    flex-shrink: 0;
+  }
+
+  .itineraire-info {
+    flex: 1;
+  }
+
+  .itineraire-name {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .itineraire-meta {
+    font-size: 13px;
+    color: #718096;
+  }
+
+  /* ═══ STEP PAGE ═══ */
+  .step-page {
+    padding: 0;
+    background: white;
+  }
+
+  .step-header {
+    background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+    color: white;
+    padding: 30px 50px;
+  }
+
+  .step-day {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 5px;
+  }
+
+  .step-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .step-location {
+    font-size: 15px;
+    opacity: 0.8;
+    margin-top: 4px;
+  }
+
+  .step-dates {
+    font-size: 13px;
+    opacity: 0.6;
+    margin-top: 6px;
+  }
+
+  .route-info-bar {
+    display: flex;
+    gap: 15px;
+    padding: 12px 50px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .route-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4a5568;
+  }
+
+  .route-icon { font-size: 16px; }
+
+  .map-container {
+    width: 100%;
+    overflow: hidden;
+    background: #f0f0f0;
+  }
+
+  .map-container img {
+    width: 100%;
+    display: block;
+  }
+
+  .step-map {
+    width: 100%;
+    display: block;
+  }
+
+  .overview-map {
+    width: 100%;
+    display: block;
+  }
+
+  .step-details {
+    padding: 25px 50px 40px;
+  }
+
+  .section {
+    margin-bottom: 25px;
+  }
+
+  .section-title {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 18px;
+    color: #1a365d;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .accommodation-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+  }
+
+  .accom-type-badge {
+    font-size: 12px;
+    color: #718096;
+    margin-bottom: 4px;
+  }
+
+  .accom-name {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .accom-address {
+    font-size: 13px;
+    color: #718096;
+    margin-top: 2px;
+  }
+
+  .accom-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #4a5568;
+  }
+
+  .accom-notes {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #718096;
+    font-style: italic;
+    padding: 8px;
+    background: #edf2f7;
+    border-radius: 6px;
+  }
+
+  .activity-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .activity-item:last-child { border-bottom: none; }
+
+  .activity-time {
+    min-width: 80px;
+    font-size: 12px;
+    color: #718096;
+    font-weight: 500;
+    padding-top: 2px;
+  }
+
+  .activity-content { flex: 1; }
+
+  .activity-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .activity-location {
+    font-size: 13px;
+    color: #718096;
+  }
+
+  .activity-notes {
+    font-size: 13px;
+    color: #4a5568;
+    margin-top: 3px;
+  }
+
+  .activity-cost {
+    font-size: 13px;
+    color: #38a169;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .step-notes {
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.7;
+    padding: 12px;
+    background: #fffbeb;
+    border-left: 3px solid #d69e2e;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .step-photos {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .step-photo {
+    width: calc(50% - 5px);
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* ═══ SUMMARY PAGE ═══ */
+  .summary-page {
+    padding: 40px 50px;
+    background: white;
+  }
+
+  .budget-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+
+  .budget-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #1a365d;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .budget-table th:first-child { border-radius: 8px 0 0 0; }
+  .budget-table th:last-child { border-radius: 0 8px 0 0; }
+
+  .budget-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 14px;
+  }
+
+  .budget-table tr:last-child td { border-bottom: none; }
+
+  .budget-total td {
+    font-weight: 700;
+    background: #f7fafc;
+    border-top: 2px solid #1a365d;
+  }
+
+  .members-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .member-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #1a365d;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .footer-note {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 12px;
+    color: #a0aec0;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 20px;
+  }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ═══ COVER ═══ -->
+  <div class="page cover-page" style="background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%)">
+    <div class="cover-content">
+      <div class="cover-badge">Roadbook</div>
+      <h1 class="cover-title">Europe 2026</h1>
+      <div class="cover-subtitle">Par Maxime</div>
+      <div class="cover-divider"></div>
+      <div class="cover-dates">31 juillet 2026 – 24 août 2026</div>
+      <div class="cover-footer">Mon Petit Roadtrip • roadtrip.harmonixe.fr</div>
+    </div>
+  </div>
+
+  <!-- ═══ OVERVIEW ═══ -->
+  <div class="page overview-page">
+    <h2 class="page-title">Vue d'ensemble</h2>
+    <p class="page-subtitle">18 étapes • 3832.5 km • 49h10 de route</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📍</div>
+        <div class="stat-value">18</div>
+        <div class="stat-label">Étapes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🛣️</div>
+        <div class="stat-value">3832.5 km</div>
+        <div class="stat-label">Distance totale</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-value">49h10</div>
+        <div class="stat-label">Temps de route</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-value">12</div>
+        <div class="stat-label">Hébergements</div>
+      </div>
+    </div>
+
+    
+    <div class="overview-map-container">
+      <img src="https://maps.googleapis.com/maps/api/staticmap?center=46.4102117,11.8440351&zoom=5&size=700x300&scale=2&maptype=roadmap&path=color:red|weight:4|48.543237,1.38867|47.09534,5.49081|46.5935058,7.9090981|46.7192366,8.2122009|47.0501682,8.3093072|46.2274803,8.8519657|45.8063817,9.0851867|45.4383659,10.9917136|45.6049385,10.6351414|46.4102117,11.8440351|45.1644434,14.5448533|46.34247269999999,13.7990434|47.2675322,11.3910349|47.557574,10.7498004|47.6779808,9.1736741|48.2660194,7.7220076|49.258329,4.031696|48.543237,1.38867&markers=color:green|label:1|48.543237,1.38867&markers=color:blue|label:2|47.09534,5.49081&markers=color:blue|label:3|46.5935058,7.9090981&markers=color:blue|label:4|46.7192366,8.2122009&markers=color:blue|label:5|47.0501682,8.3093072&markers=color:blue|label:6|46.2274803,8.8519657&markers=color:blue|label:7|45.8063817,9.0851867&markers=color:blue|label:8|45.4383659,10.9917136&markers=color:blue|label:9|45.6049385,10.6351414&markers=color:blue|label:10|46.4102117,11.8440351&markers=color:blue|label:11|45.1644434,14.5448533&markers=color:blue|label:12|46.34247269999999,13.7990434&markers=color:blue|label:13|47.2675322,11.3910349&markers=color:blue|label:14|47.557574,10.7498004&markers=color:blue|label:15|47.6779808,9.1736741&markers=color:blue|label:16|48.2660194,7.7220076&markers=color:blue|label:17|49.258329,4.031696&markers=color:red|label:18|48.543237,1.38867&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte du roadtrip" class="overview-map" />
+    </div>
+    
+
+    <h3 style="font-family:Georgia,'Times New Roman',serif;font-size:18px;color:#1a365d;margin-bottom:12px;">🗺️ Itinéraire</h3>
+    <ul class="itineraire-list">
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">1</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Maison</div>
+          <div class="itineraire-meta">
+            Clévilliers, France
+             • 460.5 km
+             • 4h30
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">2</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Dole du Jura</div>
+          <div class="itineraire-meta">
+            39100 Dole
+             • 262.9 km
+             • 3h39
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">3</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Lauterbrunnen</div>
+          <div class="itineraire-meta">
+            Lauterbrunnen
+             • 36.6 km
+             • 36 min
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">4</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Gorges de l'Aar</div>
+          <div class="itineraire-meta">
+            Gorges de l'Aar, Aareschluchtstrasse, Schattenhalb, Suisse
+             • 66.0 km
+             • 57 min
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">5</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Lucerne, Suisse</div>
+          <div class="itineraire-meta">
+            Lucerne
+             • 183.7 km
+             • 2h40
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">6</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Verzasca</div>
+          <div class="itineraire-meta">
+            Verzasca, Suisse
+             • 89.1 km
+             • 1h39
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">7</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Côme, Italie</div>
+          <div class="itineraire-meta">
+            
+             • 200.8 km
+             • 2h15
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">8</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Vérone</div>
+          <div class="itineraire-meta">
+            Vérone, Italie
+             • 40.3 km
+             • 42 min
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">9</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Lac de Garde</div>
+          <div class="itineraire-meta">
+            Lac de Garde
+             • 181.1 km
+             • 2h32
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">10</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Dolomites</div>
+          <div class="itineraire-meta">
+            Dolomites
+             • 351.4 km
+             • 4h38
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">11</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Ile de Krk</div>
+          <div class="itineraire-meta">
+            Njivice, Croatie
+             • 253.4 km
+             • 3h43
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">12</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Parc national du Triglav</div>
+          <div class="itineraire-meta">
+            Triglav National Park, Bohinjsko jezero, Slovénie
+             • 413.5 km
+             • 5h14
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">13</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Innsbruck</div>
+          <div class="itineraire-meta">
+            Innsbruck, Autriche
+             • 110.9 km
+             • 1h45
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">14</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Château de Neuschwanstein</div>
+          <div class="itineraire-meta">
+            Neuschwanstein Castle, Neuschwansteinstraße, Schwangau, Allemagne
+             • 152.7 km
+             • 2h42
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">15</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Lac de Constance</div>
+          <div class="itineraire-meta">
+            Constance, Allemagne
+             • 160.4 km
+             • 2h12
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">16</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Europa-Park</div>
+          <div class="itineraire-meta">
+            Europa-Park, Europa-Park-Straße, Rust, Allemagne
+             • 406.5 km
+             • 4h13
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">17</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Reims</div>
+          <div class="itineraire-meta">
+            51100 Reims
+             • 253.7 km
+             • 2h47
+          </div>
+        </div>
+      </li>
+      
+      <li class="itineraire-item">
+        <div class="itineraire-day">18</div>
+        <div class="itineraire-info">
+          <div class="itineraire-name">Clévilliers</div>
+          <div class="itineraire-meta">
+            28300 Clévilliers
+             • 209.0 km
+             • 2h19
+          </div>
+        </div>
+      </li>
+      
+    </ul>
+  </div>
+
+  <!-- ═══ STEP PAGES ═══ -->
+  
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 1</div>
+        <div class="step-title">Maison</div>
+        <div class="step-location">Clévilliers, France</div>
+        <div class="step-dates">
+          31 juillet 2026 → 31 juillet 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>460.5 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>4h30</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=48.543237%2C1.38867%7C48.543237%2C1.38867&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C48.543237%2C1.38867&markers=color%3Ared%7Clabel%3AA%7C48.543237%2C1.38867&path=color:red|weight:4|enc:gsfjHkmfFcDRcALSWa%40mF%40%7BDPgB%60AaBpEsE%60IaHnFaClGw%40bRt%40jLv%40zLf%40b%40%5CJfAGxN%5BhAJz%40f%40DPy%40Mc%40Zkf%40Ta%40Fg%40~JeIj%40aARsB_%40uAeDgDqAiBg%40_CSw%40u%40cLUwY~A_lBVyUAkW%5Ckg%40PaEXm%40BiA_%40qAp%40_cAb%40kl%40TgRVk%5Dv%40miAHcBx%40_v%40N%7DXn%40kp%40PiOJqI%60%40oa%40RiSPsRl%40sq%40%5Ck%5En%40kv%40WqHaAgGgFwOiBsGcAcIIwIZsFxAiIzBuIlKy%60%40xEqShCuOpBsQhAqPn%40%7BSDsRe%40wTsBon%40OyW%5CuXvAec%40NmSUiOiBcZYqF_CeU_CiWeNidBmB_WmC%7BYmAgRaBcVw%40%7DIwBkWkA%7DPmB_VmDec%40%7DBe%5BaFso%40eAgMqDke%40wGo%7B%40MiHF%7BO%60Ca_%40f%40qMnBg%5BfAq%5B%5Cia%40Ss%5EgEu%7CAw%40ci%40Mwl%40h%40%7D_Ah%40gR%7CAcSnCkR%60EsQrEqNhGgNpdAkcBnOmWdNs%5BvFmKbHuKtCuF~CgJxBaK%7CDq%5CzdAktJnQi%7CArYutC~BkMpC%7DItF%7BK~LgTvCgI~BcKvAiLlBaVnBwKlHqUhC%7BKhAaJl%40%7DMGeg%40t%40o%5E%7CC%7Dm%40b%40mZH%7DiAe%40s%5CqAs%5BgDaf%40%7D%40aRQ%7DQ%5EgSnC_a%40hHo_At%40qTAkRu%40mSgB%7DReDcTiRgcA_E%7DXaDy%5BkBkYkAu%5DQen%40fAq%60Dv%40aPnBwQlB%7DK%7CCmMvDcL~FkMtFiJdjAkaBxTeXpToUzYsYjHoJlHsMvFcNbEcNhEcSz%60%40%7DyBnLgk%40dGwWpDiL%60EcIlDmEhF%7BEfWsQdH_CzGe%40xuAtAxIc%40~GuAba%40mOld%40_UbTqM%60PgMtPgPrPiS%60_%40oi%40%60JgNjFqKtdB%7DpErF%7DPdFySnUevApBqHfIaRnC%7DIrAgIf%40_JCcS%40qKT%7BHv%40mVtFgx%40fCwS%60BuI%7CUq%7C%40%60L%7Da%40%60%40wBvBeNv%40cFbBiUR%7BEY_FYwJk%40g%40_A%40s%40%7C%40%5D~%40OpJDjAd%40bA%60AZzGcA%7C%40cA%5EmCZ%7DC%7C%40g%40xCy%40dTiHvHiFrLyJdWeRdcAse%40bXeIbGa%40xMr%40fPxBxX~JjFnEzD~EhGtGfI%7CExElB%7CFb%40vHm%40pCoBhBwC~%40sDXuEg%40uJKoHfAiYrAsSfBmm%40VqJjDukA%7CAai%40%7CI%7BsC%60AsJ%7CCsUVyG%5B%7BYPoJ%7C%40cIxBqIbEcJbEoFpFeEvFwBtPkBpHiB%7CGsDnFaF~DuF%7CEeKlCoJnBoLrAaQn%40qVZqk%40e%40w_Ai%40yNcBcZDwKx%40yPIkHeAaKeG%7Dj%40%7BF%7B%60%40w%40cLLkHv%40mH~Hw_%40jZesAn%40cCzCkJvAaBdBUxAf%40%7CElDfTzQ%7Ca%40ra%40pK~K%60GzFfFrDhGpB~B~%40dC%60AfNfEvlDn_AnFh%40nFUbGsBvEgD~G%7DJ~e%40yy%40pGqHjm%40yf%40t%5CgXdFeH%60D%7BGrN%7D_%40nEqH~RoVlCyE~KoW%60DuKdCkMpEk_%40dBoIpCwHtl%40coA~EmI%7CH_Kn%5C%7B%5B%60QeQxv%40sw%40hHkKxY%7Di%40j_A%7BfBnIwOdH%7BKrIoJtIcH~tAcw%40%60dAsl%40dJkIvGcIxw%40_rApHiJdHgGtn%40uf%40rJwJjHcKtG_Md%5Cm%7B%40lEeJlGgJrHwHfH%7BEtHcDhwAo%60%40loAiVbe%40aJ%60IwBza%40_R%7Cq%40wYxJwAf%60AA%60X%3FxKq%40xe%40gIpQuG~FmA%60GO%7Cw%40hAxJu%40~G_BfIkDlIaGt%5Eka%40jH%7BG%7CJuG~rA_u%40pMsExo%40eOlJqC%7CUkHpJyDrIiF%60z%40kt%40%60IiFbHuCjJoBxIc%40nJd%40hMvBtJv%40fKGjKsAlJoCbm%40oWlJwFbJwC~HgA%60ScA%60GoAhM%7BFlI_HrHoJnjAccBbJeJtMyIhHcD%60UwG%60OkEhJ_EnKeHrRcRp%60AmaA%60J%7DLtHmMxHkPlGyPfGiThFiWt_%40avBd%5CeyArFiPlFgLtFcJ~l%40%7Ds%40tIyKrGmLlEiL%60f%40acBpGyQbHuOlIaOpk%40sz%40bOcQ%60SiR%60p%40%7Df%40bOwMnP%7DQ%60NwQ%7Cb%40os%40bT%7D%5CdPoStP_QrhA%7DaA%7COyOtMsO%7CMoRrMcUtEcJdKyUfc%40ogAnMeWnh%40sy%40%60Uo%60%40dSaa%40~Q%7Db%40xPwd%40dNac%40ba%40szAjJ_ZjKaX%60LuU%7Ca%40yt%40xLsV~K%7DXbd%40wwAtI%7BUhJqRbKePzQgUxWq%5BpLmQbK%7BRrI_TpH%7BU%7CFkVdE_VlDcZtCs%60%40lFo%7D%40tCyY~DqWjFoU~FqRfIiSzMgWrWee%40xIcS%7CGoStGmWlHk_%40bPmdA%60Hg%60%40nH%7B%5BjGmSdImSvIwP%7CLwRdSwWxd%40mi%40zPkTlOiUjNoWvKqVrbAsjCjKsSbk%40qcA~_%40or%40zIwQp%5Dwz%40jIcPxG_KjJ_KtJeHf%5C_QfN_IjNwK%60h%40oh%40jMmOrUq%5DnsA_uBxJeQp%60%40ew%40lQoYnOaUzEyFvQyPj%60%40u%5BpKeLrh%40ys%40dl%40ez%40b%5Euo%40rU_b%40nIuLxi%40qp%40%7CG%7BJtGaNrKgVtF%7BIhH%7DHbIaGvd%40cYvJgJvGwItHyM%60GwNzEmPhD%7DPdBiNxAqSjBo%5CxByQvCoOzDkNvE_MbFeKbIsL%7CGyH~P%7DNlI_JxF%7BIrDyHtEeNlC%7DLhBuMdAeOX_POeR%7DAs%5EeCeg%40%5B%7DTRmQfAgP%60CgP%7CCiNxF%7BQ%60HuQtWkn%40tGaStFaUnCeOzCmUhBkUfAiZXia%40Pan%40x%40iZlB%7DXlDaZtEuXnIy_%40xKoa%40~%5CuhArNeh%40jIs%5EpFi%5BjDyXbC%7D%5Bz%40wVj%40sw%40v%40%7B%5ErAoSzBkQ~CoOzEyOvGaOrPmZzHoPzGcRhFsRhD%7BPhDoV%60BgS~%40%7BTP%7BU%5Dwi%40JsVr%40eQhBoRhCaPfEwP%60FuNdOg%5CfGsOxDqNdCkOrAkP%5C%7BNOoPkE%7BbA%7D%40st%40HoWz%40_XxBqYlCaT%7CEyWfGuUnGeRzIcStHcNnLoPp%7D%40saAjIeHfKiG%60KwDrJoBxLw%40%60KPhXjBjJUrIuApK_Ehe%40m%5CfHyGhHyJpE_JzCeI%7CDoOr%5DqiBhEwSjEeOpEeLdEgIlFoIlRaUnRkU~KeQ%7CH%7DOtH_S%60H%7BU%7CD%7DRjDoVlB%7DS%60Eyo%40zCiUpNq%7C%40%60D%7BL~DoKlF%7BJlHmJlHoG%7CHqEfJyCbIiAzIKbK~%40%7C_%40%7CJvLnB~K%5C~Je%40vLuBhLaE%7CIiFrJiIhK%7DLpGsKtSea%40xz%40ipAtLySbKwTpJaXlG%7DTjFgVxMox%40lIwd%40%60EgOrg%40uwAzJsZ~EaVra%40_%7DBdHqYrJ%7DZnKqXnK_U%7CKyRpMoRpPeSxNqNbx%40sp%40%7CIkJlI%7DLhGcMxEkMtDmN%7CQ%7BdA%60DaNbEmMfGgN%7CHmMbJqKdI_HdKcGtLgElKkBlLg%40xc%40fBdTL%60Sy%40plAmMvPkAdSUjf%40%60%40lOkAlLwBzMcEpN%7BGtLaItKmJzKiMzKiP~a%40ks%40~ImLjOcO~L%7BI%60U%7BKnh%40yUpHqFhGkHlNuVvFoH%60MaKhFgFnE%7DGrDsI%7CCqLpG_%5BxEkNhFkK~FiIvHwHhbBssAfPmJfReIjYaKpIcFlHiGfJyKvGqKfFkKjHiRpHoVdIg%5DvFk%5BxDgZrBsWbA_XLcXm%40_%5DkCu%7D%40Wka%40Fk%7D%40_%40g%60%40sAma%40yB%7Dk%40KqVd%40qVnAgUjCuWxDkWpHk_%40tNyk%40rr%40imChF%7BWrDcWz%5Bm%7CC%60Hsj%40zH%7Bf%40bg%40stCfMs%7B%40z%60%40kcD~CaRhDaNbE%7BLxTee%40%60m%40onAtEuMrEgRfWezArDeStDaNxEmLnE_IvKaNjJoLh%7C%40a%7CAjGwI%60Yi%5BxJuNfYei%40jNmUdy%40cfArw%40sbArcAylA%7COsUpMyUzJsTvLy%5Bna%40ioA%7CWaaAjMgb%40z_%40ueAxMe%60%40%60H_WzQgz%40hHyYjHcVhK%7BXdLuVpMqUvW%7D_%40dkAq%60BjY_%5Dvp%40iq%40zMkLdNsI%60N%7DFrOgEr_Ewx%40%7CRmFjL%7DElM_IvJiIxJsKzIgM%7CHuNfHwP~FiRhEaRdEcWv%5DevCjDaU%60EmQfFmO%60GiMvHwL~HcJhJcIbRwLlh%40_%5BpTuOpO%7BM~NuOfOuRdLkQvKkShLkWdKoYhIiYfHk%5BxGk%60%40~WioB%7CCyQ~E%7BRpJ_%5BxDuPhD%7BQfE_OnEgKhEoHvGgIpIqHbLgJrFcHfEyIbFmNrEwJvDyEdFyDxLwFtIqFfFuFfFuIzJmUdDwFbEcEdMuGtCyBvDyE~GiNbD%7DElEyDnEuBdF_AzFDvRzCbHXlHcAjTwFtFQtLD%60GoA%7CKqFbGeBjEi%40vPIrHn%40bKdChPlEtKnA%7CLNtU_AjIkAdFcBhGgDfKcJxi%40%7Bi%40zGyEnNcG%7Ca%40eP%60FuDfCwC%7CDaHbC_HrBeKx%40%7BJHwJg%40oKcAwHgEcVg%40mH%3FwJ%60%40oGbAaH~A_GxEgKfHmKl%5Bs%60%40rGaGlNkKxFqH%7CLmVhIcP%60EeFpE%7DChF%7DAtI%5DvJ%5B~EiAfMsGtFmBhFa%40~LZjGWvEqArEuC%7CIaKtRyWxNoUfDeIjCwLlCmS%5CwIOiJgBcU%5B%7DLf%40wVC_OcA%7BReC_b%40%3FyK~%40%7BN%60ByRHwJg%40eRD%7DKp%40aIdBaIhCsGnDgFdEgDzEoBdNsBxF%7BArEuCbE%7BEfD%7BG%7Cc%40%7BwAjg%40swAxAgDbFwKnK_RhBoEfAcGVoGYsLsAyLwAuF_CqE%7BB%7DBiJ%7BD%7BFcDqCgByV%7DV_S%7BUwVs%5DaWe%60%40kSoZwPuUsEmHwC%7BEgCuGaBgIq%40gIEqIf%40kI%7CAiJnx%40udD~Fu%5BxEu%5DrCi%5BrBq_%40x%40_%5E%5C%7Bn%40r%40%7B%5CzC%7Bq%40t%40_YFoZm%40_b%40eCg%7C%40o%40sa%40B_%5Bt%40o%5EfBk%5DrCi%5CdEa%5CtFq%5BlHi%5BvIaZnRyk%40nHsW~FqXnEwYlCaWpBc%5Bv%40iXJoWe%40_%5EoBcy%40%3F%7D_%40z%40ykAS%7Dx%40cA%7Bs%40iDa%7DAe%40kr%40Ci%7B%40QcU_AaZuB%7DZwCyWiE_X%7DFgXqIwYeJiV%7BMyXgUcd%40oJaUaI_VsGcWsH%7D_%40yKem%40eGkWwOok%40sHg%5BeGc%5CmEa%5CwC_%5BiBc%5B%7DAwg%40%7DB_dAkBe_%40oCg%5BaEw%5ByF%7D%5BeH_%5BaIoXkJsWgKyU%7BLkUqNqTkQuTae%40if%40qRmTiLcPcMoTwYyn%40cLsTwLiR%7DPeTov%40k%7C%40cMgQi%40qAmBoEm%40oEBiE%60%40%7BC~EyOtAgCxBgBhJuFxNuG%7CLaEl%5B%7BGxP%7BEtNoGbLcHlMkKzLuMdLcP~IePrIcStHqU%60Tst%40pFeNtGqLvH%7BJxI_IzIoFvKcEdLqBpI_%40nBVxAn%40x%40nArAtC%60Aj%40z%40Mh%40y%40%60%40wElAsVz%40aGxAwE%7CBgEvFyGtA%7D%40z%40uAh%40mAdAm%40n%40GVs%40v%40m%40dNpGvDpDn%40n%40pBhDpNfYhNvWnA%60D%3FtAVzAn%40%60%40v%40Y%5C%7DADeBtFqKfLyW~BuDn%5BqQtU_MnCk%40jHo%40lCyAvBgCdBiElD%7BPvCgHzByChKoI~RyWrCuErBmFnBaJp%40wHLsHSyeAe%40mJO%7BUhEhE%60DtBbDrAbBb%40VWvA_Cl%40l%40l%40z%40p%40LjCeAxD%7B%40nCvAhD~B%7CFfDzBnBpAFb%40nBtARRK&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Maison" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">12:00 → 14:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🚗 Récupérer Gilbert</div>
+              <div class="activity-location">Rue Gay Lussac, Évreux, France</div>
+              
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">📝 Notes</h3>
+          <div class="step-notes">Camping car : GY-212-ER</div>
+        </div>
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784628334796.jpg?width=400&quality=60" alt="Maison" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 2</div>
+        <div class="step-title">Dole du Jura</div>
+        <div class="step-location">39100 Dole</div>
+        <div class="step-dates">
+          31 juillet 2026 → 1 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>262.9 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>3h39</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=49.0270392%2C1.1837232%7C47.0162101%2C5.4814909&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C49.0270392%2C1.1837232&markers=color%3Ared%7Clabel%3AA%7C47.0162101%2C5.4814909&path=color:red|weight:4|enc:gsfjHkmfFcDRcALSWa%40mF%40%7BDPgB%60AaBpEsE%60IaHnFaClGw%40bRt%40jLv%40zLf%40b%40%5CJfAGxN%5BhAJz%40f%40DPy%40Mc%40Zkf%40Ta%40Fg%40~JeIj%40aARsB_%40uAeDgDqAiBg%40_CSw%40u%40cLUwY~A_lBVyUAkW%5Ckg%40PaEXm%40BiA_%40qAp%40_cAb%40kl%40TgRVk%5Dv%40miAHcBx%40_v%40N%7DXn%40kp%40PiOJqI%60%40oa%40RiSPsRl%40sq%40%5Ck%5En%40kv%40WqHaAgGgFwOiBsGcAcIIwIZsFxAiIzBuIlKy%60%40xEqShCuOpBsQhAqPn%40%7BSDsRe%40wTsBon%40OyW%5CuXvAec%40NmSUiOiBcZYqF_CeU_CiWeNidBmB_WmC%7BYmAgRaBcVw%40%7DIwBkWkA%7DPmB_VmDec%40%7DBe%5BaFso%40eAgMqDke%40wGo%7B%40MiHF%7BO%60Ca_%40f%40qMnBg%5BfAq%5B%5Cia%40Ss%5EgEu%7CAw%40ci%40Mwl%40h%40%7D_Ah%40gR%7CAcSnCkR%60EsQrEqNhGgNpdAkcBnOmWdNs%5BvFmKbHuKtCuF~CgJxBaK%7CDq%5CzdAktJnQi%7CArYutC~BkMpC%7DItF%7BK~LgTvCgI~BcKvAiLlBaVnBwKlHqUhC%7BKhAaJl%40%7DMGeg%40t%40o%5E%7CC%7Dm%40b%40mZH%7DiAe%40s%5CqAs%5BgDaf%40%7D%40aRQ%7DQ%5EgSnC_a%40hHo_At%40qTAkRu%40mSgB%7DReDcTiRgcA_E%7DXaDy%5BkBkYkAu%5DQen%40fAq%60Dv%40aPnBwQlB%7DK%7CCmMvDcL~FkMtFiJdjAkaBxTeXpToUzYsYjHoJlHsMvFcNbEcNhEcSz%60%40%7DyBnLgk%40dGwWpDiL%60EcIlDmEhF%7BEfWsQdH_CzGe%40xuAtAxIc%40~GuAba%40mOld%40_UbTqM%60PgMtPgPrPiS%60_%40oi%40%60JgNjFqKtdB%7DpErF%7DPdFySnUevApBqHfIaRnC%7DIrAgIf%40_JCcS%40qKT%7BHv%40mVtFgx%40fCwS%60BuI%7CUq%7C%40%60L%7Da%40%60%40wBvBeNv%40cFbBiUR%7BEY_FYwJk%40g%40_A%40s%40%7C%40%5D~%40OpJDjAd%40bA%60AZzGcA%7C%40cA%5EmCZ%7DC%7C%40g%40xCy%40dTiHvHiFrLyJdWeRdcAse%40bXeIbGa%40xMr%40fPxBxX~JjFnEzD~EhGtGfI%7CExElB%7CFb%40vHm%40pCoBhBwC~%40sDXuEg%40uJKoHfAiYrAsSfBmm%40VqJjDukA%7CAai%40%7CI%7BsC%60AsJ%7CCsUVyG%5B%7BYPoJ%7C%40cIxBqIbEcJbEoFpFeEvFwBtPkBpHiB%7CGsDnFaF~DuF%7CEeKlCoJnBoLrAaQn%40qVZqk%40e%40w_Ai%40yNcBcZDwKx%40yPIkHeAaKeG%7Dj%40%7BF%7B%60%40w%40cLLkHv%40mH~Hw_%40jZesAn%40cCzCkJvAaBdBUxAf%40%7CElDfTzQ%7Ca%40ra%40pK~K%60GzFfFrDhGpB~B~%40dC%60AfNfEvlDn_AnFh%40nFUbGsBvEgD~G%7DJ~e%40yy%40pGqHjm%40yf%40t%5CgXdFeH%60D%7BGrN%7D_%40nEqH~RoVlCyE~KoW%60DuKdCkMpEk_%40dBoIpCwHtl%40coA~EmI%7CH_Kn%5C%7B%5B%60QeQxv%40sw%40hHkKxY%7Di%40j_A%7BfBnIwOdH%7BKrIoJtIcH~tAcw%40%60dAsl%40dJkIvGcIxw%40_rApHiJdHgGtn%40uf%40rJwJjHcKtG_Md%5Cm%7B%40lEeJlGgJrHwHfH%7BEtHcDhwAo%60%40loAiVbe%40aJ%60IwBza%40_R%7Cq%40wYxJwAf%60AA%60X%3FxKq%40xe%40gIpQuG~FmA%60GO%7Cw%40hAxJu%40~G_BfIkDlIaGt%5Eka%40jH%7BG%7CJuG~rA_u%40pMsExo%40eOlJqC%7CUkHpJyDrIiF%60z%40kt%40%60IiFbHuCjJoBxIc%40nJd%40hMvBtJv%40fKGjKsAlJoCbm%40oWlJwFbJwC~HgA%60ScA%60GoAhM%7BFlI_HrHoJnjAccBbJeJtMyIhHcD%60UwG%60OkEhJ_EnKeHrRcRp%60AmaA%60J%7DLtHmMxHkPlGyPfGiThFiWt_%40avBd%5CeyArFiPlFgLtFcJ~l%40%7Ds%40tIyKrGmLlEiL%60f%40acBpGyQbHuOlIaOpk%40sz%40bOcQ%60SiR%60p%40%7Df%40bOwMnP%7DQ%60NwQ%7Cb%40os%40bT%7D%5CdPoStP_QrhA%7DaA%7COyOtMsO%7CMoRrMcUtEcJdKyUfc%40ogAnMeWnh%40sy%40%60Uo%60%40dSaa%40~Q%7Db%40xPwd%40dNac%40ba%40szAjJ_ZjKaX%60LuU%7Ca%40yt%40xLsV~K%7DXbd%40wwAtI%7BUhJqRbKePzQgUxWq%5BpLmQbK%7BRrI_TpH%7BU%7CFkVdE_VlDcZtCs%60%40lFo%7D%40tCyY~DqWjFoU~FqRfIiSzMgWrWee%40xIcS%7CGoStGmWlHk_%40bPmdA%60Hg%60%40nH%7B%5BjGmSdImSvIwP%7CLwRdSwWxd%40mi%40zPkTlOiUjNoWvKqVrbAsjCjKsSbk%40qcA~_%40or%40zIwQp%5Dwz%40jIcPxG_KjJ_KtJeHf%5C_QfN_IjNwK%60h%40oh%40jMmOrUq%5DnsA_uBxJeQp%60%40ew%40lQoYnOaUzEyFvQyPj%60%40u%5BpKeLrh%40ys%40dl%40ez%40b%5Euo%40rU_b%40nIuLxi%40qp%40%7CG%7BJtGaNrKgVtF%7BIhH%7DHbIaGvd%40cYvJgJvGwItHyM%60GwNzEmPhD%7DPdBiNxAqSjBo%5CxByQvCoOzDkNvE_MbFeKbIsL%7CGyH~P%7DNlI_JxF%7BIrDyHtEeNlC%7DLhBuMdAeOX_POeR%7DAs%5EeCeg%40%5B%7DTRmQfAgP%60CgP%7CCiNxF%7BQ%60HuQtWkn%40tGaStFaUnCeOzCmUhBkUfAiZXia%40Pan%40x%40iZlB%7DXlDaZtEuXnIy_%40xKoa%40~%5CuhArNeh%40jIs%5EpFi%5BjDyXbC%7D%5Bz%40wVj%40sw%40v%40%7B%5ErAoSzBkQ~CoOzEyOvGaOrPmZzHoPzGcRhFsRhD%7BPhDoV%60BgS~%40%7BTP%7BU%5Dwi%40JsVr%40eQhBoRhCaPfEwP%60FuNdOg%5CfGsOxDqNdCkOrAkP%5C%7BNOoPkE%7BbA%7D%40st%40HoWz%40_XxBqYlCaT%7CEyWfGuUnGeRzIcStHcNnLoPp%7D%40saAjIeHfKiG%60KwDrJoBxLw%40%60KPhXjBjJUrIuApK_Ehe%40m%5CfHyGhHyJpE_JzCeI%7CDoOr%5DqiBhEwSjEeOpEeLdEgIlFoIlRaUnRkU~KeQ%7CH%7DOtH_S%60H%7BU%7CD%7DRjDoVlB%7DS%60Eyo%40zCiUpNq%7C%40%60D%7BL~DoKlF%7BJlHmJlHoG%7CHqEfJyCbIiAzIKbK~%40%7C_%40%7CJvLnB~K%5C~Je%40vLuBhLaE%7CIiFrJiIhK%7DLpGsKtSea%40xz%40ipAtLySbKwTpJaXlG%7DTjFgVxMox%40lIwd%40%60EgOrg%40uwAzJsZ~EaVra%40_%7DBdHqYrJ%7DZnKqXnK_U%7CKyRpMoRpPeSxNqNbx%40sp%40%7CIkJlI%7DLhGcMxEkMtDmN%7CQ%7BdA%60DaNbEmMfGgN%7CHmMbJqKdI_HdKcGtLgElKkBlLg%40xc%40fBdTL%60Sy%40plAmMvPkAdSUjf%40%60%40lOkAlLwBzMcEpN%7BGtLaItKmJzKiMzKiP~a%40ks%40~ImLjOcO~L%7BI%60U%7BKnh%40yUpHqFhGkHlNuVvFoH%60MaKhFgFnE%7DGrDsI%7CCqLpG_%5BxEkNhFkK~FiIvHwHhbBssAfPmJfReIjYaKpIcFlHiGfJyKvGqKfFkKjHiRpHoVdIg%5DvFk%5BxDgZrBsWbA_XLcXm%40_%5DkCu%7D%40Wka%40Fk%7D%40_%40g%60%40sAma%40yB%7Dk%40KqVd%40qVnAgUjCuWxDkWpHk_%40tNyk%40rr%40imChF%7BWrDcWz%5Bm%7CC%60Hsj%40zH%7Bf%40bg%40stCfMs%7B%40z%60%40kcD~CaRhDaNbE%7BLxTee%40%60m%40onAtEuMrEgRfWezArDeStDaNxEmLnE_IvKaNjJoLh%7C%40a%7CAjGwI%60Yi%5BxJuNfYei%40jNmUdy%40cfArw%40sbArcAylA%7COsUpMyUzJsTvLy%5Bna%40ioA%7CWaaAjMgb%40z_%40ueAxMe%60%40%60H_WzQgz%40hHyYjHcVhK%7BXdLuVpMqUvW%7D_%40dkAq%60BjY_%5Dvp%40iq%40zMkLdNsI%60N%7DFrOgEr_Ewx%40%7CRmFjL%7DElM_IvJiIxJsKzIgM%7CHuNfHwP~FiRhEaRdEcWv%5DevCjDaU%60EmQfFmO%60GiMvHwL~HcJhJcIbRwLlh%40_%5BpTuOpO%7BM~NuOfOuRdLkQvKkShLkWdKoYhIiYfHk%5BxGk%60%40~WioB%7CCyQ~E%7BRpJ_%5BxDuPhD%7BQfE_OnEgKhEoHvGgIpIqHbLgJrFcHfEyIbFmNrEwJvDyEdFyDxLwFtIqFfFuFfFuIzJmUdDwFbEcEdMuGtCyBvDyE~GiNbD%7DElEyDnEuBdF_AzFDvRzCbHXlHcAjTwFtFQtLD%60GoA%7CKqFbGeBjEi%40vPIrHn%40bKdChPlEtKnA%7CLNtU_AjIkAdFcBhGgDfKcJxi%40%7Bi%40zGyEnNcG%7Ca%40eP%60FuDfCwC%7CDaHbC_HrBeKx%40%7BJHwJg%40oKcAwHgEcVg%40mH%3FwJ%60%40oGbAaH~A_GxEgKfHmKl%5Bs%60%40rGaGlNkKxFqH%7CLmVhIcP%60EeFpE%7DChF%7DAtI%5DvJ%5B~EiAfMsGtFmBhFa%40~LZjGWvEqArEuC%7CIaKtRyWxNoUfDeIjCwLlCmS%5CwIOiJgBcU%5B%7DLf%40wVC_OcA%7BReC_b%40%3FyK~%40%7BN%60ByRHwJg%40eRD%7DKp%40aIdBaIhCsGnDgFdEgDzEoBdNsBxF%7BArEuCbE%7BEfD%7BG%7Cc%40%7BwAjg%40swAxAgDbFwKnK_RhBoEfAcGVoGYsLsAyLwAuF_CqE%7BB%7DBiJ%7BD%7BFcDqCgByV%7DV_S%7BUwVs%5DaWe%60%40kSoZwPuUsEmHwC%7BEgCuGaBgIq%40gIEqIf%40kI%7CAiJnx%40udD~Fu%5BxEu%5DrCi%5BrBq_%40x%40_%5E%5C%7Bn%40r%40%7B%5CzC%7Bq%40t%40_YFoZm%40_b%40eCg%7C%40o%40sa%40B_%5Bt%40o%5EfBk%5DrCi%5CdEa%5CtFq%5BlHi%5BvIaZnRyk%40nHsW~FqXnEwYlCaWpBc%5Bv%40iXJoWe%40_%5EoBcy%40%3F%7D_%40z%40ykAS%7Dx%40cA%7Bs%40iDa%7DAe%40kr%40Ci%7B%40QcU_AaZuB%7DZwCyWiE_X%7DFgXqIwYeJiV%7BMyXgUcd%40oJaUaI_VsGcWsH%7D_%40yKem%40eGkWwOok%40sHg%5BeGc%5CmEa%5CwC_%5BiBc%5B%7DAwg%40%7DB_dAkBe_%40oCg%5BaEw%5ByF%7D%5BeH_%5BaIoXkJsWgKyU%7BLkUqNqTkQuTae%40if%40qRmTiLcPcMoTwYyn%40cLsTwLiR%7DPeTov%40k%7C%40cMgQi%40qAmBoEm%40oEBiE%60%40%7BC~EyOtAgCxBgBhJuFxNuG%7CLaEl%5B%7BGxP%7BEtNoGbLcHlMkKzLuMdLcP~IePrIcStHqU%60Tst%40pFeNtGqLvH%7BJxI_IzIoFvKcEdLqBpI_%40nBVxAn%40x%40nArAtC%60Aj%40z%40Mh%40y%40%60%40wElAsVz%40aGxAwE%7CBgEvFyGtA%7D%40z%40uAh%40mAdAm%40n%40GVs%40v%40m%40dNpGvDpDn%40n%40pBhDpNfYhNvWnA%60D%3FtAVzAn%40%60%40v%40Y%5C%7DADeBtFqKfLyW~BuDn%5BqQtU_MnCk%40jHo%40lCyAvBgCdBiElD%7BPvCgHzByChKoI~RyWrCuErBmFnBaJp%40wHLsHSyeAe%40mJO%7BUhEhE%60DtBbDrAbBb%40VWvA_Cl%40l%40l%40z%40p%40LjCeAxD%7B%40nCvAhD~B%7CFfDzBnBpAFb%40nBtARRK&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Dole du Jura" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Camping des Bords de Loue</div>
+            <div class="accom-address">Rue du Camping, Parcey, France</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 31 juillet 2026 20:30</span>
+              <span>🚪 Départ : 1 août 2026 11:00</span>
+              <span>🔖 Réf : 18483538</span>
+              <span>💰 59.00 €</span>
+            </div>
+            
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784639261008.jpg?width=400&quality=60" alt="Dole du Jura" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 3</div>
+        <div class="step-title">Lauterbrunnen</div>
+        <div class="step-location">Lauterbrunnen</div>
+        <div class="step-dates">
+          1 août 2026 → 2 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>36.6 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>36 min</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=47.0162101%2C5.4814909%7C46.5694717%2C7.9141679&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C47.0162101%2C5.4814909&markers=color%3Ared%7Clabel%3AA%7C46.5694717%2C7.9141679&path=color:red|weight:4|enc:gz%7D%7DGgrm%60%40%5D%40eBiBc%40%5DeALkIgG%7DB%7BBsDqAcAmAG_%40g%40%7BE%7CCgGxI_ET_%40yAkGe%40%7BC%5BuNYcIvm%40l%40hJiB%60E%7D%40bCsAlCsE%60BsElSkj%40n%40aEFyFFge%40V%7BFz%40wFpBcGR%7BCLoElAwE%5EsJOmDk%40yDLmJp%40iGhDkP%7CYmoAnHc%5DzCuQjA_K%7C%40iC%5CiCt%40_LdBsFdFeF~BmH%7CMecA~Jiu%40tFy_%40j%40oA%3Fs%40c%40Yu%40Du%40eAG_BrAmCvAyCfEkQhAsHlJyr%40vFea%40NcC~CwIp%5EoeA~I%7BW%60BqDzOsUfg%40yi%40z_%40ec%40tUeX~O%7DQ~p%40wv%40%60AqB~DoJtBcEnD_FnWaj%40%60Qu%5ExMuYna%40wlAhFcNjHuUtBmJrCw%5EnM%7BcBlS%7BqCRoAdAmCOoF~Bi%5DPcGFq%5EV_An%40%7B%40%7CC_CdByBPk%40pCiKlH_WlB%7BEfHyR~AiEfBkA%5CAbAEbBa%40bGo%40fDkBzB_CzBcBvB%7BEz%40mAj%40CRWQ%5D%5CaBrBuIC_B%5CsLLm%60%40c%40%7Df%40A_DnAyFr%40yFZ%7B%40d%40qBWiDeAwE%60%40%7DM_CqWFw%40h%40s%40nG%7BCtCsChCcBnCUbFSvDaBjF_Dp%40eAKoAk%40w%40cFaA%7DTaFw%40s%40kAyFqBwFoAoBiFaCeDPsG%60AmAu%40oAWc%40%5BgAiA%7BFsA%7DCqBgGoDwDmFsDaH%7BAmDKwDb%40yCl%5Bu_B%60%40m%40lDV~%40e%40l%40oCb%5BiwBvBoMjJyNro%40u%60Az%5Dsh%40bV%7D%5DhFcItJ%7BNv%40%7BEVk%40~Bm%40%60SeXlAqAhBQbCuAdFw%40dIFbBe%40rH_ItGkGZoAb%40y%40%7CBWpCuAtJqDrE%7DApGy%40hAk%40fBmD%7CBmCfDgIpA%7DAv%40K%60DMr%40o%40fAwErA%7BCfIuHbBeCfEsMzAwInA%7DC%7CCyB%7CCqAYsBpByDtG%7BOnAoDDgCoGqb%40sJ%7Do%40mAaIeCcFkKyMgJiQeMyV%7B%40wIm%40aIa%40sCgAqA%7DMcIWkAyAep%40XwBfPsYrJwP%7C%40iHAmBeAgGi%40uA%7BAwA%7DAwAYsBL_Ad%40y%40nAYbDvA%7CDZlBg%40bCm%40pEi%40hAoD~CeIxC_HpBsDbBsEFgAQwHg%40sCLcB%60%40y%40~SsTxPoQpVcW%60LuLtDiB~DeFtBiEfH%7DWr%40%7DEBkBUmAs%40gBa%40%7BB%40aB%60%40aB~%40iAxA_AnAgDvD%7DSr%40iE%40aC_CoTAuE%7C%40yKhD_TpBgIbCiH%7C%40uEv%40sJ%3FqEa%40_PJuAhBeEfAsDtAeFrCqF~JmQzFsHvSu%5DnDuGtF%7DJ~JgWvFyTl%40kCxAyGtGaYz%40yDpC_M%7CFkX%7CA%7BKdB_QpFub%40lA%7DG%60AsCtEwJfLqg%40bFeYjA_DfD%7BElFkHbAuDVeEQsTZuiAMcp%40qBmdBgA_%60%40qCyj%40iEu_A%7BBudAsAwf%40yBqMe%40aAwBgBkB_D_AyDWqAoBuAqA%7DBcF%7DN%7DDoJeB_JaHoVqD%7BMmD%7DO%7DAeEaD%7DGwB%7BFgAuAqAi%40mBg%40eByBqDwIyCyEiJuOw%40iCa%40%7BLm%40mGcCcMqAwD%5BmHNyHpAcHh%40gBlFuLlBcHVeDA_Ml%40wDzAkDjB%7DBnFcCjBwAlAqBdAyDTaC%40aEcAaHk%40uDi%40wQXcFf%40oBjA_BdBMrAt%40rGpE%7C%40Ob%40m%40TmBL_C%7CBmFtB_CtDkBzC%7D%40n%40aAb%40kDCqEcAiHi%40aPx%40cM%60%40sC%7C%40mBhBuAxCkAxKWfBRvCvArGvFlBb%40vF%7BA%60BmArAwBvAeEr%40iJH_D%7CCaOfAaBvA%7B%40xXaJ~UaDpMsLtEoExAuEnHiYpBuDjCiFzA%7BDhJgNnAaBz%40JvAV%7C%40c%40bEHrGkA%60CeBr%40oAbA_FDmDe%40eImAkGYsDFyBh%40wBv%40eB%5CoEWeAc%40m%40oByAsCiJQiC%7CA%7BMb%40oAt%40%7D%40%7CAsAhGiP%5EmCo%40gMAeEjC_MtAwDpAaDtDiUd%40%7BFHca%40TiDhBuEx%40%7DD~%40%7B%5BGsEq%40_EqAcDwBmDgAaDw%40wFMaHLgUJsCPiGHq%40_%40SMN%7B%40XsHMaBa%40qPcKkG%7DC%7DNaE%7DA%7B%40kJeLo%40qAs%40yB%5BgDg%40yHgBaIi%40aF%3FeKn%40qD%60BcDvIeKFw%40MwAk%40wA%3FgAFkBPcFW%7BF%3FqSb%40iEpAgF%60CkE%60DoCnJ%7BCtDkBb%5Dy%5BnEoCvWcKfEk%40nDPfBf%40%5Ch%40h%40D%5Cm%40FiA%7C%40aBxA%7DBpEgD%60DqC%7C%40UF%5BXq%40%7CA%7BBpFmO%7CA%7DDrCoA~EWdCiAhIf%40h%40j%40lAzDhAx%40pDbAjCzAxC%5EjApAlBzG%60DjLzBfFtE~F~Ch%40rBx%40rC~CvDpCnHnDdOfNdCvDzBzEhBfAvBGnCyBpAg%40%60C%5CfAOrEqFnBaCjGiDvIwJjDmClAGhDy%40tA%7BBdB_Fz%40kDj%40gAjA%7B%40dAyAh%40%7DCt%40wA~AgBlAeF~%40iEfCuIDm%40e%40OgAg%40a%40cAGgCf%40qEv%40mClBoCnG%7BE%7CBcCdIkMlAiCtAqEn%40_EXsEBoFKqE_C%7DVC%7D%5C%5BkSkBmb%40sAePiB%7DO%7BAgIeBeFsCwE%7DGoFsFiEqDsF_DuJuAuGw%40wHOqJKgGg%40eFwAeGkAoCeE%7BH%7B%40kCe%40gCo%40gH%40mHh%40qKCyD%5B%7DEmB_Ne%40iJAkHd%40wJ%60AuHpBgIrBuFxHoMzCaH%7CAsFvA_Jn%40%7DKn%40sXCoJk%40gKs%40yFkC%7BLg%40mBeCwJi%40uGFyIjAyL~BsRX%7DIWcGw%40%7DE%7DAkE_CkDiDqCeHoEqDwD%7DDgHaCkHeAsFm%40uHIqHMyLw%40yIsFgUsBaLeBmOo%40%7BNIgMVeMjAsO~%40oGbCcJrCoGxEuG%60G_FxPmJxHkFlF%7BFxD%7DGvBgGxAuGhA_JnKmvARcEN%7DHQqF_AgFuAeDwBiCyFyDiEcEuK%7BNuFcIgOwWiLcVuFwMuIyU_IaWcGiU%7DGm%5BcEwUyGig%40mEk%5EsDiUqEcTkFsSeHaT%7DHsRkJaR_LuRmByGs%40qGEcI%60%40mFfA%7BFxCcIxPsc%40pB%7BHdDwQ%7CAcNbA_SD_TmB%7D%60%40mBkNuC%7DMmF_QqIuR%7BRib%40wFoOaH%7BU_N_i%40cJg%5B%7DJyXyHcSgEoO%7DCuPoBiLkCgJeF_LmK_OkEwHaDyIyB%7BJmAwKgCwc%40mCeNuMg%5CeGgQiCoJyCiNoBcN%7DCo%5BmBkNeCyLyRas%40%7BSis%40oL%7Ba%40wGiT%7BJsWqKcVaNaWmNgTuKoN%7BNqPaImJkEoFkHwKoEmIcGwNmE%7BNqCcMkCaPsBcOwFcd%40mDsTaFqTyNge%40mE_QmBgM_AgNOeKXaNdAcM%60CaNzCcL%7CKi%5CvEsOpEcS~%40oFtBmQjAqRZ%7DK%40%7DLo%40yVs%40yJqBkQ%7DBmM%7BCgMsDkLcGwN%7DHmNmMyQ%7DReX%7DGgJmeBu_CoIoMoMkV_HePsY%7B%7B%40wEsNsa%40%7BoA_HeToE_P_EuQuD%7BSaCqQaCiVgF%7Dz%40cCo%5CaCqTkD_UgDwP%7BCeMuGcUmIaUmJoSka%40at%40kDcHsD%7DJgDwM%7DBiO_AqLa%40gPQyh%40u%40wQ%7BBiSaGk%5E%7BEeVwHa%5CwIuZ_Lo%5CoFmMqJiQkFgLmCgIqDqOgQ%7DcAmIsf%40mCeMeE%7DLaGuJyEiEmGmDcUaJkX%7BNmEqCyH%7DGeJoKmKwNmQoYyQa%5EoMgZiMa%5DiFsLcEcHsDyE%7DEsE_HoEmScL_IiGgK%7DKoIaM%7DDmHwE%7BKyDaMmA%7DFsAwMUaLPqI%60AgLxBaLlFaVtAyJ%7C%40cM%5CaRMwHcBq%60%40gB%7BW%7DCu%5CaI%7Bv%40cBeYc%40eUBaQt%40cX%60AmOhCiVvG%7Bc%40%60CuTvAeTp%40kWM%7D%5CmAsm%40RaVhAgStC%7BXbAqPtAa%5CpAeNfF%7DZnAoKd%40yKG_LeB%7DZ%5BwKRyL~%40sKbBoJnC_JdDgH%60MuRfEwIxByGjBkIrA%7DH~AcVtAkKvBgJ%60GqTfBgKrAoOv%40o%5EbA%7DYbDse%40l%40aO%3FqNg%40_N%7B%40oJcCcPkDaOeEwK%7DEmHsEkEsJaGiEkD%7DAmBoCiFaBiF_A%7BFc%40%7BKRmGhA%7BI~AsFjBmEhG%7BQxA%7DH%7C%40%7BIZcKK%7BIs%40cKsBuLgCgIaFkKoHiLaEkGwF_IsVq%5C%7BOoVgEgJwB%7DGcByIgEgb%40%7DBuPwG%7BYgBoJmAaNGeK%60AmN%60B_QJeGg%40gNgCeRY%7DDCoE%5CgCvAyD%60CeCnIyF%7CAsBtE%7DJlFyK~AyAdBy%40tDI%60Ct%40~BxBrOtYdCnD%60CzArCd%40%60DWlDmBrZ%7BUfDoA%7CCQvDp%40hKxC%7CCUlK%7DDtJqG%7CEoElDeFvCgHlBoI%7C%40cJrC%7Bo%40hAmNzBsLdD%7BJzE%7BIhEcFhEoC%60SuErGwBnG%7BDd%5Du%5Bj_%40w%5CfQkOxCoDtDeGhGiLvCwDxDiDpHiGfCaDdDoGrA%7BDnD%7BOlAmEdEaJhDkEzDaD%7CDiBxPsDnGeCnGwEfOeQlEaE~JkFbFoAlKcAlR_%40jKg%40%60D%5BfIyA%60KyClJeEbVoNji%40q%5C%60HgE%7CZiR%60PeIjRgGnJsB%60RsB~Yo%40xLq%40~NuCnTuHrKkF%7COeKvLwJrMiMfIiHjGaE%60KsEvNmD~JqAbHiBvD_ClCsCrFkJzCeE%60E_DpEcBdFa%40zKf%40hE%40rHy%40xLyCxF%7DBhD%7DB%7CDkExCeFhGgPhDcKjIuRlFuJ%60G_JxIeKzFwFzKgIzImErHyBzGs%40dIFbGv%40%7CJ%60DvIvEhb%40j%5BdHxEhIpDhGhAnDHbE%5BpFgBrD%7BBzFwFtGkGvFaEpHyEfLwF%7CNsEpR%7DC~EYlIBnKn%40hAj%40RhAYjA%7B%40%5EQ%60%40Dj%40JdAf%40dKCj%40ZHHU%60B_%40xJmDvAqAhHmK%60JaTnHiOfCmGpDgMrB%7DDp%40y%40hC_AjE%7BChCiAd%40%40TW%60%40c%40rHyClCqD%60Aw%40R%5BGU%7CBmHrCqJ%60CqGNGf%40H%5CMEk%40Ec%40h%40yBfBaCzCd%40jABpFoA%60As%40%60CaEnDgHzByFdA%7DAh%40oArJwPfDmHpJeZzNsb%40tDyGfKwUtHgPdL%7DQrFaCtBwAzA%7DBpBaFvd%40ci%40~AsAfCu%40zAw%40hAqBhAiCnBmEhD%7DEvIqI%5EErMnFdA%3FlBkBnBuBx%40Mv%40LjAv%40Nd%40TWGYd%40cAhEgFj%40u%40%60EcEjCyEnBqGv%40oF%60%40kIDuLLmKf%40kHpBoI%60BiDrGwHjCmEhCoHdDoMzCkJxJ%7DTnC%7DH%60ByHt%40%7BINmP%5EwGpCaPfG_%60%40xBuHrHcSd%40cDIaDsByFk%40gCGcCR%7BBx%40kChA%7DAvAs%40dDq%40lAoAdA%7BCzAgHhByEJcBCcMXkL%5CiE%7CAmGr%40cGjBgUpA%7BEdD%7BJlCiD~B%7BC%60AaD%60AmEzHwMnEqHr%40uB~%40qGn%40kJf%40mD%60DiJdBsHRuFBeMhAuHjB%7DFdFmLtA_Hb%40qHMaI_AoJ_CiUwAeNwBqJ_A_CiFyH%7DC_C%7DCsBkBeC_BwEyA_FiC_EuAmCy%40%7BDgAeIcCwF%7D%40%7DCqAmGiBwF%7D%40%7BGqAsEo%40oA_CoDmAqD%5BuDJyBbAwDrA_BjAm%40nAMpDr%40fABpBc%40~AoA%60AcB~%40uDx%40eJxAoNLwE%5BmN%7B%40qJmB%7BH%5DgCk%40%7DGcAkCmAmAw%40gBy%40eE%7B%40mDqBgDsBsCuBiFoCiEaCaDoEkLyCaIeEuLaBqGoBuEkDeFuDeDyEyEyB%7DDiAgEg%40eJZsOzAw%5DhAyu%40J%7DWa%40qTNkADq%40C%5Bd%40%7BDx%40%7BC%7C%40mApCcAzI%7BAz%5BhBdEdB~EbDpEl%40pMN%7CBMvBbA%7CDfFhAtA%60%40TTa%40vBy%40zFyCdImGfD_Ip%40%7B%40%7CCWlAg%40tCcDhEoCjBa%40vFqDpDyDv%40cCv%40kE~%40qCdB_BdFqNzAmFfBuJfAkDlBiCjAy%40xEoBtAcCfBqErBmB%7C%40mBvEgYf%40gAv%40i%40hHmBp%40o%40%60GmLdFgKrF_LhBsDtA%7B%40%7CA%5DhCOvCeAbF%7BChDwAnEa%40pFv%40zCFvBh%40lH%7CDtCx%40vB%5BvGRvEn%40bFhAfAB%60Am%40nAsBhA%5B~AP~ApAdDZ%60MyCpEm%40pBwAnAiBxAeFhBsAvA%3FnAl%40n%40BfCgBtHmClLYzAZbEgAdAGlAqBjAu%40rDUbAZz%40BbA%5BxEZvF%3FzDb%40vDe%40j%40%7B%40G%7D%40a%40q%40mBQe%40a%40VaB~DiF~%40mAfBmAbDoAfEoCdGqDnCeEhAi%40fA%7D%40xEaAdJqBpA%3FfA%60AdAXhMDp%5BjEtGxCzARlCz%40lJvBv%40i%40jDgAxAH&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Lauterbrunnen" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Camping Gletscherdorf</div>
+            <div class="accom-address">Locherbodenstrasse 29, Grindelwald</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 1 août 2026 20:00</span>
+              <span>🚪 Départ : 2 août 2026 12:00</span>
+              <span>🔖 Réf : XIMV-YICW</span>
+              <span>💰 121.80 CHF</span>
+            </div>
+            <div class="accom-notes">Rating: 4.1 (578 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">15:00 → 19:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Chutes de Trummelbach</div>
+              <div class="activity-location">Trümmelbachfälle</div>
+              
+              
+            </div>
+          </div>
+          
+          <div class="activity-item">
+            <div class="activity-time">12:00 → 15:00</div>
+            <div class="activity-content">
+              <div class="activity-name">📍 Bateau sur le lac de Brienz</div>
+              <div class="activity-location">Brienz</div>
+              
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">📝 Notes</h3>
+          <div class="step-notes">Lac de Brienz / Bateau</div>
+        </div>
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784641535944.jpg?width=400&quality=60" alt="Lauterbrunnen" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 4</div>
+        <div class="step-title">Gorges de l'Aar</div>
+        <div class="step-location">Gorges de l'Aar, Aareschluchtstrasse, Schattenhalb, Suisse</div>
+        <div class="step-dates">
+          2 août 2026 → 2 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>66.0 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>57 min</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=46.5694717%2C7.9141679%7C46.7398021%2C8.1208732&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C46.5694717%2C7.9141679&markers=color%3Ared%7Clabel%3AA%7C46.7398021%2C8.1208732&path=color:red|weight:4|enc:iwf%7BGmmho%40_BIa%40DmCdAa%40VKLi%40bBcI%7BE%7D%40_%40oA%5B%7D%40GaA%5DgEwBaAScT_D_Fi%40gDE_H%3Fc%40GYOm%40q%40YOo%40EwAR_Dv%40yFhA_BVe%40%5ESRu%40b%40c%40NSRoAtBy%40fAaAp%40cE~BeClAaA%60AsAj%40oAb%40oAt%40i%40j%40W%60%40UVm%40b%40qCdESx%40Cf%40XZJDbBJRLLPNd%40B%60%40CXGJa%40b%40cCd%40%7D%40AiBYgAGkCBkBCgDWq%40C_%40Jc%40Ni%40BQGYSi%40GcCFiAXQH_%40%5E%5Dp%40o%40~%40%5DLg%40EuBn%40yAXWCw%40Y_ESmFl%40mFhBiBt%40m%40%60%40w%40r%40QFg%40Q_%40We%40Om%40Ei%40D_Ab%40i%40n%40%5B%7C%40%7D%40fDe%40x%40s%40x%40w%40p%40o%40ZaBVoBTiDr%40wGdBiBI%7B%40Qi%40_%40u%40q%40YIeAGs%40LYPu%40hAWf%40k%40b%40%5BH%5B%40c%40GwAa%40kCg%40uBk%40aBC_FYiAJcARs%40Aw%40MyAo%40qE%7DBaBaAk%40Uw%40IsA%3FgAGaDo%40qAGsCJy%40T_Bt%40iA%60%40_Bz%40cC~AwAl%40_AVaAFgAFeAVi%40L%5DLe%40d%40%7B%40bBm%40nAwCbFyBrF%7DBvEwBdEaBdDqBxDSV%5DVg%40TaGvA%5DRYTU%60%40Qd%40yBpM%7DAtJQl%40k%40~%40_BtASVWf%40oAhDq%40xAc%40h%40uAr%40cCz%40m%40%5E%5DX%7DApBe%40dAMZgAjEi%40~CYjBy%40~Ca%40lA%7DClHgAbE_%40h%40eAt%40%5Bh%40y%40bDO~%40QnAKl%40k%40tAgAzAiB%7CAwAbAiC%60Bm%40Rq%40Ju%40TyA%7C%40%7BAhAmAlAgAtAi%40Zc%40JwBBe%40Re%40f%40%7B%40rBw%40nB_AnBk%40n%40yG%7CEyDzB%7BAj%40iAd%40SDC%5BMQQCONe%40Cg%40c%40Yc%40cDcEs%40k%40cAWu%40%40oALmEP%7DGg%40aA%3FmBk%40sAu%40kCkBkCsAy%40QwZkBc%40%40iAJqGnAmBj%40c%40V%5D%5E_%40l%40Y%7C%40m%40hCYrBUr%40EB%5Do%40Qa%40m%40wBw%40uBkEkJm%40cAOGwCkFgBsC%7BAoBkBkBkBmAaBw%40gA_%40wA%5DiAMaBI%7DCLmGl%40mBHiBKsAWqAg%40_BaAuAmAgAuAy%40yAgAoCw%40%7DCUoAYaCIwAGwC%40_AFeCR%7BB%60%40cCx%40aDrBoFr%40cB~%40oC%60AeE%5EkBVuBPaCNsDBeDMaDOwBi%40aEYoByCeLyAwEoAuEmAyFeAiGs%40gFg%40sEc%40gGUsEImCKkH%40oOGeJIuD_%40yG%5DkEo%40yFw%40cFu%40sDc%40aBw%40yB%7D%40kBaAaBmCaE_AeBs%40gBu%40aC%7D%40yDmAwFSw%40wCcJeAoDmAkFkA%7BFwAkFgGkRoCyHmBwEgCoFu%40qAmCaD%7DCgCiDeDcAiAaBeCq%40qAcBaEcAsBsDiGk%40mAq%40sBQs%40%5BoBOoAeAiOg%40wEcAwEm%40iB%7D%40sBwEcJq%40iBq%40%7DBk%40wCYeCo%40qIo%40%7DDq%40qCiAaDmCgG_BeEmAmEuCaMW%7D%40eD_Ke%40gBkBaMgAsEoE%7DNsCqIoAcEuAuDaAkD_CoEoB%7BB%7DAcAwDgBw%40g%40u%40w%40cAuAc%40%7B%40y%40uByEgNaCmGcDyH%7BAaDqHyMkEqIyCuGoAcDu%40%7BCOcAkB%7BPeBeMoAwHoEyRaDcLiDwLeBoGoEcOcIkYoEcOuDkN%5DoAuJo%5Bm%40%7BA_AsBiFeIi%40eAe%40uAm%40oCWqBImAIqF%40kARoEb%40wFPeBfAwHNmAVcDL_EB%7DEAqDI%7DEGmBQsCWuC%5DeCkAsG%5DaBwCkJsDuKqA%7BEeAuFi%40_Eu%40cKUwFOoIGmGYqk%40G_GYgGS%7BCa%40gFkFsy%40iByXyA_RyAmUc%40wIOsEAsEDsDH%7BD%40%7BAbEwfAFc%40FyAT_BLGBGVC%7CWjCpCTlCZHBNs%40pAgJvAwL&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Gorges de l'Aar" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">17:00 → 20:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Meiringen</div>
+              <div class="activity-location">Meiringen</div>
+              <div class="activity-notes">https://www.alltrails.com/fr/randonnee/switzerland/bern/meiringen-aareschucht?sh=aqfe4r&utm_medium=trail_share&utm_source=alltrails_virality</div>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784641574640.jpg?width=400&quality=60" alt="Gorges de l'Aar" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 5</div>
+        <div class="step-title">Lucerne, Suisse</div>
+        <div class="step-location">Lucerne</div>
+        <div class="step-dates">
+          2 août 2026 → 4 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>183.7 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>2h40</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=46.7398021%2C8.1208732%7C47.12535319999999%2C8.189932299999999&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C46.7398021%2C8.1208732&markers=color%3Ared%7Clabel%3AA%7C47.12535319999999%2C8.189932299999999&path=color:red|weight:4|enc:cqg%7CGa~pp%40iBhOgArHGTOGsD%5DuIw%40kHu%40aGm%40UUIQO%3FKN%3FXBHQbCQnFwDhbAAzAMlG%3FpFDnCPvEZfGG%5C%7C%40pTHfBcBTYWg%40oBm%40iDKiA%5DyFOo%40cB_EQm%40%7D%40kEKaAKsDUiBYcEIiD%40oILmHJeCJq%40d%40oADa%40E%5BKQSAOJITKrAI%60AU~%40Wh%40o%40%5Ca%40DYEa%40%5B%5Ba%40g%40iAYiAWgBa%40uFSuAQk%40Q%5DU%5BYY_%40Mo%40C%5BBg%40TSRa%40p%40Mb%40Ox%40GbA%40%60AFb%40J%5En%40hAl%40h%40%5ETh%40Nv%40AhAe%40b%40a%40PUZ_Al%40eCBi%40Cq%40Mg%40Ye%40%5BS%5DE%5DFc%40%5EMb%40Gb%40A%5CNnBATKTOJO%3FUMO_%40Ec%40Bm%40ZiADYDuCBURm%40TW%60A%7B%40Va%40DQRoBRwDCaDDaAf%40%7DCBuAAm%40i%40iFEcCImA%40m%40Fe%40b%40kA%60%40%7B%40r%40sC%40g%40Ie%40Qa%40kAcAS_%40m%40yBg%40%7BBuAqFKaAEqBEa%40%5DyAUy%40gD%7BJEs%40Ba%40FYvAsCJa%40Be%40AUGMSQQ%3FMFa%40p%40Uh%40Mz%40SZWP%5BDuABWJ%7B%40z%40UFI%40OMISMmBc%40kCuCmMO%5BeCgDgA_Ci%40q%40cE%7DD_%40k%40%5By%40%5Dc%40u%40c%40O%5BAg%40F_%40PSt%40e%40h%40s%40r%40sAJi%40%3Fg%40CQOc%40c%40c%40mDiCS%5BO_%40WeBScDMy%40g%40mBK_AKcBK_%40S%5Di%40a%40m%40U%7B%40SU%40SFSRQ%5CId%40%40%7C%40DfAEd%40I%5CUV%5BNU%40YIsAsAcBmBuBiC_EsFkG_IaC%7BBaByBQOc%40Om%40Ei%40Jq%40%5EcBtA%7DEjD%5BLe%40LkAJqABgBZYAuAYYC%5DD%7DAC%7D%40Gk%40J%5DR_%40j%40wBvEc%40d%40e%40Pi%40Dw%40IQBWTY%60%40UPsC%7C%40a%40FqBAqAH_%40KSWMc%40Eo%40%3FYVaC%3FsCDUPWRE%60BP~%40K%60%40CtATzBUPENWBQ%3F%5DO_%40i%40%7B%40Ui%40w%40cDWs%40g%40gASi%40Kg%40MoAIkAOm%40cAkBk%40gB_%40k%40aAgAQ%5BEYAs%40Fk%40PkADm%40EeEFeCZeKCy%40Iq%40m%40%7DBIk%40WgCWyAQg%40%7BBaD%5Bu%40K%5Dq%40w%40o%40oBa%40kBk%40kDu%40aFaAoF_AkDuC%7DIgPee%40%7BAwDyAqCkBsC%7DAmB%7BBwBeBoAwBmAwAo%40gBk%40aCg%40%7BBScDGsCLwC%60%40uBh%40%7DB%7C%40aJbEqC~AoJhE_EpB%7BAn%40iFfCiCtAwAz%40wBbBgChBiBv%40_FvAwCz%40%7BAj%40i%40Lo%40Jq%40%40mBQmBc%40yB_AcBiA%7DDsD_AcAoAiBw%40cBo%40cBe%40%7BAaAgEa%40oAg%40y%40u%40u%40oDsBi%40Oi%40A%7DH%7C%40iCDe%40FyG~ByFbA%5DCWUQc%40QqAMaAUg%40SSWC%5DFcBx%40Y%5CQr%40Gp%40Br%40Pj%40JPlD%7CBx%40n%40%5Ch%40Lj%40%3Fx%40E%60%40Qh%40YZa%40Le%40AYOcAsAUQaAi%40QWK_%40G%7B%40GoASsAWqAg%40iBm%40eD%7D%40cEOa%40w%40_Bg%40m%40o%40m%40aBq%40kAcAq%40aA%7BAgCy%40sB_%40e%40g%40%5DqAe%40WYWk%40O_AK%5BUUsAa%40_Cq%40yAw%40oAeAeAsAm%40gAy%40qBgBqG%7B%40yBaAsBwAyBu%40%7D%40cDuCmDsCsBoBoBwAoBiBsVmSkFgEeGkE%7BDgByBq%40aBa%40%7DCg%40gC%5Dq%40Yk%40_%40_%40%5DaAoAgAeB%7DBmEcDsHw%40%7DBg%40%7DB%5BeBWiAu%40aC%5D%7B%40oBoCoCmCaDgEkBqBuDuEyCkCaCyA_A_Ak%40y%40o%40iAcB_Ea%40eBg%40cFYcG%5BgJs%40mPe%40iFsAwHsAkEaEaKyHsPeSid%40_CwFyByEa%40_A_CaFiLsX%7B%40%7BBoAoC%7B%40sBuAaCkBeCsGuFiJ_FwCaAwHkBcIeAoGs%40aImAgGg%40cEQ%7BBHeATyA%60%40kCt%40yAj%40gC%7CAgEzCmAn%40%7DCp%40yAJg%40%3F%7DBUwAe%40w%40g%40gAaAOYw%40o%40_BqBk%40%7D%40%7BIgLiCcDiCqCkG_GaCeCyGyHsBeBcCcB%7BCsAcA%5ByBc%40%7DC%5BcGUcBOkB%5D%7DBs%40eCkAsA%7B%40%7DBkBmHiHsB_B%7BA%7D%40yCoAgBc%40kC%5BaJQi%40%40_CYuBc%40iC%7D%40uBeAaCaBqBeBuDmD%7BAkAeCyA%7DAq%40oHgCoB%7D%40uC%7DAoCkBsRqOmIgHwJkI%7BEeDkBeAuAq%40sCgA_EiAwCi%40sAUyBSuFW_BCeHW%7DGOaNk%40iVuAyDSyAC%7BCHyBVqAR%7BHzB%7BBh%40cE%60%40sABwCOyBWcXiEaCe%40aKcBgA%5BgBy%40_BsAcAgAcBuBiBuCy%40aBiAgCGYoH%7DRg%40cByAoGi%40gBy%40iBkAgBeB%7BBcDuD%7DFoGcEcEo%40u%40o%40aAo%40sA_%40mAk%40qCw%40uEy%40%7BDoBuGcAgCKKa%40q%40u%40%7D%40yAkAom%40s%5EaAa%40uG%7BD%7DIgFm%40O%7DAIuAW_D%7D%40_AGcA%40eCP%7D%40%40qE%5BIF_L_A%7DI%7D%40oBIyADiBTiBf%40yC%60AkB%60%40u%40H_B%40%7BAQeA%5DkAk%40kCyB%7BBsBuBcB_CoA%7BCmAuEsAmCi%40cAM%7BB%3FcBVu%40Tu%40%5CuBtAqBvBkCjDiAdBoBdDyArCsAzBq%40%60AcAjAo%40b%40iAh%40eBb%40%7BDT%7DCPyBh%40iElAqDnAeNdEgDlAaBv%40oBrAmAnAmAjB_ApBmC%60Hw%40zAmAlBoA%7CAkAhAwBlB%7DE%7CCoFfCgC%60AaEfAuDn%40oDZqDJoDEmDSu%5BgD%7BJeAgJy%40kBAsAJ%7BB%60%40aBf%40oBbAwE~CiBbAqAb%40%7BAZaBLqBCoBWid%40gLgCe%40oZcFw%40EaADqAZ%7D%40d%40cA%7C%40w%40%60AgApBaIxPwGlM%7D%40tAqDnEu%40r%40cClBsAt%40qD~AuEbBgB%60%40q%40FuA%40i%40Es%40Q%5DO%7D%40m%40i%40e%40yAsBe%40%7D%40aA%7BBaEkKcAsDqAeGm%40_C%5B%7B%40u%40%7DBm%40qAq%40_Am%40q%40qA_Ag%40UcAYaCSgBTkBh%40qClAgJpEoDrB_FdDuDpCaDjC%7DBdCoAxAsB~CmBrDuAhDkBzFm%40~Bs%40~DaAvHs%40tHeBlTyBxX%5BzFGnC%3FhCP%7CEVhDJv%40dBdLTdBTbCPfEBzDExCGhAO%60CQzAYnBg%40hCe%40bBy%40%60Cq%40~AwAtCeB%7CCaHbK%7DTr%5DqC%60EaCxCmCtCkB%7CAsBtAsBdAyBz%40_AX_Cf%40_Eb%40kEN%7DLV%7DBN%7DBZoGfB_C%7C%40iClAiC%7CAuBvA_EjDoDdEgBdCwAxB%7BCxF_DzGwEpKiE%60JuDtGcD~E%7BBtCyCfDoCrCyCfCcExCqTjN_JjGwEnDyFzEyIhIeDhDuFpGgDbEyDvFgBvCeAhB%7DBvEeCjGuAdE_BzFoA%7CFkDhRsAhGyAzF_A~CgAbDSXkDhIw%40%7CAa%40X%5DF%5BEOOQc%40Eg%40%40c%40HETe%40TQX%3FRLNTF%40rBzEAXFTPFl%40p%40t%40fBb%40bAXXfAz%40TLr%40RtC%5CtANBTDnAUnD%5DhBYbAi%40dCcBxDEX%40Z~AxBn%40%60%40f%40%3FpGgAbAQz%40KlHmA%7CJwA%60Eq%40NhANd%40DHbK~K&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Lucerne, Suisse" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">TCS Camping Sempach</div>
+            <div class="accom-address">Seelandstrasse 6, Sempach</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 2 août 2026 20:00</span>
+              <span>🚪 Départ : 4 août 2026 11:00</span>
+              <span>🔖 Réf : 50153</span>
+              <span>💰 227.60 CHF</span>
+            </div>
+            <div class="accom-notes">Rating: 4.4 (1643 avis)
+Emplacement : PREM408</div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">12:00 → 18:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Mont Pilatus</div>
+              <div class="activity-location">Pilatus</div>
+              
+              
+            </div>
+          </div>
+          
+          <div class="activity-item">
+            <div class="activity-time">12:00 → 14:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Visite de Lucerne</div>
+              <div class="activity-location">Lucerne</div>
+              
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784662124669.jpg?width=400&quality=60" alt="Lucerne, Suisse" class="step-photo" /><img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784662147336.jpg?width=400&quality=60" alt="Lucerne, Suisse" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 6</div>
+        <div class="step-title">Verzasca</div>
+        <div class="step-location">Verzasca, Suisse</div>
+        <div class="step-dates">
+          4 août 2026 → 4 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>89.1 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>1h39</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=47.0501682%2C8.3093072%7C46.3502778%2C8.7866579&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C47.0501682%2C8.3093072&markers=color%3Ared%7Clabel%3AA%7C46.3502778%2C8.7866579&path=color:red|weight:4|enc:qnd~Ge%7Cuq%40o%40i%40KiDW_Eg%40IaARAdANxDNbBdCb%40~%40BhLmAlIH~BzHp%40lCzAnE%7CA~D~DhFl%40x%40CvA%60GxCjCrAlEvEn%40~%40Zd%40zC%60O%5EdCbAbCz%40%7C%40vC%7C%40%7CBtAvBbBlBNhFQbAElm%40xGtIH%60K%7B%40bJiCbI%7BDbIaGfCoCjB%7BChEcK%60CyDbCyBjGiCrWaItDcAxJu%40tCu%40bCeBfB_C%7CFyKhFqHfDiDvD%7BA~DW~F~%40%60H%7CBzFhDhI~GtDfA%7CDI%7CJiCvEWpQ%60BfV%7CA~ASlDoBpA%7BAdK_QbDiIhAuFl%40cHH%7DGMoOOgKO%7DCwA%7BImBgGmAqFu%40qIHeJr%40sGdBwGjB%7DDb%5Bcc%40%7CEaH~GuLfGyNbEyNvCkOdBoOt%40sLd%40wQZcc%40l%40y%5CtBoc%40%5CwNQgQcAsPiBmNyPm%60Ay%40kG_%40eHAcIh%40%7DUe%40wQoCek%40%5DgNEsPa%40yIkCgSy%40mL_%40kVuAa%5DSwO%60%40uKhEgd%40tCg%5D%60AuEnC_IhEiNjDcOvKw_%40xEqN%60D_M~BwNzA%7DRhBy_%40dBcSr%40u%5Cl%40q%5EEkEo%40cVBmUWiHeBoTgB%7DMoDwRg%40gGIiIb%40sJpAoKxCwNzHwZz%40%7DDtJy%60%40nD_NlF%7BNjI_PxMkQdMyQnf%40yt%40%60SiYbDwEnN_RnOoQ~HsIrg%40ie%40vXcS%60qAoy%40hPgLlKkMlEiElCcBtFkB~Di%40tL%3F%7CDC%60H%7DAtUaNjOuKnB%7BCfBcEhAuE~%40_J%40kH%7B%40mIcBwHkCaL%7BDqPeByKO%7DC%40wDr%40eHjB%7BFxBkDtBaBvD_BbTqF%7CQwHl~Auu%40tJqH%7CI_IfFeCfEa%40pDVrk%40%7CNpIrAjHVnHc%40bImBjIeEnI_GlIuElDaAnDa%40fGAxQv%40lF%5DrFyAbQmKhIcE%60McEhHiAzHMzMThE%5DtDoBxDsExBiEfAcDx%40eElCgXbBqKxBoHfDcHjH%7DJtGwHhD_D%60EyB~Bu%40tEk%40%7CMVrEa%40tBu%40nD%7BBnIiHvDsBhKkCvh%40qHz%5C_LnMqDjB%5DxCU%60CLzDhAnBhA%7CFhFzFtEtFvB~AJ%60Eg%40lImF~PcMrDyAxAInCt%40lAhApAzB%60A%60Dz%40lFlCxPhAlHp%40nCbA%7CBnCpCxCx%40nINrEt%40%7CBtAlClDfBfF%7C%40jGvCvZ%60A%7CCbBtBnIjEdBnAfG%60GbCt%40vHm%40%60BJbC%60B%7CDnF~BpBvB%5CdBAtHa%40tDd%40pEfChCnCbFlJtCpDnCxB%7CElFhDzFdDjFtB%60CxIvGhKbKtOnStPzWbCrCvGhGlPfKhLbJ%7CUbVnIvGdMjHpDxDlGzH%60M%7CJnDlFbHdP%60FfIzFrHbIzHtI%7CG%60GxCvE%7C%40nGAbG_AdDGvDj%40dInDzGjBvD%5EjGdAdDdBzCxCvDpGvD~CfBn%40nDRpFaB%60GkCdFy%40%7Ch%40%7DAlHl%40dGpBzIxBlFTjE%5BtM_BtDCrE%7C%40h%5ErMfr%40xZf~Afr%40~IhDh%5CtHp~%40%60U%7CbA~V~p%40vNbKnAzML%7CJs%40lGkAdOgEhl%40aR%7C%7D%40uW%60RuFxWuJ%7C_Bmn%40%60%7D%40ef%40jSsOja%40gXjEoE%60EiHnC%7DHz%40sEj%40eDb%40kHF%7BEX_NjBcZh%40%7BOIwS%5DqOb%40cGnAoFzBwExJ_OrCyGbDiKzCaOtAiLzAkVpDuz%40rA%7BPbCiSfF%7BYdB%7BMn%40aLJ_K_%40mY%3FwWp%40qh%40hAa%60%40tAwXvA_QbDmXxC_RzHu_%40bGkVlHgV%7CJqX%60K_UdPuZ%7CHcQpI_WrEcKjScZhM_S%60JgQ~AsE%7CB%7BKrAoLLwIyA_ZMaO%7CAaN%5EkEBwFMkKViEl%40iDlCkMr%40yKCeOP%7BE%5EaD%60AkEtAcDvAwBbH_ItCwFlF%7DNxBwEjHsI%60N%7DKjFiI%7CCsIhBeIlBgMz%40yKd%40uMNwOd%40yKh%40wE~ByKpD%7BJ%7CLqTfEeIzIaVtFsLnDiFzEgFbIyFnKwFvRyInf%40iRtYcKzFyCnI%7DFlH_HxGmI%60FcI%60HqOnI%7DVtFmMtJ%7BO%7CGyHrL%7DJrIaHvHyGpFsDvHuCtIoBdZuE%7CGqB%7CEaCtGmFpLoOhGuGhFaDdGcBlFYjMZhHq%40%7CDoArD%7BBpDkDhFeIjIwNlLePnI%7DNbKeV~KmVdHsLfJeMzLwOzI_P%60GmPlEuPhC%7DI~CoInDkHvHkOvC%7BJ~BgLxAaNv%40_Tz%40%7BK~BiNlDqLvE%7DJvPoUlJqNxEaJtIuSvGyShDmNvIk%60%40rGeShGyM%60IoMzLaO%60Q%7BPvL%7BJhXmRh_%40%7BUp~%40gk%40vM%7BF%7CKaDjO%7BBpf%40yBvQqAnPgClMgDdOmG~_%40_R%60TeHt~Ag%5DfK_DlMaGbK%7DGzI%7DHfIkJ~FeIfL%7DPpGyGpHmFpIoDbIcBlIe%40jTr%40bLSxFo%40xHeBhKyDfNqHhGmE~EgEtGiHxH_LpD_H%60EuJxL_%5C%7CEaJnFoHtGsG~HsFzIyDnIqBjPiBvXmEjWoGpIkA%60F%3FnFz%40bDpArEpDfDhEjBlDnCtIfCxOlB%60JdGlR~FjSdDvI%7CD%60H%60EbF%7CV~TvN%60LxJjGxg%40zY%7CY~OvNhK%7CLhLfUdVrIdHnIdFbG%60CbFpBfGvAlHv%40bNZzAXjBdBd%40z%40nAfAlCPv%40XnA~B%60G~RxKz%5EpGzUvJv%5C%7CPtm%40~AzKrAbNNjIB%7CAmHlBiT%7CFoUbGmX%7CGoQxEuMnDc%5CfIOjUr%40tb%40i%40np%40StI%7BDnRe%40hFy%40%7CVfBtSItJB%60ClEl%5DdAbJnApMGdHeF%7Cx%40_Cn%5DsBv%5BWhEIfA%5BvDKbD%7DBb%5DaC~ZcAzG%7B%40tE%7B%40bDq%40lBqD~KiE%60M%7D%40re%40YrB%7DBpEc%40nAgAvC_%40bDM%5EqBK%7D%40PKY%60Ck%40FSWEqBZu%40%5BQd%40RhB_%40jDFrBYlAkAlBEz%40s%40fEWtDi%40%60F%7DB%7CEi%40~%40eB%60He%40%60AqCv%40eCxAk%40EcAm%40gCNuAf%40%7B%40OqAkAsB%3FmB%7D%40iAg%40k%40_BaAuA%7B%40qACeCXMRZf%40lD%60CvAtB~%40lBSfBDL%5Dk%40SeDMcB%7D%40aCuC%7D%40%7DBeCyA%7BB%3FgBy%40%7DDi%40u%40OsC%3FoC%7DAaFeBoT%7BKgCyBi%40oB%5CwGYiHqAaBmAOqAZgG%7CC_ANmBo%40oFsCyAWmBr%40y%40Fm%40i%40c%40eE%5Du%40wAe%40kC%60%40mEvAmDB%7BBMyCs%40i%40EqCqAwBp%40%7DADgDyAoAaA%7BAO_HvAuFkDoA_Ai%40Es%40z%40yAbBkCjJw%40lAqDbBqDhFgD%7CF_%40tAwHzKoJ%7CGcD~EuC%7CB%7DAdBaC~%40%7BCdDg%40vD_%40rAsAjAmBJi%40Xi%40h%40qCDgCe%40o%40JcAx%40aBp%40eAjBmGlF%7D%40TeEs%40yBo%40%7D%40eAe%40UgB%40gBu%40mCgByBy%40w%40_%40qAJeCKcJ%7B%40uEL%7BALoFtAcCb%40w%40n%40%7D%40%7C%40oEp%40yArAkCnAaBp%40uD%5C%7DB%3FmALmC~%40q%40~%40qEfHaBfCsCvAaBXyCpF_CzAeCbEsCfJoArCyC%7CJ%7B%40fGi%40%5Eu%40pA_AbHT~Cn%40vAGt%40%5D%60Gu%40rBqDxEwFrKqAzFcGnP%7DJjP_FfGcBpBsDfBoAhA_ChEm%40fDmBlCcEzBoEtAyBhBkD%60C%7DAl%40uGvFaDhF%7BApCuGzCgDbDeAzAmDfCkAdA%7D%40Es%40HgBjBwEfDPfEfAdCnCv%40%7CAE%5Ef%40C%60%40YLoFz%40cCKmB~%40wBtCyAvA%7DDfCmDp%40mCv%40_BGyEfGiCvDkFfA%7BP%7CCyFzE%7B%40%5ByAgB_AeBcBm%40oE%40yDsAqIkCyA_BsHmCiDmAgE_%40cC_BmBmEo%40g%40oCl%40%7B%40YeCeCgFcBaG%7DHuLqJg%40yAs%40%7BCcA%5BuCQ%7DD%7DA%7BD%5BgDVk%40p%40aAnDi%40v%40qFtCoB%40%7BCf%40a%40EcAs%40iB%40s%40TeCSiALcC~%40_GCuI%60%40eDyAmBSkAkD_BgC%7D%40cD_%40c%40_Ct%40%7B%40W_AgAoCwDsCOqEwAkFKy%40PyBbAkAm%40cD%7BBu%40LUrA_%40rHwDrDqChCiCjBoCd%40yFtGQjCmDzBuC~A%7D%40rA%7DAvCc%40bDWx%40cDnBg%40~%40MdFWfA_EdEeAlEoA%7CBcFvFsBxF%5DM%7DBTkEiDQLsBRoCc%40CjBRpAl%40bAvBdAd%40~Bj%40z%40Nx%40p%40%60%40PZ%60BrBbAj%40%60%40dADxBGdBQlCNvEPRDnAL%5E%7C%40FZg%40FkB%40lEXYj%40mHtBgLrA_F%3Fw%40aA%7BA_DwDoAu%40uAvG&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Verzasca" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">16:00 → 18:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Sonogno</div>
+              <div class="activity-location">Sonogno</div>
+              
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">📝 Notes</h3>
+          <div class="step-notes">Sonogno ou randos le long de la rivière</div>
+        </div>
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784664441728.jpg?width=400&quality=60" alt="Verzasca" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 7</div>
+        <div class="step-title">Côme, Italie</div>
+        
+        <div class="step-dates">
+          4 août 2026 → 5 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>200.8 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>2h15</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=46.3502778%2C8.7866579%7C45.8063817%2C9.0851867&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C46.3502778%2C8.7866579&markers=color%3Ared%7Clabel%3AA%7C45.8063817%2C9.0851867&path=color:red|weight:4|enc:gx%7ByGucst%40tAwGtAqHR_AP_%40dFoFZc%40%5EaAz%40%7BDN%5D%60%40e%40vCsCLYHm%40HoEJi%40Ta%40LMpC%7DALMJWNu%40RoBV_Ah%40aAf%40u%40R_%40h%40s%40XUzBiAvCcBTWLcCXc%40%60DwD%60AaAbA%5BnAKd%40Y~AoAfAm%40lA_BfCcCj%40k%40J%5DRuGHy%40JYZOX%40dAj%40dBvAv%40b%40J%40ZGbB_AXIhACnCBj%40FrCfA%7C%40NpB%40%60%40Lf%40f%40nBxCf%40n%40d%40XVJL%3FlBu%40V%40NNHRp%40fC%60%40%60Ab%40r%40d%40j%40JP~%40xCPJzAFb%40F%60CpAZ%40xHc%40~DJ~%40GdA_%40%7C%40_%40l%40KZAdBPp%40ALAROfAK%60%40Hp%40b%40PNPFnB%5B%5EIZC%60%40JlAM%7CAk%40rCiBX%5BN%5Br%40eCLi%40Tc%40TMxAOlAGdAJz%40NfA%40pBf%40%7C%40r%40z%40NxA%40l%40FZZNd%40%5ClBZdAT%5ElFzE%7CDhC%60%40b%40~ExGb%40XbEhAd%40VdBrBXNZBx%40Wr%40W%60%40%40RHZ%5C%7CAtDXb%40%7CAbAZNbDRb%40JdBj%40hAd%40jGtB%60%40RlAvAJFdC%5C%7CG%7CCf%40X~%40HfDGf%40DdAX%5CRRVl%40nAt%40dAl%40h%40NH%5EF%60FmEVMlOwCtAOrCe%40n%40W%5C%5DjByClCkFjA%5Bv%40Nj%40Kh%40WbCe%40nA%5Bx%40KnC%7DAjAgA%5Ee%40ZS~AsBVa%40fAo%40d%40OpBLf%40GjCq%40lACNCHIDQAOO_%40UGo%40J%7B%40KiB_%40QQcAsBIiAOaCBMdDyBz%40y%40fAoATONGb%40Al%40DN%3F%5CWl%40m%40jCyB%60%40MXQj%40iAfB_B~%40cA%60CmA%7CCsANMfAeCzBuCd%40wALQhG%7DEdA%5D%60Ao%40~%40u%40%60Am%40%60ByAbAg%40b%40QvCq%40bCyA%7C%40o%40fAcBNc%40ReATyAJ%5DnB_Dn%40o%40d%40%5D%60DyAJILQtA_BjAeBrCaD%7CDuFtE_JpCmG%7CAyF%7C%40qEv%40iBnC%7BFfA%7DAvBiCr%40gAh%40kAJg%40DgBVyCDS%40a%40GWg%40_AUq%40%3FmBJuBv%40uDRe%40%5Ee%40%5ESFIFQr%40uFxBwG%60%40gBj%40gA%60%40iAdAuDlAqDbAqB%60AqAr%40e%40jAu%40x%40eA~AkDVSxAGl%40QtAcAV%5B%60BmCtC%7BDp%40_BPYj%40_%40d%40S%60B_%40%60%40Il%40Bl%40FrAMv%40AbBYv%40S%7C%40g%40zAm%40x%40s%40%5Ec%40ZSvAY%7CBY%5EWXe%40Z%5B%5EUp%40QjAMbCk%40jBi%40v%40Mj%40%3F%5CBnDQrGj%40nANvAAv%40Nb%40Ab%40KXDb%40%5ChA%5Eh%40TjA%7C%40dCrAb%40Jd%40BhACND%5E%60%40T%5CTRhATx%40ZxCj%40%60%40D%5CE%5EOZYdCiCjBiAl%40_AXm%40ZWbAWd%40Y%5C_%40%60%40OPBZR%60DXx%40E%5CGXQRYNOTGp%40Az%40IdA%7D%40PSLWLu%40R_CRw%40Va%40bCcCnAc%40p%40%5Bf%40g%40bAiAbBkAb%40e%40lBoDtAkArHiFx%40s%40nAgBhEwGVs%40Nu%40Vk%40vFyI%60AmAx%40i%40vBy%40b%40g%40Re%40dAaEdAiD%5Eq%40fAaAV%5DLMLCZHp%40%5Et%40r%40lD~Bn%40Vp%40I%7CFqAf%40Ab%40Tt%40n%40%60Bz%40jAf%40r%40Lb%40E%60AY%5COp%40Mv%40NxA%60ARFTAhA%60%40nAPvADb%40FlC%3F%5ECx%40SrCcAtB_%40TA%5CF%60Ab%40LVJd%40V%60DN%60%40ZXNBVAZEvAk%40%5EGp%40Jp%40TjB%60AnBfAx%40%5Cr%40PZ%3Fb%40OpE%7BBfAk%40b%40KZEd%40Bj%40L%60%40%5Ej%40%60A%60%40hCG%7CC%5BxDA%7CANp%40X%7C%40rAtAnAr%40rOtH~BtAxBf%40fB%7C%40p%40l%40%7CAn%40l%40D%60CCJ%40LJdCTv%40Rp%40h%40t%40NbBE%60%40J%60Bp%40X%60%40Td%40f%40vAx%40hApArAr%40b%40%7C%40Zh%40JfBG%60%40HDHCRIHW%40oAGiATc%40Ac%40OqAo%40qBiAOMGQ_%40%7BCKUOGG%3FINCjAFx%40Th%40x%40z%40PRd%40bATt%40JRZVl%40Nz%40j%40p%40Pv%40Kz%40Jf%40Vh%40r%40PHh%40Dp%40Ib%40%5Dd%40O%60B%3FZJh%40%60%40VHPCz%40_A~Bi%40t%40Od%40WT_%40Na%40%7C%40gDf%40yBTg%40l%40u%40b%40e%40hAuDJo%40TkDJy%40HgBRqA%5EsB%40g%40Jo%40LYt%40w%40Rg%40De%40GaB%40%5B%5CqC%3F%5DE_%40M%7B%40B%5DLGh%40X%5C%3Fz%40Kj%40OH%3FDFALEDwB%60%40IH%3FLLJ%60%40CXMfBNHCFIFc%40PsBLi%40%5EmAd%40aATaALMTFjBeFNw%40FoAd%40uNT%7DTNw%40bGkPbAyCb%40cB%5C%7D%40Ro%40Lq%40l%40qBb%40kCViA%60%40gC%60%40sCr%40uHb%40cGh%40eI~%40%7DN%7C%40eMLqCHOL%7DBJk%40L%5BNK%40EbAUrHDTDL%40JNNAFMp%40I%60XEnBHdAdA%40d%40L%5ETPTBTKPYFg%40pAmAr%40KfBE~G%3Fp%40AXDvBUlBm%40l%5D%7DMlLuEh%40SbAg%40hAc%40lEqBbC_AXOfAcAh%40%7B%40t%40qBJMLQ%40YEOEoCM_BIk%40i%40gFWyCM_Aa%40yEI%7DB%3FkCRsNTaNXgRPaDvCu%5CVaALO%40YIS%40%7D%40~%40gKxAgPp%40%7DHxAmPLe%40Hm%40LM%3FWIOB%7D%40rCs%5BFWLsADUEUEEI_AGO%5BeDEo%40w%40cFuBaPe%40oDQcBSiAsAcKE%5BG%7B%40%5DcFCmABiAHSCUEGC%7D%40EY%40eFPeP%40aCD%7DBV%7BAHQ%40KPo%40BKzAgDx%40u%40zAiAvEcDjA%7D%40%5Ee%40d%40aAl%40iCTYVQTCh%40B%5EJPf%40Hr%40DbEK%7C%40YfABRJHNALQXgCx%40cELGPFDJAXaAdFWnBEtA%3Fn%40LpBR~CNtHP%7CA~BfMJz%40x%40xLDrBNrBt%40%60FBvDJvAf%40zCPrB%40dB%40bAH~%40%5CdBLVPDNGN%5D%3FYUcAGkAAOb%40qGBm%40CuCe%40aMMeECsFBo%40Lg%40Xq%40VIRHJR%40VSvBAtAFhA%5E%7CBd%40%7CCx%40%7CBT~%40%5EnALfADbABrFCvJ%3FxA%5EjITrBj%40bEJjB%3FnDRbHC~CZnHJzEOtF%40r%40%60%40rIFxCAjCInDU%60G_%40vGg%40bLMpBi%40vDGhBD%60BDh%40Z~BX%60BJpAB%60BK%60HGvB%3FrBFn%40Nr%40L%5CT%60%40RRjAn%40hA%3F~%40OzB%7BA~%40i%40lBaBhB%7DBtE_HhLgPbAmBv%40kB~CkJrBgErA%7BBfBcC~FuHr%40s%40jAs%40b%40Gd%40Bh%40VnAdAh%40V%5EDf%40KXO%5Eg%40p%40cAj%40c%40%5EIj%40%3Fj%40BRUrBHzCKpBQnB_%40lA%5BxBy%40pBaArA_AvAgArBsB%60AgAhA%7DAzBqDzC_F%7CByCbEwDzBaB%60E%7DBtLiFvE%7DBrBeAhEaCfIeEpG_CfD%7B%40%7CBe%40rFs%40tCUbEIrC%40hCHnDZbFx%40zD%7C%40%60F%60BdC%60AjFpCvFpDbOdKnFdDbHtDbEpB%60HrCnItCnDfAtEhAzDv%40jDd%40zCV~CJtCCjBSfCc%40%7CAc%40jAc%40jCoAx%40g%40fDmCzDeE%5Ec%40Ve%40tG_IzD%7DDnDmCbCuAdBq%40lD_AnC%5BbCQnCA~CLdFn%40bK%60BbHp%40nFJbDA~FYzJo%40lEKpCBnCNnCX%7CDt%40lCr%40pCbAjEnBlExBpAl%40hC%60A%60Cl%40tB%5CxBPpBDtBCbCOvE%7D%40nBo%40rBaAnBiAhCoBfGaF~AeAhCmAvAe%40hBc%40~B%5D%7CDOtA%40%7CAD~ALtC%60%40dDr%40rEvAtEnBnCpAvKdGjL%7CGjKrFtJ~EfPbHz%60%40lOzW%7CJxF%60BrGpA%7CDf%40lDXvDPrDCrDUbJoAbCKfBDpERvBAdAE%60C%5D%60Be%40jBs%40fDeBnIeFjCeBnB_BhBmBhBgCrA_CbA%7DBx%40eC%7C%40aDxAqGhB_HtCeM%60AkDp%40oBr%40_BfCkEfA%7BAxA%7BAbByA%60CyA~As%40tAc%40vBc%40pBQnBC%7CCPhBXnBj%40nBz%40rAt%40nFjDlEdCbCfAxDvAdA%5C%60Dl%40hFt%40%7C%40NzBj%40tE%60BvDhBxCjBlFzDtBnAbBp%40z%40TpB%5CjBH~AAdCYlAYvBy%40vAy%40r%40g%40fAaAdCuCbA_BnAoCtA%7BEj%40gDXqCh%40yIJyBbAyPb%40%7BKb%40eHZeDl%40%7BDt%40mDfAsDjAuCpAgCjAgBfEeF%7CDoEvBuCjAqB%60%40%7B%40z%40%7BBbAcDt%40cDv%40sEZaCjA%7DJl%40cHd%40qIb%40wKX%7BEXcCVuAZsA~%40%7BCz%40kBzA_ChAqAt%40m%40pBsA~Au%40zAe%40tB_%40%60CKzBD%7CBVbKrBdDp%40%7CAPnABvBCrC%5BnA%5BdBq%40hB%7D%40pAeAl%40g%40pAwAb%40k%40dAcBtBmEhBqEbBgEpAiCj%40aA~AwB%60BeBnB%7DA~A_A%60EuBrQgJfCkA%60I%7DC~GmChGwC~EmCtEqC~XgQlBeAzBeAhDiAdFy%40jBMtB%3FzAHfAJ%60BVvHnB~Bb%40%7CBTfEJtDD%7C%40DpBVfB%60%40bDlAzLpFnLxElDhB%60EfCpA%60ArEtDtBxA%7CDlBjC%7C%40~IdCdFjAbCTx%40DrA%3F~%40BhCKzBUjDy%40nDuAnCwAxCyBjFiEpBqAlCwAlCeAzC%7B%40fCc%40bFg%40hCC~BHhDXrCh%40zCx%40lCfApCxAnBnAtB%60BfGpFdFnE%60FbEdMzKvEtDvBtAhCnAlC~%40nCp%40%60C%5EpBPbBDrDGdD%5BlE%7D%40tDwAd%40SnEiCrAgApCmC~%40iAfBgC%60AwAjBgDnC%7BFrA_DjBeDlAiB%7C%40oAfEwErCgDdMoN~CgEdA_Bt%40yAbAwB%60AmClAoEn%40aD%5C_Cd%40%7DE%5EkEd%40uDp%40wD%60AqD%60%40mAbAgCvAyCtCqFrBgF%60AeDn%40uCTqA%5CuCLwALyBLqEAeEOgEMqBaCqYe%40kGKsCAqAHoEFeA%5CyCn%40aD~%40sCbA%7DBxA_Ct%40cAhEwEzAwBnAyBREzAcDXu%40Lc%40Rm%40%40%5B%5EqBNwAP_AHu%40NeDViK%5EiQPgJFsA%3Fq%40%5EmBNGHS%3FWKQB%7D%40T%7DAPCHS%3FYd%40iBl%40%7DAVWREZHb%40LfAHJRPBNKFYCUACD%5DFQFc%40hAuCRULCTBlDlCb%40d%40lExDZ%5CrBbBn%40%60%40N%3FRWHYHIn%40%5B%5EiAbAeELI%3FSAC~%40cChFkPd%40mA%5E%7B%40~%40%7DAvBeDxB%7DDZy%40z%40kDLoAZ%7DJHqEF%5B%40%7B%40Js%40HOVKLNPAJS%40YDs%40Ne%40jAoBJW~CaF%5Eq%40~CaFh%40yAhAeDJa%40Vc%40Pu%40zByGTYFJLCFKd%40Lp%40A~A%5BnADLO%3FWCIVq%40jB%7BB%60AkBh%40sA%7C%40iCR_%40Z_%40pEeEHYD%5B%40q%40CSF%7D%40FUXW%7C%40_%40%60%40E~%40FNGV%5Bx%40oBhA_DVoBTk%40%60%40_%40jAc%40p%40a%40%7CAeBtBgDd%40S%7C%40QRQJSz%40uBnDsHVs%40nD%7DHf%40uA%3F%5DG%5DGQ%3FUKs%40i%40w%40EQEGSgBWkEHe%40Xy%40%40M%7C%40iAdCmCVKf%40k%40Ne%40Lc%40XQn%40KNG%60C%7DB%5Ca%40%7CJiJAYuBeIhIsGm%40uEdHmHNw%40Cg%40E%5DaDwHo%40iB&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Côme, Italie" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Camping Monte Generoso</div>
+            <div class="accom-address">Via Tannini 12, Melano</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 4 août 2026 19:30</span>
+              <span>🚪 Départ : 5 août 2026 14:00</span>
+              <span>🔖 Réf : 31936042</span>
+              <span>💰 106.40 CHF</span>
+            </div>
+            <div class="accom-notes">Rating: 4.4 (888 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">12:00 → 17:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Lac de Côme</div>
+              <div class="activity-location">Lac de Côme</div>
+              
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784664764638.jpg?width=400&quality=60" alt="Côme, Italie" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 8</div>
+        <div class="step-title">Vérone</div>
+        <div class="step-location">Vérone, Italie</div>
+        <div class="step-dates">
+          5 août 2026 → 5 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>40.3 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>42 min</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=45.8063817%2C9.0851867%7C45.4383659%2C10.9917136&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C45.8063817%2C9.0851867&markers=color%3Ared%7Clabel%3AA%7C45.4383659%2C10.9917136&path=color:red|weight:4|enc:%7BpqvGmmmv%40%5DcAuAgDq%40mB~CkDvBqBf%40q%40zSgHTEjBu%40ZQaByFaDkJp%40%7B%40vIwIfAu%40bBcA%5ECHJJEBQIKB%5BV%7DANaCZcBRk%40n%40cAl%40%5B%5EKzADtFtANCd%40c%40lAuA%60%40OJ%40zDrBxAh%40d%40Z%5CPFJJC%40QZYR%3FlBf%40zFrB%60DpCdAl%40TZd%40vBhA%60DtA~CTBPCt%40vAZd%40tAnC%5EjAT%5E%3Fp%40CXFTFDJlAEtE%3FlB%5EzD%7C%40nGzA~H%7CAfGdAtCdAjCpAlCp%40fAb%40l%40x%40x%40TZrAl%40vAb%40lFt%40%7CA%5Ez%40%60%40b%40Zf%40x%40%40XHRRFPIt%40Fr%40r%40tHzI%60BbB%60ChB%5C%60%40d%40%7C%40Nb%40FfAGV%3F%5ELXRJB%3Fl%40l%40%5Ej%40h%40%60%40j%40Lr%40%3Fb%40Mx%40GtADdAJb%40XDZNPRBRKHYA_%40v%40kAz%40%7B%40RGx%40c%40h%40Ol%40An%40Lp%40%60%40%5C%5Eb%40%7C%40jAdEt%40lDx%40rEt%40zLB~Fq%40pc%40%3FbFB%60CNxCf%40dIlCt%5DEt%40PfCDfAG%7CAIv%40%3FPG%5E_%40%60Am%40bAg%40fAMz%40%3Ft%40HbCJz%40Lj%40P%60%40h%40r%40h%40%5Cp%40PzIf%40bIvAxGrA~CVlVxErAPJE%60HrArEnAnFlB%7CG%7CCtCbB%60EhCxHxFbf%40z%5EdHnFzDnCjDvBfCpArF~B~EtAbJnBnBVjJlBlM%60CrAZ%7C%5EdHrBd%40nFbArhArTdBVjQpDbf%40fJtOpCx%7B%40pPxJlBfGx%40lCRfLZ%60jAzB%60Uf%40fMTpFLJBp%5Dl%40jk%40fA~%7C%40fBzCLtS%60%40zEDlm%40nAh%5Dl%40nQb%40%60e%40z%40tNP%7C%60%40x%40nUx%40lN%60%40tcBdDxHFdBCfHJxVf%40hJXzC%5CdAPhALbDf%40pAD~%40AbAQ%60Be%40%60HmCv%40e%40v%40w%40x%40sAr%40cB%60%40eBr%40aE%5CwAx%40sBpA%7BCAa%40rOe%5DrEoKvKwV~%40%7DBxDwJb%40_AbJgTtCsFbKmVvLiX%60DaI~Qib%40~GkPjDcI~%40iBzFqMDm%40z%40gBb%40m%40dAaBdEmJ~%40cClC%7BGpXsn%40zkBejExh%40ejAbAcBnA_BbDyClAgAPY~A_B~AwBdAmB%60%40gAVoALwA%40yAIoAYkBiAoEaAuCmAmCsAkCSAcHeMkBaEqJ%7BVsLa%5BoEuLiJeViKoXuB%7DFiToj%40oIkUwS%7Di%40yB%7BFaBuE%7DCsIcBeF_EcNa%40aBkCiLiAyFyFiZ_FsYwDeUeBwKcNmy%40_AyHa%40eFQyCIkCKgGKcNcA_bASaI_%40sH%7DB_YgCiYqAuOkB%7DYmHc~%40e%40oGoBuUs%40iIoIceA%7D%40eLCaACwE_%40gFc%40%7DCScBs%40wE%7DAwRWuDkNqfBuCa_%40mByS%7BAiQyIeiA_CiZgLywAmKusAoBiXcMo_BiEkg%40%7DCq%60%40o%40eKo%40qH%5D%7DCcEei%40aA_KwUsuBeDk%5BeCuTiFic%40cl%40%7DiFuVuzBsAeMsMgkAaA%7BHWkBiAuGu%40sDaD_NmDcO_Ta%7D%40%7DDgQkFkU_E%7DPU%7B%40_CcKk%40_C%7D%40aEeBmH_EaPgBiHoFaUkCgL%7DAoGqWghAuGsZcDsNqGeWaHuY_FkSeE%7BPsKmd%40wCaLsBoGiC%7BG%7DFuMsScd%40yJwSwFyLkv%40%7DbBo%5Bcr%40%7BEmKSk%40cz%40giByMwYc%40%7B%40yk%40cpAuJ%7BSmGkNu%40aCc%40kB%5DwB%5BiDIiCBkDHoBZeDfwAcyMvDa%60%40fNiyAdA%7BJjBwOrrAm%7DJ%7CYwyBhEe%5CdC%7BRnF%7B_%40da%40szCdEuXrEc%5CjCqSlAoIpDsXlCmUrEu%5D%60BmLd%40uCvAkHpD%7DNrCaJlCeH%60CqFnFaL~Zso%40rJgSfb%40e%7C%40tFcLtp%40kuAhGiMzs%40wzA~B%7DEjAqCpBsFnBqG~%40iDzA%7BGfAeGTwAx%40kGrGwm%40NaAdC%7BVXuBbJk%7B%40xByQvAyKzAiN%60Eu_%40zCuYvC%7DX%7CAoNzHmt%40bC%7DUvEkc%40lCqVnDw%5C%5E_E%7CMwoAtCeXhAmIhAiH~AsIvBkJdCiJpBoGbByE~%5EaaA%7CNm%5EzW%7Bo%40xBqFdEcLvHiT%60I%7BSfJ%7BU~AaE%60Q%7Bc%40hM%7B%5BnBcFjIyUxZs%7C%40rQig%40tK%7B%5BdDeKnBkHd%40gBb%40yBlAaHbAyHl%40_Gh%40%7DHlKwlBVsCp%40iFx%40aEfAeE%7C%40oCj%5EecArCmIjF%7BNvDcKlDcKrAoEnByHtAiHfAeHz%40uHh%40%7DG%7CAoUXgDx%40%7DGrPmlAjAkI%60A_Ghj%40oxCzGmZvTwaAjAmGdKyo%40b%40aD%60BwJzKor%40vGkb%40vRmvAxHck%40zv%40mvFxHmj%40~%40oI%7CA_PxJ%7BeAd%40_IdCsq%40pIa%60CZqFh%40sGfAmJ%60T_dBvCoUvUa%7BAv%40%7DGf%40qF%60%40yFv%40oQPyGl%40ga%40RqFZiGrCmg%40xCqg%40pBge%40tCcp%40lAwWtAi%5BJsCn%40sMx%40wKn%40yGpA_K%7CAwJ~AkIjEuSlAgHdAiHpBoQrXciCz_%40gpD~Dy_%40f%40mGb%40wHV%7BEPcFPcL%60%40qSl%40_%5CHiDHiGlFevC~C_mArDyvAnAce%40b%40%7DQf%40ePpAof%40j%40_VJ%7DGB%7DMCkMGuh%40Cc%5DCwPUwlB%40%7DHNyMReJ%5EuIdMuiCxFglAb%40%7BHr%40qIhAaJp%40eEz%40%7DEnBgInBeH%60H%7BUpBoHbDyMjBgJrByL%60BeL%60B%7DN~%40oKf%40mHlFudAViGNwH%40sHI%7BGwH_eCMoJ%3FmJJwJVuJf%40mK%60AeMjFih%40z%40uIFaA%60AmKj%40iI%5EuI%60%40mOlHq%60D%5EiKp%40wKf%40aGfAeKtAyJxC%7DPtXg%7DAtNix%40~%40gGjb%40cnDj%40eGfBgZRmFReNNmAZuQLoARgATk%40%60%40g%40%5CQd%40G%60%40D%5CVV%5ERh%40Fp%40Cx%40Ol%40Ud%40e%40%5Ea%40JmBC%7DAK_AUk%40Ym%40g%40_CaDm%40oAMc%40Is%40kAyDYsAe%40%7DCWkBEO%5B_%40iAi%40qGmC%7DCyAcIcDqB%7B%40wEgB%7BIkDyDwAM%3FwZqLUe%40%3Fg%40KWSIQHGJm%40%40WFkt%40mYqF%7BBIM%7DGsCgBu%40%7D%40%5BuH%7BCuFkC%7D%40c%40iEaBuAu%40a%40w%40%5B%5DsASq%40%40%5BHYAqOqGaI_DuD%7BAeA_%40e%40AaDyA&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Vérone" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784664820428.jpg?width=400&quality=60" alt="Vérone" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 9</div>
+        <div class="step-title">Lac de Garde</div>
+        <div class="step-location">Lac de Garde</div>
+        <div class="step-dates">
+          5 août 2026 → 7 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>181.1 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>2h32</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=45.4383659%2C10.9917136%7C45.592641%2C10.7186121&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C45.4383659%2C10.9917136&markers=color%3Ared%7Clabel%3AA%7C45.592641%2C10.7186121&path=color:red|weight:4|enc:ytitGeyabA%60DxA%60%40VvInD~HfDvJ%60ENPpAn%40%5C%7C%40LRr%40Jd%40n%40x%40%60An%40~%40RvBDt%40AXGt%40WnA_EjMcDbKOr%40Gh%40YbBV%5ExDvBf%40b%40RXVf%40X%7C%40%60%40tBNhAzBbM%5CtAfHdUP~%40LxA%40xACd%40ShBiBtIyCrTkHfh%40gAlFo%40fC%7B%40~By%40zAyBbDa%40t%40%5DbAYpAQnB%3FbBHzAh%40jGp%40tElEdTlKvg%40lArGj%40dENjCFhC%3FxBQhEY~Cg%40%7CCaH%7C%5Ck%40%7CCg%40fE%5DbFGpC%40jFNtDLnBVnCnBnNzB~Or%40dG%5EtEBjAE~AS%60BY%7C%40o%40fAs%40t%40s%40j%40mHvEaA~%40aAvAi%40jAgAjDYn%40s%40%60A_%40Z_%40LQKEWB%5BJe%40b%40iAV%5B~%40o%40j%40i%40TYNWB%5BEYAEx%40iAnEwHNGf%40w%40b%40%5Bj%40K%60%40JZPV%5E%5EpA%60%40nBBj%40G%60AGd%40Wn%40k%40x%40u%40t%40oEhCgAv%40k%40h%40qDnCkD%60DwD~DyDxEsChEgQ%7CYiSh%5DiTr%5EwBdEwB%60FuBbGwAbFwA%60G_A%7CEwBpNeNp_AcAbI%7BUzwBiArIwArIsBrKmBbIyAjFqCvIqq%40toB_DhIeBtDuBjD%7BAvByChDiC~BoZxVqElEyDhEmDrEqDnFoDhG_DpGwRnb%40mBrDwAxBcC%60D_C%7CB%7BC~B_d%40pYiVtO%7BEjCsD%60B%7BDpA%7DBj%40yDn%40qC%5CoET%7BD%40wDIo_%40iByEIoFLyDVqFr%40a_AdOcFj%40mv%40fGgQdAmC%40mCQaDm%40qCw%40uCqAcCwA%7BBgBaC_C_BqBiBoCuAcCwBuEqKqVoCoG%40Wg%40_BKu%40Ai%40JaANg%40%60%40i%40%5CS%5EId%40Db%40RZ%5CRd%40N%7C%40%40x%40It%40Sp%40_%40h%40mCvCcDvDa%40%5CSCaCvBu%40%7C%40Uh%40EREpAEl%40IVQT_%40F%5D%5CMXC%5E%40l%40%40RJZD%60%40xBvLDf%40Gh%40Mf%40a%40b%40%5Bp%40Qv%40I%7C%40B~%40Lz%40Tr%40%5Ej%40FD%5E%60ADV%3FP%5D~CGFkAq%40y%40%5DcA%5B%7B%40Oq%40%40WQW_%40Ce%40MYSOWASNMXE%60%40c%40~%40cCdBkAxA%7BBjDaBpB_HrC%5B~%40A%5ED%5Ej%40dAh%40nAHb%40Bv%40Cx%40sCxLeBzG_%40fAsCrFaBdDWV%7B%40rAiDvGg%40jAs%40lBeAjBiAxAeBv%40iMbFM%40GHwFz%40iA%5EkAj%40eQhM%7DFhEkCtBoA%5EOEKLCHa%40%5EmA%5CkB%5Ca%40LOHmTzEoHfBiBx%40_BlAoHzG%7BBnBM%40yCjCuEnEELkBjBo%40x%40MH_EfGoB~BKRuBnBWDa%40NM%3FGP%3FFyDtESAOLGXD%5C%40BY~%40mAdB%7BIhKkEfFaOpPOT%7DCxAiJvFaI~Ei%40Va%40LaA%40i%40Kw%40i%40w%40%7D%40g%40m%40qAaA_%40GcBCu%40L%5DNi%40b%40o%40n%40cEfCqB%60ByAvAmKrL%7DBfCo%40pAM%7C%40EtALnKA%5CDp%40dAfEBTSt%40O%60%40Mn%40CTA~AAZJEJ%7C%40RbC%40t%40E%60ASnAeAjDAVFbABVBVLLF%40n%40%5Cr%40r%40r%40VTBdAMvBe%40~%40%3F~Dr%40nAVhABxBQXF%5EV%5Ep%40~%40lCp%40vAf%40h%40xBvAx%40z%40p%40z%40p%40zA%7C%40rCv%40hAhA%7CAd%40%60%40fAb%40~Cz%40d%40VnBlCzFbJn%40jAt%40dA%5CLd%40DPNh%40v%40N%5CP~%40Jf%40FLZP%60%40JrAJxAP%40_CNkCPiDHqANqGJeB%3F%5DASHi%40HWZi%40TYtA_AFKRk%40Xa%40b%40W%7C%40M%60%40Wi%40m%40o%40g%40%7B%40cAu%40fBSDeA%5BWOKK&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Lac de Garde" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Agriturismo Agricamping GARDA NATURA</div>
+            <div class="accom-address">Via della Valletta, 19, Costermano sul Garda</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 5 août 2026 20:00</span>
+              <span>🚪 Départ : 7 août 2026 12:00</span>
+              <span>🔖 Réf : 3107</span>
+              <span>💰 260.00 €</span>
+            </div>
+            <div class="accom-notes">Rating: 4.7 (183 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">12:30 → 19:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Monte Baldo</div>
+              <div class="activity-location">Monte Baldo</div>
+              <div class="activity-notes">Téléphérique</div>
+              
+            </div>
+          </div>
+          
+          <div class="activity-item">
+            <div class="activity-time">17:00 → 19:00</div>
+            <div class="activity-content">
+              <div class="activity-name">📍 Visite Malcesine</div>
+              <div class="activity-location">Malcesine</div>
+              
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">📝 Notes</h3>
+          <div class="step-notes">Monte Baldo par téléphérique : 10h30<br/>Parking Retelino<br/>Chateau + Ville</div>
+        </div>
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784664882165.jpg?width=400&quality=60" alt="Lac de Garde" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 10</div>
+        <div class="step-title">Dolomites</div>
+        <div class="step-location">Dolomites</div>
+        <div class="step-dates">
+          7 août 2026 → 12 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>351.4 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>4h38</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=45.592641%2C10.7186121%7C46.4102117%2C11.8440351&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C45.592641%2C10.7186121&markers=color%3Ared%7Clabel%3AA%7C46.4102117%2C11.8440351&path=color:red|weight:4|enc:yvguGorl%60AJJVNdAZREt%40gBbAjAt%40l%40Z%5Ea%40V%7D%40Lc%40VY%60%40Sl%40URgAt%40c%40j%40MVIVIh%40B%5CAZOdCKhFW~DGdBK%60BA~B_CYcAI%5DOIGKY%5B%7DA%5Ds%40a%40i%40MGi%40EUKmAiBkAoB%7BF_JaAmAc%40SiDaAcAe%40%5BYmBkCS%5BmAsDe%40cAsA_B%7D%40q%40wA%7B%40e%40m%40u%40_Bu%40%7BB_%40q%40a%40Wc%40E_CPgAGwBg%40oCc%40%7D%40BsCl%40m%40Bq%40SMGs%40s%40Mo%40Yk%40%5BUMMCa%40B_%40bAcDRoADaAA%7B%40UoCIk%40KDB_B%3F%5BFk%40Ja%40Xu%40FYE%5DcA_EEq%40%3FqAK%7BIHiBHi%40n%40qArEcFvHwIhCcC%60Au%40lEoCd%40g%40x%40m%40t%40QdAAt%40D%5ELfAx%40fAtAXVt%40f%40h%40J%60AAr%40Wb%40UzOwJbCwA%7CCyA%60%40g%40vNgPfNkPxAgBj%40%7B%40RMXa%40REJU%40%5BAKxAqBxAgBL%3FFQ%3FIZOjCgCRGjByB%7CBmD%60A_BFQn%40y%40jBkBJAxGoGtAiAFOnIuHdCyBlAw%40pAk%40rKgChQ%7BDP%3FjCe%40zBo%40L%40JQ%40Gb%40UrBcBbF%7BDbI%7BFvIoG%60Bu%40zAa%40nEo%40FDNCjMaFtAw%40~AwBz%40%7DAr%40mBtA%7BCzBgEz%40sAVW%60BeDrCsF%5EgAfCaK~F%7DVhAuC%60BqBzBkDjAyAbCeBt%40ORPV%3FRIb%40BpAEz%40Np%40VLPbAd%40%60An%40FTLDJIB_%40EMFuAPqALYp%40c%40h%40Of%40%5D%5Ek%40Vu%40LiA%3F_AI%7B%40Uw%40Uc%40k%40i%40m%40Su%40c%40S_%40uAaHUsA%40e%40Xm%40VIXWNa%40Fg%40Ai%40Mc%40GKAy%40Bi%40Ps%40b%40cAf%40q%40xAaB%5Eu%40hHgIh%40m%40f%40w%40Ru%40F%7D%40C%7B%40M%7B%40O_%40a%40i%40YQq%40KyAFeAJm%40Gk%40Si%40c%40e%40q%40%5Dk%40OAyEsKsAiCcCyDqBaCaAaAkAeA_CeBqC%7BAeAe%40qC_A%7BDy%40cp%40gLmPuBmLuAwCa%40mCg%40mDcAcE%7DAmCoAcEiCqB%7BAmC_C%7BB_CqBaCiCoDcBmCwB%7DDeAwBmBwEoB_Gq%40_CwAeGs%40sDc%40sCs%40%7BFu%40%7DHiC%7B%5Dg%40yEk%40aEc%40eCo%40uCcAuDeAgDkAwCaBmDmBgDuAuBqCkDeCeCmAeAoEuCsFmCqEkBiMgGiFcD%7BDwCah%40gd%40oIuHwDyCuFyDcH_EkHeDoEiBsCsA_EqC_CqBuDqDoBuBQYqg%40yf%40kD%7DC%7Da%40u%5CeU%7BQc%5B_WwFcFaHaHkAqAcEuFaBkByBmBkGiEwEaEgGkGyCmCmFeEqBuAaFcDwGwEsY%7DRyQ%7DL%7BCiB%7DBiAcDqAyDmAuPqE%7DE_B%7BD%7DAiG%7BC%7BXyPyNeJ%7DMkI%7BEmCkHcDcI%7BCqCw%40wEiAkGiAwOwB_GcAuDgAqCkAeCwAsCuB%7BBqBwB%7BBaCaDeE%7BGgQaZmIcNcDkE%7BC_DoBgBcBiAuDsBwZwMaSsIiFeCoBmAoBwA%5BSyDaDmVyTkDoCaGyDox%40of%40mDcCmEqD_D%7DCiD_EgCeDaCuDoDmGiAcCaTug%40oBeFc%40qAkAeE_AaEm%40eDy%40cG_AoKe%40mFm%40%7DEk%40gDw%40oDuAuEmBaFqLsYwByF_DsJcUet%40u%40%7DByAmE%7D%40_CmBuDeBoCgBeCsDsDgFyD%7BUkPgf%40a%5D%7DC%7BBoAiAyA_BiBkCyAsC%7BFsMgMcZiB%7DDgAqB%7DAgCuBmCsByBwAkAoBsAuC_BmIyCu%5E_MmVcIeDqA%7DA%7B%40qCoBqFoEmDeCiCqAkDkAuA%5DsKyAmSaCkDSyB%3FqCLyCd%40_B%5CiAZiDvAgQ~IoY%7CNmC%60BqC~BmCjCeDjDmBpB%7BBnB%7DAlAmF%7CCaLbF%7BBfAuCrBcQfOyBdBsBpAsCtAq%40XmCr%40eDh%40eER%7BNZgDRyC%60%40%7DGnA_C%5CuERwp%40z%40iDPkBT%7DA%5CkA%5CsCfAaErBoEzBeDlA%7BCv%40gDh%40yCRqDB_ESsDg%40eDy%40%7DIqCgDq%40sBU%7DBGsCHiCXcM~BgDZiCDqBGiDc%40uCs%40sCmAsC%7DAwf%40e%5B_DaBiCaAmBg%40_Eq%40on%40%7DHeEw%40cFwAsDsAsn%40gWoD%7BA_CqAiBoAiCsBcCeCuBkCiFwHuOyUkD%7BEmCcDiDoDoE%7BDsF%7DD%7D%7B%40am%40qCaCyDyDmDaEmBeCmDqF%7BCqF_%5Dws%40oYwm%40mBuEeAaDs%40sCq%40mDg%40qDc%40%7BGIiDAoDJ_EJsBb%40aF%7CCmWj%40uGL_DBgCAoDGsBQuDa%40_E%5DaCy%40iEeAyDqAkD%7BAcDgAkBkBiCeEuEii%40uj%40uFsGw_%40sd%40kCuCoEeEkDoCcDuBuDsBuDaBak%40kSoDeAoDw%40qB%5DkEc%40%7D_CaQ%7DC_%40%7BBg%40uCeAoB_AeCyAoA_A%7BEiEi%5BwYeEkDkDeCeEgCoFoCcHqCmDgAkEeAmF_AgGo%40_EUiP%5Bcn%40_A%7DYmA%7DMm%40%7BEIkx%40KaFHyD%5CaF%7C%40il%40bOuDnAuCrAyDzBmCpBiE%7CDuQ%7CQiEvDsCvBoDxBwDjBiDrAaD%60AkDx%40mFt%40%7BCTqELgFCmDY%7BCc%40%7BVyDwC%5BiBKgCCeCHuBTqGnAoe%40zKkQ%60E%7DGjAcRxBqJdAwDX%7BN%5EeDXyCh%40cCp%40aDtAiBdA%7DC~BsSfRmn%40xk%40%7DBlBgD%60CyDzBgD%7CAiDjA%7DDdAso%40%60MaEh%40aIj%40wKj%40wE%60%40oEt%40mCl%40iCt%40aU%60J_NvFmDfA%7BCl%40%7DC%5C_EPaCG%7DCUwFcAgEwAaC%7D%40_%40Kw_%40qOu%5DiNiEyA_Cq%40oOyDoq%40eQgBo%40uAo%40uCeBkA_AoCiC%7Br%40kt%40_FeEaEqCwCeBaI%7DEcd%40iXor%40_%60%40_DuB%7BBgBsBmB%7BAaBuFcHuGsIoFiHsGmIA%40oDyE%7DCaF%7DKqQyNaVaDqEgDsD_CsBwBaB%7DByAuC%7BAoJuD%7DtAsh%40%7BEwBuBqAyAeA%7DBwBq%40s%40u%40_AmBmC%7BBgEc%40cAuAoDcAeDik%40atBwCgLcUo%60Aca%40ueB%7BA%7DF_Rel%40_BeEu%40gBmBoDkAeBiBaCePqQyBsCqEgHuJwOgDwEyBgCqZsZwLuLuBmBuAeAyDeCea%40eTeD%7BAoC%7D%40%7BBo%40iDk%40wdAuNaGiAqHsBwFoBiCgAgHoDsFeDqEcDe%60%40kZ%7BrAkdAiDwCgDaDcEuEcDcEiFwHqTg%5CsC_EmBcCyDeEyDmDsDoCgf%40y%5CiBeAYKaCkASIMUaAc%40%7BI%7DCq%40e%40a%40c%40a%40w%40Ma%40I%7B%40%3Fa%40J%7B%40F%5B%5Ci%40RU%5CQXEX%3FZHZNdBnAX%40DA~FdEjBjAjDfCx%40z%40IRBVLLNCHSCWVQ%60DyExA_CNQbAMrEvAjAd%40nAjAx%40~%40FD%60D~D%7CIfKp%40%7DAdA_Ej%40_AdBkB%5D%7D%40gBcDNk%40%7C%40%7BBb%40w%40hEeDpEeDzCmBtC_ClBsBTYVo%40BQ%40%5DEq%40Oe%40m%40cAaAaAw%40a%40eBk%40e%40%5BY%5B_EsHkB_C_BcC_BuAYc%40MUo%40m%40y%40k%40eAa%40mDaCk%40%5Do%40SmA%7D%40eB%7DBSOk%40We%40c%40Yg%40%7DAoDkAwBsB_D%7BB_Ce%40s%40eBwD%5Bc%40YYoCcB_D%7BBe%40I_%40AWDeAj%40Y%3Fa%40S%5B_%40Oe%40oAwE%5Do%40y%40%7D%40s%40g%40MGe%40sBOyAKyCWsKI%7B%40O%5Da%40k%40i%40%5DkIuD%7DEqA%7D%40AqA%40%7B%40OoBm%40%7D%40g%40WUg%40q%40eBmBa%40Wu%40Uc%40MgAq%40%7BC%7B%40s%40EIO%3FSLUHArBx%40zAd%40pAn%40v%40LTHp%40j%40l%40%7C%40j%40n%40r%40%5Er%40Rh%40BfDYrJY%60%40On%40q%40vC%7DERg%40Fi%40Cc%40Og%40UUkDaA_%40Ck%40F_%40Pk%40l%40y%40h%40e%40Lo%40%3FeFiAWD%5BRW%5Eq%40xAc%40j%40YJa%40C_%40QiGcE%5D_%40Wi%40Km%40EaA%40g%40Fc%40d%40aBbCsH%5CuALmA%3FcBKkBM%7DAw%40cMaAgQOwASeAkCkIi%40aBYcBSyBSyEW_C_%40_BsAeEu%40oCGg%40G_CLkMAa%40UaA_AsC%5DuCe%40cFCu%40Dw%40Lm%40Ra%40rDqENa%40Fk%40Em%40I%5B_%40c%40m%40Se%40%5BGIWo%40GYYwFEMo%40sQFs%40Lg%40%60CgFh%40s%40n%40i%40%5CMb%40An%40F%5CK%5C%5BvCeEL_%40Fs%40Cq%40SiA%5BqASa%40WUaHiAWWIUAc%40H_%40%7C%40wATi%40Hg%40H%7BB%5EwCNoA%3Fy%40Ku%40s%40cB_CqFc%40cB%5D%7DBOcA_%40eBc%40yAGe%40%3Fc%40Ls%40%60%40iAjDkFxBkE%5Ca%40b%40Ql%40B%60AH%5EEb%40ST%5BfA_C%60%40c%40%60Am%40l%40Ij%40D~%40Lx%40Mr%40i%40vPqPzCiCTg%40Jc%40Fq%40AWUoBEeABq%40J%7D%40Vw%40xAyCn%40_AfBeBXi%40jCcIl%40eCRkB%40uDF%7D%40Tu%40n%40cA%5Ec%40Zy%40p%40mEZeAt%40cBf%40s%40DMrAqBlDoGbFmIp%40%7D%40nEmELC~C_Cr%40%7D%40%60E%7DFlEmHl%40%7D%40Pc%40lAuBbAqBhCkHTi%40%60%40i%40ZWvAy%40nB%7B%40%5EWVSvEcHlCwDt%40k%40%60%40GfA%3FdJf%40V%3Fz%40WjGoEtAkA%5Ea%40pLkQj%40%7B%40n%40mAFQJKZeBt%40eIVeEAIDmCCsBMwBEc%40Mc%40%5Dk%40o%40q%40c%40s%40Uy%40Ek%40%40c%40Da%40ZaAj%40aAfGsHVQNGp%40%3FpDb%40T%3Ff%40Mn%40e%40r%40cAtBeEZg%40zBkBr%40e%40h%40Wx%40UvASnA%40fALfE%40jBi%40fI%7DCxL%7DErCeApBkApD%7BCxAeBhAwBxAqEz%40wCh%40sBjAwGv%40oH%60%40gBZi%40l%40o%40b%40_%40d%40OfAQjFi%40hEy%40%60CQfACjEg%40ZKf%40%5Bh%40s%40f%40aA%7CCwI%60%40%7D%40l%40eBp%40sAr%40s%40l%40U%60AMhAJl%40XjA%60AdEvDpAv%40pA%5EfBNpCPvEj%40fCv%40lC%7C%40~%40NdA%3FbAM%60A_%40bAo%40%7C%40_Aj%40_Al%40%7BA%5E_BTiBDq%40Ji%40KgCOwBUuEG%5D%40kDAqDGaBUqB_%40%7DAo%40aBiA%7DB%5B%7D%40a%40iBQgBGoBHuGG%7BCQwC%5DsCgDoS%7DCiM%5BoBaAmJEgABgBPGHSBe%40ISEC_%40_AWsAE%5DKwBCmE%5EyHDmB%3FaASwB%7D%40%7BFKsAIaC%40iB%60%40qH%60%40sJ%3FgEEiAOyAY%7BAaAmCi%40kA_HeJwAaCy%40mBaGwVkAiGUeC%5EeLBa%40ZqOCqBEk%40I%5DsCsZoBe%5Cs%40uKIiCC_ETyGx%40_QJgCDmCB%5DMoIc%40%7BIo%40aH%7B%40kIOiCCsE%3F%7BAFgA%5CgD%5CqB%5CuAb%40uAf%40oAlAkChBqCd%40cA%60%40cAXiAPcALyAHuAPgGDkEMkDKmCBa%40e%40qKi%40_Ku%40gQ_%40eICsAP%7BDJo%40HWC%5BDy%40RqB%60DmMhB_G%60%40_CPeCNuGHyAb%40oCf%40qC%7CBuRt%40sLB%7BCGaCk%40kIEkBFiBv%40qIhB%7BQHsBAsBG%7DAQyAYmA%3FSk%40_Bm%40qAy%40%7DAa%40_Ac%40k%40%5Bi%40%7DAeBw%40w%40KCsBsBcAyAqAyCg%40aB_%40aB%7DA%7BHq%40_CsAiCs%40gAsAeBoB_Cu%40cAg%40y%40%7D%40cBuEuNiIkW%7DGmReCuG%7DF_Q%5B%7D%40g%40uBi%40aDO%7DB%5BaI%5B_FUgBoAwG%3FSM_A%40a%40L%7D%40PQF%5D%3Fe%40GUKK%3FQ_AiB%7DB_E%5Di%40g%40m%40m%40g%40SI_FwEeAkAk%40u%40gAoBa%40w%40cBiCwAkBgAaBm%40gAMSQAONADm%40EcDuAqDiA_DaAkIyBkCq%40oAk%40w%40k%40qAuAqEuGYe%40m%40k%40y%40m%40SUqBoA_%40_%40GIIBoB_AgAOuAEgAF%7BCVoH%5EsEd%40gGj%40aCh%40_FvAu%40D%7B%40Ec%40I%7D%40g%40SUCKNCHQ%3FWKQMAMHCHMEyAiB_DkFw%40_Aa%40SmHoCuDkAsASaBOwBYKIgGkBaEiAkDgAaAUoAm%40g%40%5DqAkAICqCsDsEyGsAaB_%40%5B%5DSe%40OyCe%40%7BD_BoDmCmB%7BB%7B%40yAk%40%7BB_A_E%7B%40yBu%40%7DAu%40uAg%40m%40oBcBwC_CwE_EcEmDu%40w%40e%40%7D%40Oc%40%5DgB%5BmBSm%40O%5B%5D%5DaAi%40e%40a%40_%40c%40Ym%40O_AOeBWwCS_Ag%40iA%5Be%40gCsBqDcCg%40a%40kAwAqA%7DCgCqGOm%40Ki%40M%7DA%3FkDM%7BDMyBOyA_%40%7DBi%40wAmA%7BAkEwEaAk%40%7B%40WqCg%40o%40ScAk%40oCcDcNaQkEkFu%40iAo%40_B_%40gBcCyM_BoIc%40mAk%40kA%7BFwIaEiEaJ_IcBeA%5Bg%40uAsAiAqAQYEa%40QYKG%5BBC%40i%40S%5BQaAeAg%40y%40c%40_C%7D%40qDc%40sA_%40o%40y%40%7B%40eBaBcC%7DC%7DByCsCwC_BsByAeC%7B%40kBs%40qAg%40kAs%40sA%7BDmIs%40cBcCaE%7D%40mAq%40kAk%40_Bo%40_D%7DCmPkAoFAO_%40oC%3Fq%40%3F%5DM%5BOIWJKPCZ%40RKbA%3FJMdADp%40LRNJh%40%3FFBvAxARJLCBKIc%40Oi%40QiA%3FiFJcDEq%40OeAIy%40DaAlA%7BINy%40f%40wAT%7D%40JsALeD%60%40%7DD~AmMl%40gCl%40gB%5EkB%5Ck%40xBoBpB%7DBLQfBuDr%40mCj%40mCh%40yCt%40qDJ_BDgCNqAV%7B%40Pe%40lDiGh%40w%40n%40%7DATaAJaADgLFs%40%40OP_%40x%40s%40%7CAiAj%40i%40Ve%40FSLmB%60%40eKC%7B%40Oo%40QKu%40S_%40c%40MkJMgCy%40oHAcADeAl%40uDH%7D%40%3Fe%40Ca%40c%40mECk%40Aq%40%5EkIZkINoAn%40qC%60%40mCRyCCaAMwAg%40qCi%40oCK%5DeAwBUeAK%7DAEgB%3F%7DAHeD%40oGKcE%3FuDu%40aGGyA%40g%40p%40oCFq%40BkAEcCEs%40WkBs%40_E%3FsA%40qAI%7BA%7B%40aGe%40kCOi%40Yw%40s%40cAwBeCeBcCYo%40Mm%40KuAMyESiLM%7DAWyByBqMs%40cDg%40oA_AcBmD%7BFs%40sAi%40aCQyAc%40%7DGYsBQeA%7BAyFq%40%7DBe%40iBo%40aCG%5DU%7BBCgA%40sDCeCYwE%7DAkPq%40oJIy%40aBoJU%7B%40%5Dy%40%5De%40wAwAUi%40UwAWiF%5DoDuAuHMcAKqAIgBm%40qE_%40%7BDCsBD%7DHAaEEiEEsGPsHp%40k%5CDcDGmBEe%40y%40iEs%40gDUwA_%40wFq%40cNImACi%40%40k%40De%40jBmFl%40%7DDLuAAk%40%7B%40oLCiBF%7BCJmD%3FgB%5BeEG%7DCEoGJeBLiC%3Fw%40Ce%40SaB_CeOIeACe%40BsBJ%7DCC_CUkFIyCEkIDyAh%40mFPyAHuB%40_EJoF%3FkFGIIa%40EyAGg%40a%40mAe%40u%40%7DA_BYq%40SaAQ%7BBQcDWuBu%40qEw%40cDq%40yASu%40UmDQg%40eAoAwB_BS%5BA%5BBWN%5Bj%40%7B%40%5CcAlA%7BBj%40y%40JYXkA%5EkCHq%40y%40sCIg%40GyA%3FiB%40%7BBG%7BCAmCG%7DA_%40wBqBeIw%40eCSi%40_%40%7DAEu%40%3FmAEWc%40i%40u%40k%40cA%5B%7D%40C_%40Ci%40Si%40c%40cA_%40IG_ACOCe%40e%40%5DQcASe%40%3F%5B%3FWOSWm%40y%40m%40q%40Gc%40GyA_%40%5BU%5DYIm%40kAaAQc%40S%5Be%40_%40eA%5BWs%40Yo%40QEMFORMj%40QHK%40UG%5BYk%40KI_AkBG%5DAkAAOOQKGEW%3FmAIi%40Q%5BWQi%40CUDKFOKCEk%40Hs%40f%40MJUf%40%5BXcDfBMFWMOGIDEJIzAQl%40g%40%7C%40Wn%40KJOFg%40GUGKDKlAS%7C%40Cj%40QLm%40FUH%7D%40E_Aj%40CH&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Dolomites" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Camping Sass Dlacia</div>
+            <div class="accom-address">Sciarè 11 San Cassiano in, Badia</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 7 août 2026 02:00</span>
+              <span>🚪 Départ : 12 août 2026 02:00</span>
+              <span>🔖 Réf : 36289385 / 36289397</span>
+              <span>💰 641.00 CHF</span>
+            </div>
+            <div class="accom-notes">Rating: 4.3 (1205 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">15:00 → 02:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🚗 (39040) Überwasser - 17 Via Vidalong</div>
+              <div class="activity-location">(39040) Überwasser - 17 Via Vidalong</div>
+              
+              
+            </div>
+          </div>
+          
+          <div class="activity-item">
+            <div class="activity-time">15:00 → 19:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Seceda</div>
+              <div class="activity-location">Ortisei, Sud-Tyrol, Italie</div>
+              
+              
+            </div>
+          </div>
+          
+          <div class="activity-item">
+            <div class="activity-time">12:30 → 18:00</div>
+            <div class="activity-content">
+              <div class="activity-name">🥾 Tre Cime di Lavaredo - Parking</div>
+              <div class="activity-location">Auronzo di Cadore, Belluno, Italie</div>
+              
+              <div class="activity-cost">💰 60.00 €</div>
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">📝 Notes</h3>
+          <div class="step-notes">Booking number: 36289385<br/>Booking number: 36289397<br/><br/>1er jour : Seceda ou ALpi Di Siusi<br/>2ème jour : Tre CIme (10h30). Parking réservé<br/>3eme jour : Lac de brayes<br/>4eme jour : Lagazuoi : parking. Telepherique aller. Redescente galleries guerre<br/>5eme jour : rando autour du camping</div>
+        </div>
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784664942820.jpg?width=400&quality=60" alt="Dolomites" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 11</div>
+        <div class="step-title">Ile de Krk</div>
+        <div class="step-location">Njivice, Croatie</div>
+        <div class="step-dates">
+          12 août 2026 → 16 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>253.4 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>3h43</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=46.4102117%2C11.8440351%7C45.1644434%2C14.5448533&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C46.4102117%2C11.8440351&markers=color%3Ared%7Clabel%3AA%7C45.1644434%2C14.5448533&path=color:red|weight:4|enc:sldzGujggAbAu%40dBGl%40QZ_CR%7D%40%7C%40Nh%40k%40p%40uAZkCXKd%40LpDqBl%40%7D%40%7C%40s%40x%40FVIx%40%40h%40l%40H~BZ%5EFt%40PzAfAjB%5CpASXy%40%5C%3FZbBh%40z%40%7CArA%60AzAtAz%40r%40%5CzBlA%60Bt%40%7C%40p%40B%7CATbAv%40nAFrAj%40lAr%40%7CAFbCpA%5Ev%40DbCrArEjCdKf%40hGFpF%40%7CGTzAPtGc%40rBmAtBuA%7CC%7D%40%60BDr%40jCvBpApBh%40dFlBhGjAbIf%40rHh%40tA%60CtCj%40bCLlB%40uOXyGx%40yEhAgCnAiAfFoA%60DyBxCgC%60DmBtCkAhD_DjCuDzBeAz%40s%40%7CCuGbAm%40~BcCnBsChD%7BDnBk%40La%40a%40SoA_%40Hi%40%7C%40G%60C%7DCvDoH%60ByElA_CE%5Dy%40%60%40OMl%40oAlBaCrBmAp%40sBbAc%40Tg%40I_Au%40w%40eAY%5Cm%40lCmAF_%40%5B%5Dq%40a%40%5Ck%40~Ac%40jAiCjAkBh%40%7B%40%5CQGcBd%40iBIUy%40jA%5D%3FbDiKfA%7D%40p%40oCz%40kB%3Fg%40m%40f%40wApCWc%40Jo%40xAoBt%40eEhAmCvE_IM_Ag%40%3FqAhDo%40%5Ee%40SOoAjAgGRkCLeEnBaFnDkClBaExIeKhDoCPoAyB%7DLcBaDy%40yEsAkFkBgE%40%5DZHrBnCjFjIlB%60Az%40hAjAr%40vBnAjAjBRSMc%40gAaB%7BDeJ%3Fs%40l%40WbAMh%40cA%40%7DA_%40eAcBWaBH%7DA%7BC%3Fo%40f%40%7B%40t%40PzA%60Bl%40a%40C_AmB%7DD%7DAyHqCuLwAeCcG%7BH_EyJkAgEDqFLqA%5EeL_AcUgAqI_CaJuCqKiCsGgEaJk%40wDmAkNgCgM%5B_DEqKNsCl%40yBUwSLiHv%40mNAuBp%40oCZ%7BGx%40%7DKxBcMH_EYwH%5DoI%7DA_MYiJ%5BmEqBuLBaBd%40yLEkAa%40%7BLRwI%7C%40gWIoH%7B%40gKyAuDuA%7BG%5BuEp%40gVr%40wCf%40yBvC%7BPhAkBVgAPgAz%40_A%7CAuAfBuFnA%7BDTcAl%40oB%7CJ%7Bc%40vBkFpF_GvLaEbDw%40xB%7D%40pCwDdA~AvBQvEsDrF%7DFdCg%40fF_%40nCi%40%7C%40sAbDaKlAs%40fBKzDcCP%7B%40HoGR%7B%40pBkBdHyJhB_DxBkFlA%7D%40vC%7B%40vBqAxD%7DGbD%7BI%60DoGnBqBrFmE%7CFoIxDcE%60EgDxBsDzIgS%7CGoQ%7CJgQxSySrU%7BLtFaAhEsFdCkBfBm%40tBCzJn%40hBa%40~EsDbD_BxBc%40lBwCvCgG%7CDuElAe%40~FuA~Nu%40zB_%40pB%7BAjN_R%60EkDfD%7DAnDw%40pNyD%7CLwEbCkB~CaDxDaCzHyBp%40%3Fh%40LN%5BhAy%40%7CBcBzB_EvCuIlC%7BDpB%7BAtEeBtDy%40pN_BxO_GlDqCrJwPbGmF%7CAgBjAoBlAz%40zAx%40v%40Aj%40k%40X%7BACuBq%40sBaAoAc%40yAAqCf%40uB~%40g%40hAv%40fArBbARxBcAfBKzGbAzFyBhZqFxB%7B%40zC%7BBdDkFjAkDrAqIlDoOBwBo%40kH%7B%40gGLeDn%40sBzA%7BB%60GqG%7CBmFdDwFjAkEfCyPpZctCIsDaBoIQgD%60%40cKjAiKZ_C%60B%7BFjByIhBwNfB%7BSbAmCzFoF%60CwDlGaHpB%7B%40rDI~JxChALfAOhAq%40lCgFxAgCvFmGjDmA%7CGgGzAoAdEcBpEcB~AkAjNmOrIcHxAyBhAiAzD%7B%40nAu%40v%40sAlBgGnCaEbCaAnBoAdDqEj%5Bk%5CjBo%40vDG~QuFjL_BlKXtFp%40jJzEhDnCzFjC%7CTjH%7C%60%40~BdDMpJ%7BAfBb%40pBtB~AdA%60BLrFqA~AZnGjEvIbEjJjHhEvEpB%7CDbIfErKfFfBhBvBxFhA%7CAhBXbBu%40fKaIxD%7BEhEmBzNgJbIcA%60Bq%40pAaBd%40qB%40oHr%40yBnQsVrFyEhJwB~DnB%7CAbBzClI%7C%40p%40pDMjAHfC~%40pBQfO%7DKhEoCfP%7DF%60BA%60%40_%40%3Fc%40dDwAvN%7BHbBwCzFkOzCgLP%7DX%5BeBaEmB%7B%40_AiBiVLuAfCyDj%40kCR%7DHuBgKyCqOp%40%7DMp%40sC%60IoSd%40%7DDSeOFkEU%7BLA%7DJCsORcCvCsH%60AmE%40%7BCsAkSgDyh%40cAaPKqEz%40oB~%40wB%5C_DGoDoA%7BJaFeUiEiNuDaLc%40mAQm%40q%40sDyCgIImD%5CeR%60AgEvDuFn%40%3FR%5DU%5Be%40OsHoNmDuGOqCIaG%7D%40%7BYm%40aDNaAMk%40cAmA%7DBiCgHkHy%40yAkCyByFkGGa%40%7B%40e%40%7BF%7BGqDcE%7BByBmEuEqLoM%7DEiF%7D%5Ba%5EkQ%7BR%7DC%7DFyD_Lk%40uBGk%40QGWe%40iEaLaS%7Dg%40mD_PuDaLgCyD_%5C_b%40gBcEy%40gESmD%5EmGf%40gENcA%40_A~A%7BRr%40mI%60%40wCn%40gHd%40_%40Lq%40%5D_%40iBSgDm%40oDs%40wVkFiIaBuHgBoCOeEBwEKmLUg%40M%5BG%5DFiJBwPn%40wRn%40yCl%40_Kx%40iAUgDHe%40s%40GgA~C%7BGbCwApLuC~RaCfQi%40hJVbVhA%60IU~GkArI%7DCvH_FbIsHpb%40mg%40hHiKjMmX%60E_HrGqHrFcEpIyDv%5BuJnTyFnIuEhVmObE_A%7CDLbL~BxDPvEk%40vBg%40lGYjFp%40rFlC%7COzKtDp%40lEQbW%7BDni%40yCh_%40qDxq%40_J~UwCnf%40eG~C_%40xHDnLeB%60WeGvJeDpKqCxVkHbKoCrHmBxHuBv_%40eNjQyIpCcB~PyKxHcDnHaApGBxDh%40tG~BnE~C%7CFvF%60LtOtNzSvp%40%60y%40zHzFxJrDpZbKnQzI%60f%40%60XlGpEpElFvD%60H%60Qhf%40jCjG~C~EfG%60GvSbPnKpKpH%60JbWjc%40rHpKlIxHfJnFrInCrb%40bIrJjA~K%3FfvAkIdE_AbBcAhCmCxMeUvBkDlBeB%7CBeA%60Cc%40bJOvFaApCcBbHeJhCwCtCcBzDo%40fDPjQpC%60HGzE_AvFeC%7CFyElQaQzD%7DBzPuGlDqB%60HsGbLcNxDwCxIwErIeF%60FiEtIkKpQsYbI%7DKfKoLrEsCvDaAdDUjc%40T%60Fw%40fEqBxDkDnCeEbCoGjFe%5BbDuNrFuPxEiKhJgOnEmFjPgOxJ_L%60H_LtJ%7BQlE_FxEcD%60FiBtGu%40nDD%60UjEhz%40%7CPlLnApJDvEJ~EMtFeAdBT%60FrBjCQhA%7B%40~%40oB%5EmDOqC%7B%40iCoCwDi%40oA_A_Da%40mEK_La%40yq%40NcRjAid%40%40cRg%40wOuAuPsBoNmFaVea%40_%7CAaFuUuBqMuA_Mo%40aJy%40aQm%40ad%40%5D%7Dn%40y%40yXoBwVaCyOyBuJqE%7BMeE_JaFcIgFyGwIwIkLgJse%40sZaMeJkJ%7BIuAiBkIyL%7DFqLgEkLgE%7DOsEeWyHch%40cDmQcFkUeFyQgOck%40wCsO%7BBoPoAeOiBcb%40gBcd%40yAcLwBwImD%7BIyp%40ojAwGeN%7DDiL%7DA%7BGcB%7BKs%40_J_%40iMF%7DJlA_T~C%7D%5Bx%40oNBsLq%40mNqDeXi%60%40kiCgBcQe%40oL%3FeJ%5EaKzAeNhC_NbIk%5DlIs_%40hBeMn%40uIVsNQ_Ju%40qKyCyRyFoZ%7D%40%7DHi%40aIQcH%40wKnCusAl%40%7BOvAiQzAkLzCmOxD%7DMzBeGvFuL%60JkOxI%7DMbLkRbIuQjGqQvKqa%40t%40oCvOom%40tDyMbKcZzKoWzI_QpJ%7BOzHaLnk%40ys%40li%40cq%40jqCskD%60%60A_fA%60KyLbUi%5Cxq%40mdArOgSvTgVrPqOpc%40q%5Exp%40_j%40bRoOfWcSvLiHhI_EvOwFhTgFrLeDtPwG~K_GhMqI%7CNaMpMeNnIaKdFwH%60EyC%60Ai%40tDaAfCM~DaAhB_A%60FeDl%40%7BAA_Cc%40wAsAw%40oD%7D%40aAiAgJe%60%40mByIoEm%5BqFyg%40wKycAwTavB%7DBkZoAe%5Bi%40w%5ERsa%40%5C%7D%5DIsWq%40u%5D_Baa%40qBcj%40gByl%40mF%7B%7DAiFq%7BAuBy%5CmCaVgN%7DpAkIyx%40%7BCc%5BkAyQeAmM_CqWgC_n%40sF%7ByAiAyP%7BAoMkJeg%40uJui%40cCiPwC%7DYaTqpCgQq%7DB_Dma%40yDc_%40uF__%40yJud%40iWuiAuEgSs%5CyyAgh%40c%7DB%7BGaZ%7BE_UePow%40ek%40orCoLmi%40y%7DAo%60GkIkVq%5E%7Bz%40%7BHeR%7DPc%60%40wI%7BQs%40sBqDmJqAsGe%40uMd%40_ObCeT%60_%40uoCn%5D%7ByBn%7CAcwJxCuO%7CHgXrKs%5Ej%5EmjA%7CX_%7D%40nC_LvByNzDee%40fMs_BnBmO%60EgQlo%40quBnB%7BKl%40%7DHLmK%5DsJ%7DBgUk%40_MCwJh%40wKbDaWrCeOhCiIxDuHnG%7BI~HmHzIaFjP%7DHrGiFbHyIdLsUlCwEjFwGnJ%7BKpFqInGsMrF%7BObSi%7B%40%60BcJlAaM%60%40mMUwNScN%5EmHjAcHdBiFdCmEnJgLvFsHxC%7BGhB%7BGdB%7BN%7CCoXrBsHhBgE~HuL~AuBvA%7DBn%40cAxH%7DJhFkF%60EqCpDqBxTgMhQqLtFeGxDqGhHmMdDuDxFgEhm%40s%5ExCyC%60DmFnCiI%7C%40kGdKu%7D%40hFmlB%60B%7Dd%40%5CyErAcHx%40eCbD%7BFzNcQhK%7DLdEuG~CsHlCuJfJcd%40hHa%5CzKqd%40jAoDrAwCjCqDvScOfNkJpHqHfGsIvNkYb%5Caq%40bgAqoBtoA%7B%7CBny%40osAbNcSbK%7DMzCgGrBeHfEeWjHoh%40nAgPp%40gSDkRk%40kTs%40oLc%40sG_Hsm%40aBcSa%40kONaNbAqNpAqIbCuJjCcHvDwH%7CFqHtHkGxH%7BDvY_KrOkHnJgG%60TuPhMmIvKkFdZ%7BLpIeF%7CRoP~q%40gi%40fCwAnEoBnDs%40vE%40rD%7C%40%60DhBnDlEbCxFtBzFrAzBjGxIdBp%40zAIfF_CxBgBfFaH%60EoErCgBzDyB~FcDlEcGrEuC~FiGfDmE%7CAYfB%7BC~EoEjDoGdE_Hj%40yCBgBMsHbAmE~AeBPcAUk%40gAG_FZyAgAq%40wBgKit%40wAiKgAwHw%40kFGyOf%40oRhGiWzMcd%40bDq%5BfBwQf%40mC%60EkK%7CKaRvAeKt%40kCfIsQ%7CDuEp%40_BrCkQh%40gAvB%7BCfC%7BEbHoFfB_BhDkEx%40aC%7CKuTrQ%7D%5CfIeQvBsE~BeBnGcB~Fz%40rAOdAeAf%40eBK%7DQVgDrEiMt%40aENiLvA%7DI%60CyRHcCV%7BBd%40w%40RkAYeBs%40oDEi%40_%40sCw%40%7BHHeCf%40cBPa%40IeBYuBBiBl%40gBnHuLjDaLpCwJtBiE%60AaCpBmITqGOeBb%40mA~B%7DCvSwZbEyJ~CiJhJ%7Da%40p%40%7DGxHe%5ErKu%5BxA%7DBx%60%40%7B_%40t%40yAtCmHjDuCx%40eAjEwNfBqEv%40_GpGmX%7CAuCzAmBpD%7DM~%40qCvEaIxB%7DClDgG~BeE~GiK~DgHz%40qBrHmXzA_DdDqI%60BmEzB%7BDdBqEfCcHbBiDbH_WrI%7DS%7CBsIj%40%7BAvAqAlQyDjBgAf%40aAf%40oC%40sJTaBx%40y%40Ta%40%40cBfFqQbBgHvDuJvCoIh%40wHf%40eCnFuRtAmG%60%40mCVqK~AyM%7CBkIjA%7DAbCaB%5CK%7C%40oCjLuc%40xBkMXaFNgN%60BwLrCsNdBcChE%7BFfLa%5Cb%40cCPgEWqJd%40_Gj%40%7DD%60%40qJ%60AkCfH%7DLnEyLNkDDwb%40QgCgCwKMkCTaCXeAvBqEj%40%7DGOiDUaDJ%7BJdA%7BFt%40kB%60P_NlA%7BBzCyLbLo%5CdAiBbDmB%60DmFhAs%40%7CBSv%40m%40hFeM%3FuDRmAtGeFn%40cA%7CEuOzBiH~AkKtAmCbDcFxA%7DHOwA_AyCCmCf%40wB%60CuD%60%40qBx%40_HdE%7DOdAqG%7CE%7DI%60HuJnEaEtGuOdEoLrFuLjAeAjCaAjGwDfBqBbFmIpGcF%60G%7DCbHmEb%40iBMqFTkErEiZfFiMlDiIbAiEhBgLr%40mBzLuTnGyQjBiLdBaGrBwF%7CAoJlCgGnAwDrC_PbDmHzC_MJeBYqA%7B%40%7D%40oI_Eq%40%7B%40a%40eBBsIVeArDmCdAyAf%40%7BCv%40eOOkE%5B%7BA%5BgCdBmQj%40eGjAiDbJwQnEwSvGaM~AmAvLsEdAyBJ_AMgCw%40aBaAs%40qFmC%5Dk%40c%40oE%3FqBf%40yAjAgAbB%5DnCNvAM%7CCwCvC%7BAfCk%40rD_%40z%40q%40%5EsBOeB%7B%40gBqEaF%7B%40aBg%40_JSaBkAcC_As%40cB%5DkCc%40k%40o%40e%40wAJkCb%40iAlA%7B%40%60EuAbBuBbDoIdBwCX%7DBx%40%7DCt%40qFzGir%40d%40yBhHeM~DyGZ%7BB%5E_QRoBn%40qDjA%7BCtCmEjAn%40jBXlCQp%40o%40dAwAjABnJrENCzJbFvR~JvKhErInBjHn%40nNIzEg%40tHoCjEgBjKmEnPuFzW_GtN%7BDdLqFhIcGdJcJlHaKzFeKhVqh%40dQa_%40fFcItEsFxHmG%60GcDlM%7DDhHy%40%7CGOzIf%40%7CT~D%60PlAfQFdLm%40rS_DlMqCzEWpCMtKXlT%7CAhGE~Gs%40~GgBrJyEpFmE%60FqFxCkErG%7BMlDeLlCwNdCiP~%40eDzCkItFmJjHoGlCuC%60GmLtBoDlCoC%60HuD%60IaE%7CBgBpD%7DDrB%7DCzHiQzCwGxF%7BHnE%7BFxCoGhWor%40pDoMp%40cEv%40_Iz%40yKdAuFtBqH%60BiD%7CAyCfPaXjDaJ%60CqJrAcKh%40cJJmGg%40ef%40FiGn%40yIbAeLz%40sX%60AoTfBoNvDgPtIm%5EjAoMbBop%40g%40qKqGel%40uAsMDgGx%40aG%60DcP%7CC_MlAaCrAyAdF_CbDiBfBuBzAaDdIaU%7CByHR_EAeN%5EmD~%40yCtIeLrAuCl%40mDCkEo%40gDeHqQi%40%7DDAyD%5CgD~HyUjC%7BH%7C%40qGFsD%5BaFiAeF%7DBsF%7DFsMgF_Ma%40aCJwCn%40yBz%40gAfBm%40dEy%40nDqBbBcBpCoBfBi%40zGa%40%7CCi%40%7CDeB%60D_DxBeEnAuD%60A%7BFVeHPiLd%40mGz%40cF%60BoFxGgNtB%7DFnB%7DJ%7CAeG~CuFbFgFhByCjC_HvBcLlBgGjFwK~AeF~%40_HbAsPp%40wDjEuLfAoEr%40gHA_PX_HbA%7BFxBwF%7CEqJrAqEl%40wFHeI_%40eIYkHFcE%60AwLn%40sLBqHc%40aMEyH%5CeIzAcKzAqFnCqGjVqc%40rFeK~CyGvFoPlCeGvI%7DLfCuEzA%7DDzAcGlB%7DIhBgFpCoEdTmRvDeErCyE%7CAuD%60B_G~AmLxAyNhAwFdAsC~B_F~CuEfC_CrE%7DB~I%7BEpJyJvCqF%7CEyMvBoFlG%7BJbCgCtGsE%7CGqCbC%7D%40pDgAfGgE%7CGwHhGeItDqClBg%40jBN%7CAn%40pA%7CAx%40xB%60%40rCAfEc%40rC%7D%40nE%7DAnKs%40pB%7BBtEeBnGm%40rE%3F%60Fv%40tF%60AbChCdCtBx%40fD%3FtFkC%7CCs%40hHO%7CEZ%60DnBDv%40f%40VXJhAnBt%40zCB%60Lf%40jGpAfEbE%7CEdBrBpBxGbBzE%60BtBhBjAfBf%40~GGpBf%40v%40j%40bBhCxCnIfBpEt%5E%7Cm%40%60EzIfGdNfG%60NdBzB~CjBdDv%40~DGdNsC%7CD%5BlEl%40xj%40nN%7CB%5EzBc%40xk%40gh%40t%40c%40XD%5EU%40i%40d%40m%40%60HiDnGkAnT%5Dd%5Da%40tFh%40nGzBrJtGrHlDfIbBbEl%40vC~%40vAl%40lDxDfIpKbDdCbDlAfDXtNJtFdAhRnDdIlA~GbBzC%5E%7CGm%40tBEfWfFxJ%60AzT%5CdEfAtCxBjC%7CBtVfKfExCmAvDCtA%5EzBb%40dBN%7CDUjBs%40pC_CrAcBXBx%40&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Ile de Krk" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Aminess Style Camping Atea Resort</div>
+            <div class="accom-address">Primorska cesta 41, Njivice</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 12 août 2026 02:00</span>
+              <span>🚪 Départ : 16 août 2026 02:00</span>
+              <span>🔖 Réf : PH27866820</span>
+              <span>💰 763.84 €</span>
+            </div>
+            <div class="accom-notes">Rating: 4.3 (4217 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784664980843.jpg?width=400&quality=60" alt="Ile de Krk" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 12</div>
+        <div class="step-title">Parc national du Triglav</div>
+        <div class="step-location">Triglav National Park, Bohinjsko jezero, Slovénie</div>
+        <div class="step-dates">
+          16 août 2026 → 18 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>413.5 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>5h14</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=45.1644434%2C14.5448533%7C46.34247269999999%2C13.7990434&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C45.1644434%2C14.5448533&markers=color%3Ared%7Clabel%3AA%7C46.34247269999999%2C13.7990434&path=color:red|weight:4|enc:ketrGgxwwAv%40cAnCwAVw%40%60AyCFkB%5DwDq%40kCCyALmAu%40oF_SuIsGgDoCmCyCwAyRu%40gIOwTqDkJoBmGt%40oCGmEy%40yJqBmP_DyJkByMWgDCsD%7D%40_DiByDiEyIaLgBkAcB%7D%40uFs%40_G%7D%40mG%7BB%7BMwIiEkBuE%7B%40qZHmMN%7BM%5CmGvA%7BFvCgAR%5B%5EMh%40e%40l%40yk%40fh%40oB%60%40sFsAyCm%40_e%40eLcCSkFh%40sNpCuDO%7DBo%40uCgBeB%7BBqGqNwHcQgCmFa%5Dak%40sCgHu%40sEiAsCmD%7BCgBk%40oDDyDO_Bo%40_CwBmBeE_BqGiBaDyC_DuBgDmAaHCkKs%40iGsAeDDq%40_%40c%40_%40JwB%7BAcEg%40iEMiGj%40mCbAkCjAkCToCo%40%7BBgBoAwBo%40gC%5BiELaFn%40%7DDhBeGrC%7DF%7C%40mEfAoIfA%7BFD_De%40eEiAwCuB%7DB_De%40aBTwDbCqHtJqHdIyC%7CB%7BD%7CAcCv%40kL~EkGtEcGbIaFtJ_GlOaExGeCtCaJ%60H_IbEyHpI_EnIqBdJaBlQqAdIeBdGmBnEeF~GkRlP%7BCbDcCdEsBfGiDhO%7DBlGkDxFsFvHcDrGiGxQiCrFk%60%40bt%40gBlEmBbI%7D%40rH%5B%60IVlPPvHQfIsBxTEdJl%40tMBpFWxEkAhFsAvEsBtDgCbGuAzG_%40lGDdMWdHkAvG_ExK%7D%40bEk%40%60Eo%40lLUvCkAvFcHrOcCnHkDbOkCfF%7BFnH%7DAtBiBjEeClLyAvFiFhLyAvCwBpGcApFk%40lG%5BnPg%40xGiAlFsAdD%7DDfF%7DD%60CyCp%40gGXcCd%40aCpAeExDuElB%7BDl%40aBvAcArCO~CZvCjDlIzB%60G%60H%7COhAdE%60%40%7CD%3FhGe%40lEsIzW%7BB%7CGg%40nDDxF%5C~BdBvEbDfHbBdGLvCg%40xD%7D%40dCgHbJ%7DApC%7D%40vDU~DBbNo%40vEmM%60%5EaAjB%7BA~AwJpE%7BCnCoAnCkGz%5B%7B%40lHE~Fx%40hMdFbd%40tAvMT~IcAp%5Ei%40lOq%40bHgJn%60%40gEhQwAzLiBtj%40sBfWU~Hb%40tl%40g%40xKeAxIcBbIcCbIkDzHaGxJqInNoC%60IwAfHoBhT%7D%40lGwA%60GkHnSaT~j%40eD%60FyGdImDnGuHvQgDnF%7DEfFgGvD%7BJtEuBhBqCvD%7DBtEgDpGgCxCwLxK%7BBzD%7BCbJ_BrG%7BBbPkB%7CJsC%7CJuCjHmDvGuFlH%7DD%7CD_IlFuDbByJbC%7BIj%40qNi%40%7DPiA%7BJH_KtAaNvCqQpBiM%5CgECoQgA%7DWgEsGk%40mJFmFh%40%7BKlCeGlBoHjAgEfByBhBeCvDoBnFaCxKyAtD%7BPx%5EmKhUkJ~QqHvKiJpJsN%7CJgJxDmKlCaUzEqPdFeRxHcFnBgPfCgI%40qFa%40mGkAkH%7BBsZcOwJeFmE%7DBoJoFmKwFyQmImJkBiF%7BA_FwCoEaEqB%7BA_Dy%40_DJeC%7C%40cFrEiN~LmEhDkEhCyCbD%7BBdFwAtBwAd%40eIRyHkAkDR%7BB%60AeCFaAb%40q%40vAq%40bDmCvDgBtCaAbB_AXu%40Ks%40y%40wB%7BHo%40_A%7B%40H%7D%40pAgAtDkBrJ%7BDvH_AvAoBrI_DpMwGbRgAjBkMzJuCnEoExHyBjAwGzB%7BBjDkAlAyPrBoExCw%40fB%7BCfL%7DCfEqDbDw%40SgCaFcB%7DCcAaAqDaBaQaE_D%5BiLeEoC%7DBw%40Iy%40%5CkBnCc%40%5C%7B%40%3FgCoBaAOy%40%60%40uAxF%7D%40pBkCnA%7BB%5EgBScCiB%7DA%5DsANcClBsAp%40%7DBB%7DLoDeBMkClAkNpI%7BD%3F%7DAJyA~%40kAtBcBtDaBtAoDrAqAz%40qAfBcAhDkBvJyArBsDpBmAMoHaD_I_FuFwDcGyB%7BEqB%5BSU%5E_%40%60AqAvByChFmJnCoIpCcCnBqBbEe%40%7CBmAvP%7B%40zB%7BCbG%7BE%7CGgExI_DvEaCdBwXnNiCjBi%40gCLuBn%40mClBkFzAoDx%40qDZ%7B%40Bg%40%5BAmC%7BDwI%7DUi%40oB%40y%40%5DOs%40j%40yAReBQ%7DEeBuA%5BiCp%40mCL%7B%40%60%40gCfEuCxEwEzLy%40bKW%60Bq%40%7CAg%40Rc%40SUe%40g%40uFu%40wB%7DBgCkDwBs%40Oe%40PcBrCqAtA%7DAb%40cCIs%40o%40SgAUuMDeCYF%5DpD%7B%40dD%5B%40Bq%40l%40qBT_DD%7BGEcHAeGW%5DM%5Co%40jIw%40~Ae%40E%7DA%7DES%7BDKiDg%40QqDvCyBzFqBbDgElK_AnAaIbCgEzA_CtBgBx%40gAGeAwAgGmS_DcReAgBiIyCsOwFyAcAm%40eBYkGg%40aCaBsD%7BAcAaHqC%7DGeJwGaEmDQkCkA%7BAS_GZcDIiBhAoBfD%7BAtCoB~B%7BB%7CAeAxAkArBeDhFiArAmAXwCLsApBKzAU%60GIxFoCxM%7B%40pIcCjJ%7BBzKyDpEkCdDoEhD_BlC_AdBe%40d%40mBXkAb%40%7DErDmCj%40oCzBkBbA%7BFzA%7DF%7CDa%40HcEeAeANkBtBs%40WiB%7BA%5DDaFhGcBTqA%7D%40%7B%40a%40%7DE%5DwDwAw%40JsCdDmCbDcBj%40%7DCpBoHxAuBaAkB%5BaHZsW~CkEdB_BnA_EnG_GhBuCz%40kDrD_BBaABkBtBcD%7CD%7DClCeElFoC%7CBwDtBoHfD_BbAiClC_B%5EaCjAeBvB%7BAjAaC%60%40yA%60%40_ClCgG~IsEvKUhEKdB%3FzALhFNnBgA~EEjENpF%5DvC%40~E_%40dB%5BzEk%40tF%7BG_EgWgJs%40wAkAoEaKxAiAL%5Da%40c%40Vs%40TyIaAiDx%40kGjBcDtA%7BH~EwAPgD%3F%7DDLmGtA%7DNvEeHrBsLjAaH%60%40yDx%40uI%60DsDn%40cKHsf%40SiIoAsGu%40cEc%40wJIgCD%7DCj%40sJ%7CGeLdEcGhBsGbCyFjGcAn%40mO_%40cJu%40sBsAcFkIaDcDgHiF%7D%40sAsAaEy%40kA%7BAq%40_EmAkRyHwHy%40qCm%40_%40HuAnB_CdB%7BH%7CCyFbBuADoBa%40gOgGcFq%40cFPw%40IsAQw%40e%40%5Dq%40qAkFuCgFaEcIiAwFgBuNmDkVuEwVuAkHkDqNoE_NyDoIgG%7DIkF%7BEeE_CiFiByHgAiHBgNnAmIj%40oJTyIo%40iJ%7DA%7BF%7BBwMsGcKaIcHsHkGyIwGeMmHaSaDkM%7DAwIkBoN_BgQuH_dAy%40oHiDmQsGaTwLq_%40mBkI_Jae%40%7BEsQuEuLaGkLaFgGmFwD%7DCgAoGw%40oFPaKhBmFr%40_IJsGg%40uEcAgE%7BAcIsEkE%7DDcOoSsFuGiFwD%7DFcCyE%7D%40yGQeJl%40kHpAuIjCiKzEaLrIiRxSoPnNiOhLaM~Kyq%40xo%40gHdE%7DGlCkPzFcItEkFlE%7DJbLqDxDiEbDsFjCqGzAiG%5CkQd%40aG%60AqInCcIdEaSvLsQvGeOdDwLpAaMZcNe%40oM%7BAmP%7DDoIaDqQqI_E_CmNeJaPiMeEiDsQgLgGwCyNyEeIgBiJqAuMwAkIkBiHmCeEmCyEmE%7BKmL_FyCsI%7DEoDmDiC_EuBeFeCyIwAcHqAyJ_BgWgAaM%7BBcN%7BCkLsFiN%7BEmIgCkDwHcI%7DJmG_IyCcGsAsLu%40%7BJ%60%40oRnCeKr%40cO_%40_LcBoN_FwJkF_M%7BIsLcLwRcUyP%7BTcQmWyLwSoJcQ%7DPw%5DoPs_%40yPqc%40iJwY%7DDmPsC_PcByMiEyk%40wBmOyDuQsBwGwDsJ_%5Con%40mJoSmDeK%7BD%7BOwCuQoHqt%40cXwpCuBsSsDyZqCsR%7DFgYyCoLmFkP%7BCyF_EmEcG_DuLwEqDqCcA_AmDyC%7DC_BcEk%40mBDaDn%40yC%7CAcFrEaFrDiGpBiEXsGg%40qCu%40wDyBwPaOcIsFcHeD%7BIqCaQqEeY%7BHcp%40oP_TgEqVqCuU_As%5BNkSSoYwCmGqAiEyAePsJ%7D%5C_YqLcHiJyDiPwE_SmE_FqBeIaFkH_HyJeMsG_HiJgGsLiEgIkA%7BIU%7BIh%40yGtAmK%60EcLtGkP~IwHjC_IbBiK~%40%7BNCmI%7D%40aMwCypAae%40qU%7DHaLiCeNoBsNg%40cNTgLfA_OtCiP%7CFkFbCiMfIiKtIwHlHg%5Br%5DsCrCyHpK%7BObSeZ~a%40mXnb%40%7BZzh%40iV%60e%40ePt%5CsZfs%40_%5Cfy%40ab%40fdAyKbUePlXiFvHwMdPq_%40h%60%40wShUgG%60IsJjOmGhMeJlViDdLmD~NqCtOcFxa%40sEpe%40gI~w%40eF%7C%5DyF%7CYiGfVcE%60NsH~RgHrPyHbPcMb%5CkFfRuCxMcD%7CR%7DBnTqG~x%40qAjNiDtReDfKaEtGsE%60FoF~CqLdDuFpBmMjJsDdCeFtC%7DFfByEr%40%7BCJwMSkQ%5CeJxAcItByF~B%7DKjGwGjF_EnEsErHiFtNcCdMmAjLy%40bYe%40ja%40s%40vTeCbVcBxIaE~McDdJ%7BLf%5DmMx%5D_FbRmLvh%40wDhTmDbYsFng%40%7DDhUgH~XiHjSqLrVwTj%60%40g%60%40bk%40mYp%5Dk%5Bp%5Cs~%40~~%40wQpRuNfMkIrGiY%60RePtMyNjOoNfRaH~KeP%7CXkH%7CJwJjKePdNkN%60JkN%60HiMzEkSlF%7BLxDeH%7CD%7DHhHoF~HiEhJoC%60J_CtLkAtKi%40dKuArTsClUaEdXwC%60b%40yBjS%7BCfNgE%60KiGnLcHvLsFlMoCrJcD~MgCjHsJzU%7BEdRgF~UaElWeB~TmBtNqDlOyBfHsIlTwCnKqFtWsD%60OaGvP%7DHjQqEnLkEjQoBdMaE%7C%5CcDdRcIr%5D%7BC%60NkCpKeAlCkCnB_AbAg%40jBGjFRlBYxBo%40p%40%7BC%5C%7DAm%40mBjHiBxIqEbOkAnFc%40lEq%40zSK%60JNpM%3FpBc%40rCsApDwAfBeEzDeEnHaFtKaAfGGpDBnKSpCkAzEmDnHgApCyAxGmJnf%40kDnS_%40vH%40%60LM%60Bo%40hBcCtBwChAyAjAoAvBs%40zCg%40jHgAtYe%40dWgBxXeD~d%40iAjHkDnQ%7B%40bMDlCXpGS~Gu%40tEy%40%60Eu%40fIs%40vDgAtCcExH_CdHsAvDsBjFmAzH%7B%40vDcBnCmH~IqItQ%7DAlFUbDRpC%60AvDx%40jGHn%5E%5DnHaHrg%40%7BBpHi%40rFqAlPcBxEcAzDObIHhJ~%40jJ%40tI%5ErHDzHm%40lF%7DBpNyBrYBvIEzIeCvXuArGGjG%5CpGSrCgAfGI%7CEI~Ag%40pB_D~E%7BBhEcCjHg%40jCiAvWEvCd%40~D%60AbCbBbBvEtDX~A%5B~B_DjM%7BAvCi%40rBq%40~Fi%40bERhCKhB%7DD%60IuDrI_%40%7CBOvJSvFTrJQfNNvG_%40pCwAzFO%60Es%40vEg%40rJCzN%5EtI%5ElEpB~OF%7CC%7CAt%5DbAlGd%40rF%5BtDeAnC_FfIaC%7CFyAhEGl%40%5ENpEI%60JgAx%40b%40zApBpClGbB%7CGh%40%7CBxCnKnBlE%7CCbEnE~CzI%60CvGv%40zCMpAa%40~%40sBRoB%7BAmJ%40mAj%40%7DAjCwC%60Cc%40tBo%40lAn%40%7CA%60%40jGo%40lH~%40%60Ad%40lBfDf%40%60Cn%40pAz%40TvAY~Ay%40t%40Nl%40~%40dAjC%7CAPfDt%40hBYvCyA%7CAUnHjAvBHPb%40Yz%40iAr%40%7B%40l%40%40~%40~CrBzAo%40%60C%5DxDlA~BW%7C%40s%40~G_%40fAv%40hCNvAXlBNrCFRtAl%40jAzAz%40%7C%40%7C%40Vg%40Pi%40p%40NxAdArDtA%60BbA%5C~%40rC%60%40lEdChBhBj%40~%40zAS%60GRtBz%40~B%7C%40lB%60B%60%40%5EOH%7BCoAFZ~BlAv%40%60AEvAUrAVr%40~%40%3Fl%40n%40hAXPr%40WbCAnHPXr%40e%40d%40a%40L%5CsArBU~%40VCj%40aAb%40Jt%40bBp%40l%40AZi%40MmAi%40u%40d%40w%40jB%5BDu%40sAs%40sEk%40o%40o%40FSr%40P~AbDvKP~BBvC%7CAzEfAdAvJdHjB%60%40nAQx%40q%40%60AQp%40h%40r%40rATnB%5Cb%40bA%5DRX_%40tCYH%7B%40%7D%40oCcAUTxBbCK%60%40%7BAd%40uEPA%5Cx%40C%7CEBRRWZaFHi%40ZPXx%40IdCbBzAIFd%40uA%7C%40mA%60%40m%40rB%40lBR~%40hAzAbBzF%40xAs%40xAUdES%60%40qAIgBwAi%40GsB~%40y%40VLTvC_%40zAxAjCbEv%40b%40MXmAo%40c%40Xs%40RJVvB%5EB%5Eu%40KgARyAI%5D%5Ct%40~BjBnCf%40lBs%40n%40c%40z%40Pd%40r%40%40fB%60%40zBzAv%40DbB%5B%7B%40hBaBv%40iANC%60%40tANpEtBzD%60D~EzD~CrCdBf%40lCQl%40Ld%40DbA%7D%40nCqDvAg%40%60BiAZJKb%40o%40v%40XPbCy%40%7C%40kAl%40KfBl%40hA%5ElDaAl%40Tx%40rBt%40Ch%40KAXu%40REXz%40LjAt%40xE~%40vA%5DtDp%40bBSdAY%7CDJdEeAd%40a%40%60%40%7D%40jBi%40jBdAvA%5E~ExCp%40fArAjAnCx%40rBrB~%40%5EtB%60Bl%40OpAeB%60AyCNsCd%40qD%60A_Ar%40gCZMxAI%60CwCT%5BD%60%40uBhEa%40~%40XHxFoG%7CA_AdAGx%40b%40x%40e%40Hw%40e%40qAj%40iBEe%40iAuA_%40yAx%40aFAuBJiDj%40aAhAa%40n%40%7DBIeAR%3FXxAK%7CASdA%7B%40x%40%40l%40fAtEOtBRRj%40kBQwDPs%40z%40_%40nAcBG%7BFRQX~Dd%40%60BKhCTNX_DUyACiAPIJtAl%40jANlCPfARGCkBJ%7DAc%40gBHwCUkB%40_Bx%40cAAk%40%5Bu%40VCh%40zA%5B%60BPxAt%40fBPnB~%40tAZtA%5C~%40Zl%40UjDoAhBSf%40RFdBu%40d%40s%40%7C%40oB%5CG%40%5Eu%40%7C%40BpAM%5EqAlAEnCcAnEw%40vAFZl%40iAfA%7BBv%40u%40PwAVAKlAQv%40%7DAdEOdB%7D%40xEaA%60DX%40v%40uBjB%7DCh%40yAB%60%40_A~Da%40fA%5C%3FrB%7DETJq%40bCwA%60Fg%40pAQxBe%40r%40QtCo%40bDNVl%40yAlAoCv%40yARq%40b%40EdAF%60BwALT_AbBc%40jB%5DvAB%60Bk%40pAOhAYpCLXbBaAp%40XR~%40MhBJj%40j%40Hb%40w%40%60%40qCbAcBpCgA%7CAuBdBeFpAeCp%40oCh%40kB%60AuBvAo%40jAZpA%60Az%40w%40%60%40%40rBdB%7C%40TdCcDnCo%40rBe%40bFvBlEjCl%40Az%40y%40%7CAqC%7CB%7DAtBVfB%5EjBYtBoB%60EeC~%40iAhC%7BHhEoHbAaAvBEhAo%40hCyDvAoDlAwAdByB~%40uCd%40iDtA%7DGlAcBl%40%7D%40x%40uDH%3FTiDLyAc%40aCUqGF_Dm%40%7DD%7B%40uFIyCDwFJ_FUeEBcBXgEs%40wGyA%7D%40i%40yAKgCHaBF_%40e%40gDKkA%5EoALaFp%40aDTkD%60AwBPs%40P%7BI%40aG_%40mBO_ALc%40dASjCmGj%40sD&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Parc national du Triglav" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Maya outdoor center</div>
+            <div class="accom-address">Volče 87c, Tolmin</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 16 août 2026 02:00</span>
+              <span>🚪 Départ : 18 août 2026 02:00</span>
+              <span>🔖 Réf : 9062</span>
+              <span>💰 183.00 €</span>
+            </div>
+            <div class="accom-notes">Rating: 4.8 (258 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time"></div>
+            <div class="activity-content">
+              <div class="activity-name">📍 Maya team - rafting, kayak, canyoning, Zip line, SUP</div>
+              <div class="activity-location">Volče, Tolmin, Slovénie</div>
+              
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784665055862.jpg?width=400&quality=60" alt="Parc national du Triglav" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 13</div>
+        <div class="step-title">Innsbruck</div>
+        <div class="step-location">Innsbruck, Autriche</div>
+        <div class="step-dates">
+          18 août 2026 → 19 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>110.9 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>1h45</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=46.34247269999999%2C13.7990434%7C47.2675322%2C11.3910349&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C46.34247269999999%2C13.7990434&markers=color%3Ared%7Clabel%3AA%7C47.2675322%2C11.3910349&path=color:red|weight:4|enc:w%7DazG%7BlcsAgEpMaAV%5CxBVtF%5BjLoA%60DYtD_A~Gc%40zDP~AN~DFxDn%40tBlClFYnHV~EQhHB%60J%7C%40nHn%40hGHzIb%40nDc%40tEu%40nCcBhCqB~Hu%40vEqBdE%7BBnCoCbGgDvCmCXsFfJ%7DCxIeFdDaD~BwEg%40sCh%40mC%60E%7DA%7C%40gFyCgGcBwErA_DtCqCuBkAt%40cCuAcCf%40wAtDiAbEsBhF%7DCnF_ErBaAdF_AXQ%7D%40%3FsCw%40e%40oBt%40V_Dr%40kCBqBv%40mDhAgCoAr%40kBPm%40f%40cA%7CBkBpEWQv%40kG%7C%40yCbAwDnBuHSWsB%7CE%5DQzAeFCq%40iBjEaBdDWW%60CiJtAiGn%40yBIs%40e%40lB_BdCcAdBl%40iBfAwELcDvAqAFqBj%40_Ao%40NmApCsB%7C%40Ka%40nBoEI%7BBk%40%7DAqAiCYiCeAwCX%7BC%7D%40_AXx%40q%40dBGhBHpE%60%40xDAdDYDYeEs%40uBSw%40H~BKbE%5BEM%7DDe%40kFC~A%7BAtGeAl%40PtDs%40pC%40oBkA_Gz%40yA%5EyCa%40iBGx%40i%40nCcBt%40_%40tD%40~Ck%40dG%60BlCe%40jB%60%40jB_%40pA%7DAWqCt%40sGbHKe%40pCoFS%5BuD~DsA%5Ew%40%60CyA%7CEy%40nFiBbDuAMoCgB%7DDaCeDiCeF%7BD%7BCkAqB%5DaBzA%7DChAiFd%40%7BCZgEw%40uB%60%40%7BGqBgAWx%40c%40Ac%40kAZgA%7BBmDXkC%5ByBUqAxAiCj%40h%40eA%3Fs%40qBlA%7DCnB%7DClDs%40WsDHeE_CcHeGgJ_GcB%5Dz%40a%40nC%7DATqAoDDgD_BwAMBeAhAeA%7BBwEmAgD~%40a%40~BCt%40K%7BBg%40Bg%40~ASbAJgB_BwDaFcDNv%40%5DnC_AjClBhAQZyEv%40yBoBcIqAmB%3FkDhAmB~BgAcAYeDeBgA%40d%40m%40tFSc%40g%40yFJGg%40tGo%40f%40i%40qBwCdDbAbA%60Ah%40iDkAFm%40q%40i%40oC%7BAqAuAr%40yCV%7DIkGeDiC%7BAgGUoFiDuLN%7DAlAL%60AlFdArAdAuBvAWtAh%40i%40y%40sAaCs%40r%40%5DV%7C%40eCZkAmAdA_%40eAXaJQyAkBcAgACSyAVeCqCaCk%40k%40fDlAy%40w%40uC%7BBwDoA%7BHFiAeAmGoEaEcAm%40uAaGaC%7BByAi%40bAu%40GsB_B_A%7BCuCMoCUcEg%40_I%5DcB~%40cGg%40aETeFy%40G_BrBeAd%40uAwAa%40gJmAaDf%40eE%60BmFaAwAcDkAy%40mBv%40wBTmAmBgCsGuCeAuJ_%40qFM_B%5BsEtAgDlEBtC~%40%7CKgAlCsEr%40qH%7B%40kMmEsC%7BCmFsJkCeKmC%7BKgByD_CeD%7BBa%40cNh%40k%40Qi%40~E%7B%40bKIbL%7CCr_%40EbB%60%40%7CAZzKoBlOuDhP%7D%40rPa%40%7CM%3FnQ%7DGbSkBfGeDYuE%7C%40oDt%40eCkA_FwEaGaDY%7DBpAyEUmBgBIw%40%7CDKrIsAtGkBlEiBtEgBh%40iCh%40kKtFyAXcBaBeA%60B_E~%40kFhBoFvHoDlD%7BHlBkHp%40c%5CgEsHq%40sGw%40iEmAaDa%40qPjEmD%7CAwCJcHzCiCr%40M%7BA%60BaDxBqCq%40g%40%7BBG%7DCPgFyFsA%40iAtDBxD%7DFdFeMpRaFhEcE~GaBD_DsIQeDX%7BMHgG%60AwVGqPVyN%5CqCs%40FkBbIsBIuAuCGwGtAoDC%7BFsCqUM_NgAcPuA_%40kEJmBcCoEgLeEeBwAcB%7DBeEwCwDiFsKaCcKaDyP%7BBsDyL_KwDcAgLByDgByBaDy%40wCsHm%5BiFmVqGyH%7DKcKoI%7BCkEuAiC%7BDeJk%5BcA_DiEcOsHmL_DiGwBsFoJg%5Bv%40eFIiDAqB%7C%40%3F%60%40dDdAtC~GtEbAhBLlBq%40%60A%7D%40OmAkLq%40a_%40m%40mQiAqJqEcNsJaPiSsVoOsRyI_PoImU%7DOoo%40gMqj%40uKcc%40oNw%60%40kO_Z%7BRgWc%5BeYc%60%40kY%7BP_OoNmPuBmEsEqUcCmFmDwAuEdAiHfGiZdUeVfLm_%40vK%7BO%60I%7DLzKeMlOeWz%5DePzWwKzVeIbY%7BFj%60%40WhH%5ErSpEro%40nGjhA%7CGlt%40xe%40hqCvAxQNxJcAlSwAzHsE%7CPkEpWe%40bSz%40hYW%7CSq%40hG_Jv%5DmDlRuBzf%40%7BFny%40_Ido%40mGz%5EiGxTkK~V%7DKzVwMl%5EsNta%40%7BVr%60%40gP%7CTmInVuHd%5DmErQ_Qnf%40qObl%40sHd_%40gBbQ%7B%40hPmCfV%7DDpNsDzPwA%7COkBrQaDhP%7DKvY%7DQz%5DkJpMuLhJkPnHmMvKcEzGsOrZeOrOyQ~P%7DFrI_Nj%5B%7DLxVeIhIeYrUm%5Bl%5DiRpY_%5Bvs%40iJxQmSxWkG%60OoHbPqI%60McHpMwHrQaIvKgIlG%7DSrOeDfFoGfLiYfWmQpNwc%40xj%40iP%7CQg_%40zWuJ%60I_N%60Ra%5Elr%40cIlSmLnc%40iHfUiJ~SoI%7CLmHbE%7BHVi%5DcKeTaFeH%60AkG%60FwEhJaFhRyPfx%40uG%7CUcDbK%7DLxZuK%7CSwKfNaNlKgNxEaMl%40gNyBqLuGmHuHaSsXkKsKcOsIeKkDiLSiWp%40oVgCkKiDgVcNqNgGuZ%7BHyYuBmN%7D%40_I%7BCsLcLkFmFsJ_EiP%7DBaMsI_KoPuEmFaP%7DJeJsIyJyPiQmP_FwF%7DDmJsBaM%5Bu%5C%7DAwMyC%7DHeGuGeOsGgGeEiHeJiFkMcF%7BUaF%7DQoHsOyRs%5BmG%7DQcIgd%40wDuWeFeYwG%7DQmMkSsKyQaLyZ%7BKg%5CuI_SmSsYsHqHyReL%7Bd%40kNuw%40gTcHoCsDaD%7BIsMcIsIyEoBqL%7B%40yJs%40%7DReGmOkAe%60%40%40%7BXw%40sR%7DAm%5CpEuWjEyM~GuHvBiJe%40oNwBeU%5Es%5EnFa%5EtKkSfLsS~VgXbf%40sTpWqYrReXnM%7DPxEqx%40dJwz%40tHiXIyhAeNyMmCgG%7BFuDyIqBsLaCsHsIyLgI%7DLcGyDoKoAqEmAsFiEqGgFcHaBkF%40mIpCuFhFuF%60McJjW_KrM_OhKiSdU%7BOpT_MhR%7DRj_%40%7DIr%5CcMfb%40aPt_%40cR%60%5D_HhQeFfUgG~Qc%5Bbi%40cQfa%40%7DNjl%40wMtb%40%7BCpLyDvHmQzYcCpGuDrQmLxa%40%7BEvIsCvCuGjE%7BFrIwCxMeAb_%40u%40hNeClLyF%60M%7BCbNgCnNoEnJ%7DJ%7COqCbKoAbM%7D%40d%5C_BlK%7DDvJ_HpHcK~HuDbHoNni%40mBdMeDvRkDjIgShXyJtSgL%60Mw%60%40x%5C_VbNc%5BvIefBzVgmAhOsjApO_I%5BiTyG%7BHgG%7DHeIkF_CmH%5DcI%60BcIlGmIdKuGbEkSlHqKtIwLjLiIpDcMtAyOfAkV%60JkOxCiTpAwH%7CB_FrDcL%7CQ_HtJgVfVkWtVyS%7CP%7DSnKqQhDsGCeZuBkPuCeQqMuIkC%7DEMeGr%40yO~GyH%60BuMHeUgBuRpAyPfC%7DQy%40_MkDuSkEuk%40gEsUAg%5BaBcQw%40qNrAaa%40dL%7DLxBcJH_K%7DBeNsJuQiPkJiF_KoB%7BMDgR%60Ek%5CzN_%60%40zOsLnBir%40zHuIpEqJvL_NnIeQlCoIfEqGjIsFrOuFt%5ByBh%5BeCbd%40oBv_%40A%7Ca%40oA%7CL_GpUkBdM_%40zMb%40xMxCvV%60BvWtDzUnLb_%40tKdb%40pDjVRtP_BdSoCvK%7BFvP%7BNxa%40cSrZiIxOsCvLmB%7CSaCpa%40wDjTaHlYuCbVc%40jSJnZcBl%7B%40aErb%40uAjToCzLoErNiBpMO%60Ov%40d%5Ck%40zM_DdSoFbOcHtK%7DM%60JcMdCqRDkJhBmLbH%7DTvTcRh%5B%7BHtIsVhN%7DIhH_ObPoK%60Ga%5BxEkSdF%7B%5DpP_HnGsJfPyLlWkP~QsJdFqOhCoSbE%7BOrGiIfHcPrQiIlDcRjF_XzJse%40pAqVj%40%7BWWyMkBqLoFwVqMgMkDca%40eAahAlAiSvA_YtFm_%40tJuPtIwM%60N%7DJlQeJpP_HdHw%5DbUuSvIuNjFoo%40~LwVpHqTtK_MbJ%7BLnMqQlSyJdD_PMwLx%40gNhIoPnRsL~H%7BJbBmIg%40a%5EeMy%5B%7DI%7DVyC_Wi%40eY~CoMhFgT%7CRuQ%60Hed%40rKadApa%40sUxMaRtOgJlMaMhZkFjKuIjJiIpEeQ~DaKnAqSlEuRrJw%5EtOmi%40~Ja%5ErE%7BL~E%7DH%7CFsKtN%7DGbOsG%7CXuJfk%40%7BG%7C_%40wTlmAsQr~%40%7DMvp%40mj%40tsCyHrV%7DLxU_TlXwVx%5BeMvPuJfRcRvl%40wLzb%40sBjNu%40vSj%40rQrI~e%40bAnLb%40xb%40bB~vB%60A~p%40rKtsCq%40hOoLds%40%7BG~QwpAl%7BB%7BhA~jAiSv%5DwuA~lCwl%40%60h%40%7D_%40tf%40kHvNeNfg%40_ChTa%40%60oAtLzkAvAfYSfWeBnj%40bDtrAy%40fPsCpN%7DMp%5E%7BDhSwAxSFbTjIzbAdArZa%40by%40hAlgAdIpjAtNbn%40nAzOUbQyDz_%40v%40fhAm%40vU_D%60UcNnu%40kCno%40%5ChXbHtv%40%40hQ_Eld%40WnXnCl%7B%40Q~k%40eApi%40bHpzAlCbm%40o%40fX_Ef%60AqDrt%40eEdfAcU%60pBia%40zmCkA%7CTJ~e%40xG~%7DCrCrRxJpf%40tCx%5DQduBhBlt%40AlVeCl_AlA%60QlEnR%7CGvMbJxIzf%40t%5BnKhMdMjXxIdU~E~WlCjYdCfWlJ%7CZ%7CLvv%40rH%60c%40bMld%40h%5Bh~B%7C%40bRi%40zQqFx%60%40sC%7Ct%40OdvA~%40pTzCzRdRj_AnFjf%40nBb%5Ep%40tc%40a%40%60iArAv%60%40jGvy%40gAdd%40LpQpCfb%40UxQ%7DBnR%7DE%60PkQx%5C%7DDpNcBjPeAvuAwKj_BcHjvBkG%60uAuIv%7BBqFny%40%7D%40nBgBR_AgCh%40sGnCyEdEeAxEbBjXzVzLjHdO%60Ezb%40Jhg%40yC%7Ca%40mH%60b%40yM%60%5EaQdXmQ~TcR~r%40gu%40dm%40ol%40h%5DqY%60y%40el%40l%5C%7BTf%5EwWb%5Em%5Bhd%40qc%40ncAm_A~ViL%7CXeFxj%40oH%7CUaGbRqIfVqQ%60RiT%60Wo%60%40nKoLtLyGve%40%7DGvUeFrf%40%7BRh%7DA%7Bu%40jd%40%7BTzVyF%7Cc%40kDlU%40vNzC%7CLbGvOhObIvM%7CKtWrLdf%40hHvUvJnRpXza%40rIlSbWfv%40fNbYtM%60RdRrQdi%40v%5Dbn%40p%60%40j%5CzTxLrMhKtP~Trd%40rI%60MbN%60NnZvQlRfO%60NlPjLdSfIfStFpSvGj%5E~C%7C%5D%60Bh%5ExBlQ%60GrS%7CKrS~Znd%40nNbQ%7CL%7CJxPdInZbIfNpGt%5ChVlIbDlJl%40pWgDfINzHfCpIdHpHtMnLf%5CjJf%5DlF~YjHfs%40%7CAd_%40b%40tv%40r%40xS%60DrZnIho%40tCzc%40rBry%40dBhRzDhQ%7CM%60%5EnNzc%40bRhv%40hZhoAlPpj%40nKx%5B%60DhSxIbhA%7CBnNrEdNn%5Dbi%40hU%60a%40pJxUhNhg%40hLbq%40lHxZjNh%5Bj%5Exf%40vUj_%40vTpe%40zH%60N%7CKhMbWbSnKnJrJrMbGpLnSnk%40bQ%7Cl%40tEhVdBzSZhWChd%40nBv_%40rD%60VdDhKdFnJvJdKjV~KrKjHxIvK%60IdQvW%7C%7B%40hDjRz%40lOq%40lh%40%60%40~SrBzPrH%60%5BzIfT%7CS%60%5DbW%7Ca%40hm%40fmA%7CHnSzDtQjQ%7C~AvCfSjHhUrIlNbIzHxT%7CPf%5Cnc%40xHrIzGbFbN%60G%7CZhHlKlElKtGjUlUxTtYjKtRdJzUxTzr%40fIv%5BrEhYtCrZ~BhSnFbTpRf_%40zH~QrE~SxBlVjDjh%40zDdQpIjRlT%60_%40%7CEhNxC~Px%40bR%7B%40fWcBpZE~TfBdj%40%7CAn%5DbBjM~DzOvFnMvGhJhUpS%7CIhH~LbLfNxPxFxJnFpMjFzRlEzYlQl%7DA%60Gnp%40%7C%40x%5C%5Bf_%40h%40fTpCtPfMna%40hChOp%40tRaBxl%40FnQpOt%7CAhFl%5DnG~QvRb%5DlErMrBfPrD~%60AnDnSzDtLlEbLvMhg%40rFvYpAfOl%40l%5CzGbx%40xBvKtEjQz%40vMg%40jMiDjP%7DFzQq%40xHp%40lP%5CbMyApQi%40dJhAvSUbDkA%7C%40kBcADgDfA%7DCgCeTi%40gEgKiLiCcAcDzIeDrAiIoK%7BJsLoF_JwOoUyC_BYS&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Innsbruck" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Camping Aschach Castle</div>
+            <div class="accom-address">Hochschwarzweg 2, Volders</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 18 août 2026 02:00</span>
+              <span>🚪 Départ : 19 août 2026 02:00</span>
+              
+              
+            </div>
+            <div class="accom-notes">Rating: 4.5 (818 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784665111795.jpg?width=400&quality=60" alt="Innsbruck" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 14</div>
+        <div class="step-title">Château de Neuschwanstein</div>
+        <div class="step-location">Neuschwanstein Castle, Neuschwansteinstraße, Schwangau, Allemagne</div>
+        <div class="step-dates">
+          19 août 2026 → 20 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>152.7 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>2h42</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=47.2675322%2C11.3910349%7C47.557574%2C10.7498004&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C47.2675322%2C11.3910349&markers=color%3Ared%7Clabel%3AA%7C47.557574%2C10.7498004&path=color:red|weight:4|enc:e%7Dn_HuxodAXRL%5C%5CZf%40Z%5C%5EnF%60JnDxEzAbBz%40hA%60%40%60%40vBxCvCvDbCpC%5Eh%40jFjG~ErGNJJVp%40j%40hEfFdAvAfBzCfBlCfCfDxAbCnCxCZX%40TrBtClAbCx%40nBLLbA%7CDVpA%60%40pCTnCJ~CAzDMzCEp%40DXoGfd%40s%40fGi%40lGUdEObFAtFHpDXxE%60%40nE~%40lGtAtHhC%60N%60AjG%60%40fDVxDLvD%40bEGpDU~Da%40~Dk%40tD_A%7CEeBvH%7BJda%40yAbFwAtDmAfC%7BAdCuBtCeDpDqKdL%7BCtD%7BBfDcB%60DuAdDaAvCmAbFu%40%60Ei%40jEYxDQ~DEpEDvGRpIhEfuAVlKBtGCzDKtD%5BfF_%40xDs%40zEiA%7CFmC~Lw%40rEi%40fEa%40rFQtEEdFFzFNjG~%40jWLfHBhISb%5CBxFPtGVvEb%40fFj%40xE%7C%40xF%5EjBlBdIzBfIjBfIv%40pEb%40vDTdDNpDD%60FE%7CEOfDe%40%60Gm%40zEoA~HsAfGsAfFkB%60GkBvEsBnEuBtD_BhCgA%7CAaEbFgGhHgEtFmBrCsCzEsC%7CFsB%60FiApCwAjE%7BBbIi%40rBuCbNiB~JsHle%40cDpRiDvQqBtJqDvOuDtNwDnM%7BEfOkIlVaBpF_A%7CDs%40~Dg%40zDa%40~EMxBKdECvEJrFRxFxB%7C%5D%60%40%60JNvFB~BAbIMzGa%40~Ho%40zHu%40bGgAnGoAbGgAjEaCjIiZ%7C~%40m%5ErhAmDrKkDpKqFlP_B%60EkAbCgBxCyArByBfCaCtBuBzAkAp%40_FxBmFxBeDfBoCxBmCrC_BvBq%40dAqA~Bk%40lA%7D%40xBu%40vB%7D%40xCa%40%60Bc%40zBiAnHc%40nFSfFEjD%40dEHxCP~C%60%40%60EhAjInBzKhDnPnC%60LnD%7CMvJt%5CxH~WjBnHnAbGlAbHbApHv%40~Hj%40pId%40jKtBhf%40f%40vIl%40%7CGz%40fH%60AfGtAxG%7CBhJhMde%40%60ArEl%40hEZzDR%60FF~HFnKPzG%5CnGr%40xHfCrUzA%7CPfArOhAlSl%40bLh%40fGr%40bGdAhGdGlYfC~M%7CBpNjBdNfBtOxTjyBjAlNhAlQjAfRv%40bJv%40rGjAnHxAvHxA%60GdBfGzBpGzHvRrA%60E~AxFf%40jBC%5CTfBHxA%3FhBUxEDp%40Lh%40b%40p%40~%40v%40JjAy%40vBi%40l%40k%40z%40yAdC%7B%40dAa%40Z%5BLc%40DY%3Fg%40KqC%7D%40sA%5B%7BABe%40Hq%40TiAh%40o%40RsBPmJ%60%40%7BA%40o%40Dk%40Ls%40d%40UVYh%40_%40lA%5DnAWj%40U%5EWRc%40N%5DE_%40QWg%40So%40Cg%40Bk%40F%5DN_%40JSx%40o%40vAm%40t%40_%40~%40s%40%60C_C%60Aq%40tBw%40jBg%40p%40%5Bj%40i%40d%40y%40VaAJiA%40%5DEgAQcA%5By%40qA%7BByAgC%7B%40iC%7B%40%7DCi%40cBg%40eAo%40_As%40q%40m%40%5DwAi%40_JgAqCcA%7DReJsBm%40kASoAEiAF%7DAVs%40Vk%40Z%7DBfBk%40n%40y%40xAs%40~Am%40nBi%40tCs%40jFc%40hC_%40zC%7B%40vFQn%40Yp%40%5Dd%40e%40%5Co%40NU%40o%40KOGcCsBs%40%5BwBa%40a%40O%7B%40g%40q%40Ws%40Mm%40Fs%40Pk%40%60%40%7B%40z%40SNy%40dAQDIV%40XLPN%40%5Cr%40Z%60%40LZNNNZ%60BxBr%40vAZ~%40f%40pCn%40pEZ%60BfAhEV~AlA~L%60AlKFfADjCDjIJdBTlA%5EbAvCrGVt%40Jj%40Hr%40b%40bBj%40hBN~%40BfBBjDHnD%3F~BEz%40SvBE%7C%40%40fA%40zA_%40nEa%40jGUbE%40hDHrGTdDZdCnAtFV%7CARdBL%7CC%40fBA~%40UlFO%60Cc%40nDo%40%60Di%40xB%7BCjJ%7B%40jE%5DlDYfFw%40tPGlGJzCPpBn%40vDLhABt%40%40lE%40bCGfB%5B%7CCe%40dBiArCoAlCW%7C%40sAzFW%60Bg%40rIc%40vCKn%40_%40jA%7DAfDw%40hBuBjGWtAQ~BUbBS~%40eA%7CC%7BA%7CFWfB%7DBdS_%40xB_%40xAcAtBsBbDmFdIa%40dAe%40~Ba%40rCErA%40p%40b%40hE%5E~FFlDC%60EUlI%40~CLvDXjDf%40~Cf%40bCx%40jCzBrFp%40jBl%40vBb%40vBZ~BRrCFvB%3FnCCxAQnC_%40xCc%40tBw%40rCiHtS%5DzAKlA%3FfABj%40RlAVn%40%5En%40n%40h%40h%40Tz%40L~EFrALxB%60%40LJR%40hCjARBpDxBrAf%40v%40J%60ACfAW%60Am%40bAu%40f%40Od%40B%5CPX%60%40Nd%40Fz%40Aj%40Oj%40c%40r%40c%40RqBZgBz%40%7BAf%40gANaB%40iBSoAa%40wA%7B%40aCcBc%40Ki%40BWL%5B%5EQd%40Gj%40Ah%40Fh%40Rj%40PXd%40V%5EHvFj%40x%40JrCp%40jCdAl%40ZfGfEh%5BnUr%40n%40l%40n%40f%40n%40f%40x%40b%40x%40%5Cx%40x%40fCVjARrAx%40hGf%40hCp%40lB%7C%40%7CA%60%40l%40dCrB%7C%40n%40v%40nARz%40F%7C%40C%60AMx%40Yt%40a%40h%40i%40Z%5DDi%40Cg%40QiFwDmD%7DBmEyB_Bk%40eD%7D%40m%40O%7BCe%40wBQ%7DDGkCF%7DAJaBXoAXqA%60%40sCbBgDvC%7DC%7CDQb%40q%40jAYp%40QXk%40%60BmBlGkAvCs%40pA%7BAtBeAdAuAz%40aAf%40gBh%40uEx%40wA%60%40o%40TkAz%40%7D%40~%40k%40~%40mAfCaB~DgBzDkAtB_IfMmAjCiCnHe%40dAk%40%60Aw%40dAi%40j%40sA~%40oAd%40%7DAVsAByAOkB%5D_C%5DcACyADy%40JsAZcAb%40eFlCsI~EmA%7C%40wAnAk%40t%40%7D%40vA%5Bp%40w%40vAkC%60F%7D%40%60AkAx%40wBrAeAf%40%7BAToA%3F%7D%40GcAWoBk%40kAOoA%3FcBPeANkAAaBSoASoBc%40y%40KiAI_EF%7DAP%7B%40XkIhEu%40Po%40%40i%40Qg%40g%40Wi%40k%40%7BA_%40c%40uAqAuBkC%5DYc%40O_%40%3FyDt%40m%40%60%40UXgArB%5DXc%40J_CB%5DKs%40m%40UKa%40%3F%7D%40X%5DBa%40GQQcAgDYc%40aAsAuDqIiCeIOS%7BA%5BQOy%40%7B%40WM%5DCaAPY%3FuCkAiAm%40i%40m%40o%40eAkBiDoBsCWe%40uAcDeAmD_%40cBc%40mCyAaLUkCWkFU%7BCAoB%3FyGHsAX%7DBpC%7DHPq%40fA_GL%5B%5C%5BZE~AHNMBSISQK%7DBH%5BV%5Bl%40oBrGm%40lAgB%60Ds%40nBWpAYrCWtD_%40fKExC%5BnEC~%40LjLEl%40iA%60Dk%40rC%5BdCE%7C%40BxAJpBCf%40KXm%40p%40mC~BsBpAg%40n%40sAnCYVYBQOK%5B%5D_B_%40%7D%40e%40q%40GWa%40aC%3Fw%40FwAAy%40WmCSgIIeAQc%40QWoAgAYg%40g%40yBMUYMcBF_%40FsA%60%40%5BA_%40SYa%40i%40uA%7BAsEs%40sBa%40gBaB_KSwBE%7DBD%7D%40r%40mFhAkGXs%40tAuBhBoCxBeEj%40sAX_AT%7BAF_C%40eAHk%40Na%40Vc%40b%40YbEwAf%40%5D%60AqA%7CBmEh%40qAR%7B%40FeADgDHu%40ZcApDeIdCaEjAwDNm%40DcAGoEI%7B%40K_%40_%40%5B%5BI%5DAWF%7BAz%40MBWAk%40Uu%40g%40g%40Kw%40Be%40Ve%40f%40gAhBWLSCMMO_%40iAgE_A%7DBs%40iBMq%40MyA%5BgFCiADkAh%40gEDy%40Ay%40O%7DA%5BoAa%40%7D%40uAwBWm%40c%40oBaAsGe%40iBeBoEWeAIsAKaCGi%40WiAg%40kAcByC_BmDaA%7DAkAuAq%40e%40s%40SgBIgBMkAa%40eAu%40aCcCgBeCaB%7BCm%40yAcAwCoAaF%5BuAaBwFcAgCw%40%7BAaCmDiBqBaCuBcCaBqBcA%5DIkAi%40uEoAuAWsBMeDAoCNaDf%40_ATqGpBwHnCmEvAur%40hVkExAmFlBii%40nQkIjDkDpBgAz%40eB~BeBvBq%40bAwJjQeA~Ae%40%7C%40qItMcCbDgB%60BkBjAs%40v%40i%40v%40_AxBg%40nBqCjMk%40%7CBw%40vD%7B%40dDo%40tA%7D%40vAc%40%5E%5Bd%40s%40%7C%40e%40%7C%40y%40vBWbAc%40nDgAlMWlBi%40dCg%40bB%7DAhE_%40xAQ%60BWdD%5DpBo%40jCs%40vDYhCs%40tMKhDEpTPxOG%7CEo%40zIQxGEvLOjPKnGSzJ%3FbGJ%7CDLhBxAfPRrDHfEC%60Eg%40%7CPCnEDjCNpDf%40dFnBbNTlCDpB%3F%60CQvC%5DxCc%40lBaA~C_A~Bu%40xAoCvEuBlDcCpEeCpFuAlDaAfDs%40%7CCw%40%60FQvA%5BbEQxFSlGUjEe%40lEk%40jDqAtEaAfCw%40bBgBrCoAzAiB%60B%7DAdAqCtAiA%60%40y%40LuHxBkBz%40wAz%40cB%7CAmBxBeLvNcBrC%7D%40tBqArDeAlD%7DBxG%7B%40tCw%40fDc%40%7CCStCGbCD%7CJGpBUtCYvBQdAaBlIq%40~ESjC%7B%40%60RSjCQbAGZkB%7CEcAdBoAhBwDtGa%40fAOf%40WxAYtC%7B%40zGmCtQWpASt%40Uj%40oA%7CByAtAsB%60BgH%60FoB%7CA_E%7CDy%40t%40m%40%60Ac%40bAIZWdBe%40zEQrAm%40bBYl%40aAdAg%40%5Ec%40R%7B%40Py%40BaAAqAW%7B%40CiALmAl%40%7BBnAaBn%40aBl%40mBbAcAfAw%40lAw%40~A%5DbA%7D%40%7CDcGtYo%40%7CBk%40tAe%40r%40eAhAiDnC_BbAwBfAg%40f%40W%60%40Yx%40If%40Cx%40%3FhALjFApAQfASp%40c%40x%40a%40d%40%5DT%5DJ%5DDo%40Co%40SwCqAcCYo%40So%40c%40%5B%5DmAeBuB%7DBm%40%7B%40uDoGoB%7BCk%40u%40kFoFwAaCaAuBy%40y%40w%40c%40u%40QkRLy%40KkA%5D%7D%40k%40s%40u%40i%40u%40k%40kAuAwDe%40%7D%40m%40k%40q%40_%40y%40U%7D%40Cy%40JuAl%40i%40HY%3FaCq%40_%40Go%40UeAy%40mDmEw%40%7BAQe%40UcAQiAUuFOoBYyAK_%40u%40yA_AqA%7D%40q%40_DeBmA%7D%40sF%7DFuJ%7BKiAeBcAqB%7D%40eC%7BA_Fi%40kAi%40%7B%40%7B%40%7D%40u%40e%40oAi%40gCu%40iAm%40iAiA%7D%40uA%7B%40_CWeAq%40yE%5BmAm%40qAg%40w%40w%40m%40u%40%5BaAQ%7B%40%3FoBf%40oA%5E%7BBdAyBlAaCjBmBhB%7DAhBaCnDkArBmBhEo%40%60B_E~M_AlCw%40lBiAnBoAhBkDpDiAz%40oBfAsAj%40cElAqZrGuGbBqFfBkFzBeCnAqEpCsEfDiFzEuDdEgCbDoBtCcChEy%40zAqAvC%7DBbGkBbGyAvFwBpKqR~gAkBdK_%40fBg%40dDkF~YkEtUwDbQaDxMeD%7CLgEpNsEdNmErLqE%7CKsFbMuEpJwHzNsBlDkB%60EsAvD_CpIy%40tBcAlBcAxAq%40t%40kAbAs%40b%40sDbBoBnA%7BArA%7D%40dAcCxCs%40n%40kBrA%7DAx%40iCjB%7BAvAYH_DzB%7DBjAK%40MSICBg%40AcCO%7B%40q%40iAyAoB%5Bk%40_BaFIe%40SiCQi%40_%40%7B%40Ki%40AmA%40_BGcDMwCUmB_%40sBm%40iFa%40_FYqEQ%7DAe%40cCQaAIi%40gCsLo%40mC%7DFuXe%40sA%7BDcIcAoCUgAOcBK%7DBSwA%5BgAs%40%7DAy%40gBqBiHsAaHOuAAs%40HcDC%7B%40_%40mBwCmLO%5B%7BAaAg%40k%40oBoC%5D_%40_Am%40cA%5De%40G%5BHSRe%40rAKV%5DPiARe%40RaAl%40eA%5Cg%40%40%5DKWUK_%40Ac%40H%7BAEm%40Ma%40aCoFaAuCmCgEcAoBe%40uAIsAYiH%3F%7BA%40m%40NiBr%40%7BERkBPuCNkE%40eCCaCKiBUwC_%40mBq%40_CImA%3F%7B%40ZkAZyBP%7DBB_CGcCUcC_%40%7DBBk%40AmACI%7D%40mQiAaWAuAJw%40z%40mDLo%40TgBb%40cBTo%40r%40iAtAcBl%40g%40h%40Yt%40MX%40pAQl%40W%5EW%7C%40y%40nAwAfBeCjFaKnAqBb%40k%40vCqCj%40u%40Ti%40ViANuANw%40L%5BXe%40z%40w%40~%40o%40x%40%7D%40fBkDLo%40Ds%40Ce%40YyBCs%40D_DL%7DCPmBZgBHcAeBSkJ%7DA%5C%7BJ%5Cy%40hAcCDe%40Co%40CUsBeI_BeF&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Château de Neuschwanstein" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Camping Brunnen</div>
+            <div class="accom-address">Seestraße 81, Schwangau-Brunnen</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 19 août 2026 19:00</span>
+              <span>🚪 Départ : 20 août 2026 12:00</span>
+              <span>🔖 Réf : 270058</span>
+              <span>💰 85.45 €</span>
+            </div>
+            <div class="accom-notes">Rating: 4.5 (2699 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="section">
+          <h3 class="section-title">🎯 Activités</h3>
+          
+          <div class="activity-item">
+            <div class="activity-time">13:45 → 16:00</div>
+            <div class="activity-content">
+              <div class="activity-name">📍 Schloss Neuschwanstein</div>
+              <div class="activity-location">Schloss Neuschwanstein</div>
+              
+              <div class="activity-cost">💰 60.00 €</div>
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784665185338.jpg?width=400&quality=60" alt="Château de Neuschwanstein" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 15</div>
+        <div class="step-title">Lac de Constance</div>
+        <div class="step-location">Constance, Allemagne</div>
+        <div class="step-dates">
+          20 août 2026 → 21 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>160.4 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>2h12</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=47.557574%2C10.7498004%7C47.6779808%2C9.1736741&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C47.557574%2C10.7498004&markers=color%3Ared%7Clabel%3AA%7C47.6779808%2C9.1736741&path=color:red|weight:4|enc:%7D%7CgaHmcr%60A~AdFrBdIFv%40Af%40Ob%40sApCGR%5DzJvKfBx%40HIbAa%40hCQhCIvCClBF~%40XxB%3Fl%40Kp%40GVgBjDy%40~%40eAp%40y%40v%40Yh%40IROv%40OtA%5BrAWh%40e%40j%40wCpCe%40l%40mAnBkF%60KgBdCmBtBi%40d%40a%40Tu%40T%7D%40JYAu%40Lu%40%60%40mAnAaApA%5Bj%40k%40dBMl%40%5D%60CUfAs%40tCC%5C%40lBvAnZn%40fMG%60%40IJIDf%40pBTzATbCFbCC~BUtCW%60Bw%40tCaH%60SuChJcA%60EiBtIgA%60HUn%40g%40bAo%40jCMr%40uSiJmAg%40aXuMiNiHuAi%40MM_%40MMSQAEBa%40_%40KEG%40wAq%40%7DBk%40o%40Ia%40MaCIi%40AExC%7D%40zEUvBQxCC~BH%60DN%7CBb%40zCr%40fDxC%60MpAjGn%40jD%60A%7CGn%40dG%60%40jFZnFzClx%40f%40hIFhAZfDp%40vFZtBHT~%40pFzA%7CG%60BhGnBdGbLv%5B%60BlFb%40bB%3FJjAxFLp%40APBh%40G%60%40SVkBfA%7D%40%60Ak%40n%40u%40h%40cAVy%40AKLiEc%40%7DESgF%40aFV%7DEh%40iGnAuEtAmEdBsDjBsFdDmK%7CG%7DC~A%7DCfAaEfAeEp%40%7DCXcEH_EKsDWkIaAwBMmBG%7DAAoCL%7BAL%7DCf%40sJ~B%7BCf%40%7BDRiD%3F%7BBKkDc%40qCo%40wCaAsCqAuCeBoDqC%7BIaImCsBuBmAuBaA%7BC_A%7BCk%40%7BCSiCCaCH_BPsCh%40gBf%40wBz%40sBdAsBtAkB%7CA%7DA~AuBlCwBfDuAnCkApCwAhEiAnEi%40hCu%40%7CE_%40vD%5DfFK~DCtCD~FNdE%5EfF~AdQ%5CdFT%7CGFzGEvHWrJ_%40jMGhFApFD~GTxIlAtZN%7CGB~GI~GWpGYjEk%40dGeA%60I_BbJeGlZoApHq%40tFm%40tGYxEWrHGvF%40hGJhGZzGt%40%7CK%7CAjTd%40rITlIBnGE%7CFUvG_%40lGg%40lFu%40vFcA~FaAtEoAtE_B%60F%7DBzFgBtD_GlKyGjLsExIqCfG%7BCxHkCvHsB~GwBlIkBxIuAtH%7BA%7CJ%7D%40pHu%40xHq%40dJc%40vI%5BjKKvJA%60JL%7CLn%40h%5EpDtqBFvJGlJQxIWdHm%40rJs%40jIcAfJkAjIcBhJ%7DAlHyBtIkFfR_%60%40~rAgCrJsBxIqBzJyAnIeA%60H_AhHiAlKo%40~Hi%40zHi%40hK%5DjLQjLEdMLxv%40EvMM%7CJW~Hi%40%7CJu%40vJcA%60JiAfIyAnIcB~HmBpHqBxGoC~HmCtGuAtCsE%7CIaC%7CDmC%60EqDvEsDdEuEnE_EdD%7BEhDyFfDmOhIaDrBkCtB_C~BkB%7CBeCxDmBrDuA%60D%7BAlEaAjDeA%60Fo%40bEa%40jDa%40jFUtFGhFBdFNnFZxEl%40pFt%40zEnAdG%60BrHl%40tDj%40xE%5CvENnED~DCxDMfE%5B%7CE_%40tDo%40fEy%40dEcAxDy%40fC_BzDcBbDsBbDwBlCwC%60DwDhDaGxEiGfESG%7BE%60CaGxCyCpAmBr%40QBmGxBQAk%40BYIa%40a%40Oc%40Is%40By%40Pq%40Xa%40%5ESb%40%3F%60%40NZ%60%40Pj%40Dp%40GvGOfSDxDAH%60Ahk%40h%40fQn%40nN%7C%40lOz%40hLxAfPxBpSxCxW%60CvUbB%7CQrLlyAl%40tJVnGRxIHxJAhLIh%5CBxILrKVlI%60%40fIh%40xGr%40rGhAzHfAhGrAbGhBbHzAvE%7CBfGdCxFxDrHvD~GlGbLrB%60ErBpEvBrFxBrGjB~GfBdIx%40pEhAzH~%40jI%60%40xEf%40xH%5CtHPbHHpIAxGKnIStGe%40hJi%40jHi%40rFsAxKkC%7CRs%40rGq%40tHe%40rIWnIInIDdIR~Id%40jLr%40jLx%40fKdA~JtApKdCbPvDdUfAbIv%40~Hd%40zGZzGT~JBbBIzOg%40jMmAbVUrIAfHFnFNnEPjDLnAvAnHx%40vFv%40dErAvFzAbFpBlF~%40xBzBhEvCxEdK%7CNxC%7CEbCtElBhEpBjFrBtGvArFjBxI%60K~h%40nK%7Cj%40%7CExXtD%7CUjA%60IDf%40%7CDdYNl%40d%40~CpCjU%7CBzS~%40vIfFxi%40fBhP~AzL%7CArKlEzWvBdMz%40%7CFfAzId%40pEl%40%7CI%60%40rHXhIJhHDbH%40~SIzNOnJOnCa%40~CSjA_%40~AKRqCtJCTcA%60Dy%40%60Bk%40x%40q%40p%40k%40d%40e%40VuAf%40qAPqA%40oDS_AF%7B%40X%7B%40h%40iCfCgAh%40aATeCHY%40MEcINkAGMB%7B%40Yu%40g%40y%40%7D%40iAkBmGqKs%40%7D%40EM%5DWaBaAsBw%40kA_%40Q%3FaK%7DCaAc%40u%40g%40Wc%40%7B%40cAk%40%7D%40ISyF%7DIqAkBOIiByB%7B%40u%40yAu%40aA%5Do%40EoCFKDsIZsBPaAEyBc%40eDy%40%7DASeBIgBN%7DATyAl%40%7DA%7C%40%7B%40t%40k%40t%40_BrBuIrLgBjBcAl%40u%40Z%7DBn%40_Af%40cAv%40iAvAmQpVg%40%60Ai%40tBqGfYe%40xAg%40dAu%40dAw%40t%40gAl%40k%40Rk%40LgHf%40_AJsAb%40qAt%40s%40r%40y%40fAe%40z%40g%40tAa%40tA_%40xBi%40bFiAfMU%60DG%60DBh%40C%60BB%60EPbE%5ClFHnDChEStFExCBlCNbDj%40%7CFNpCFdDCpJDhENtDHlAd%40xDx%40rEXpAt%40hCjAbDpEhKlAtDb%40%60B~%40rEzApIn%40rCr%40~Bb%40bA~%40~Ah%40t%40%7C%40~%40rAx%40hCxAdAn%40HBtA~Ar%40hA%60%40z%40j%40%60Bh%40%60CVrBJjBDjBEvBOzB%5DbC%5DzAq%40lBg%40dAq%40dAgAnAkAfAeH~FeBhB%7DAzBiBzCgBvDaAxCgAhEm%40lD%5BxB%5BrDOhDCv%40ERCv%40AxBPrNDZFvEL~Bd%40vEb%40lEHhCRlEJ~ALr%40XfDf%40rDdArFj%40zC%5CjCLrDEpIOpKDdCLbC%5CfCd%40xBn%40nBl%40pAhAlBbDrDx%40rAbDzGl%40%7CA%5ChAPT%60%40xBTpBPpDd%40dRVdDf%40zD%7CBxLHt%40J%60BAbAKfD%3Fz%40BlA%60%40pG%3F%60BK%7CAi%40tDEdAB%60Bf%40~DF%7CAHpP%40%7C%40%3FjATrEVjCR%7CABf%40Jx%40Th%40%3FXd%40%60CXf%40tAtG%7CGz%5Cn%40~Dh%40pE%60%40hG~%40lQd%40%60Fr%40rF~%40dFp%40xCv%40lC~%40~B~%40bB~ArBdAbAhAx%40%7CAv%40xAd%40jBXpIr%40bBf%40z%40%5EfAv%40jAnAzBdD%60DdFp%40nA%60%40dAZ%60BL%7CA%40pBa%40tGAjBFlAVxAd%40vAd%40v%40f%40l%40TPTX%5CTnEzAZ%3FtAv%40v%40TN%40ZK%5C%5DNe%40Rq%40JIN%40LNH%60AF%7C%40Rx%40%5E%7C%40rB~C%60AbB%7CAlD%5CfAVrAHrBC%7CAm%40jGIfC%40pCThEl%40~IB%7C%40AzCO%7CBc%40fDaBnLQhCCfCf%40v%60%40%3FjAG%7CCoAfSOfAeAdFUnBExA%3FdANvF%40zAGfEEbE%3FtBRtKTjFBhAM%60DUhB_AlFShBe%40bIQtAuAzGQbBMjCChAA%60GM~Ba%40~CoDnUGNuA%60Jq%40lGIlA%3FTS%60DO%7CESfTO%60DWzC%5BnBa%40dBsBdHe%40~BYpBWfDIvDFfDLnCh%40fFt%40%60FdAjFhApEj%40nBrAxDxBjFvT%7Cb%40%7CEfJANDb%40Zh%40NPR%3Ft%40vBr%40%60DDV%3F~ASnDIfC%40%5EFd%40%5Cp%40Vb%40f%40rAnAvE%60FnQ~AjFlBvEpIvRjChFhC%60F%7CAtD%7C%40lCl%40fCNfAZrCLdCLdDAh%40GZU%60%40_%40NQ%3F%5D_%40EYDYT%5B%7C%40%40fGjAvAh%40%60%40TdBtAxAjBv%40nAjFhJr%40bBhBhDfBxCl%40jATXbEjIlHtPhCxGhBhF%60AhD~%40hE%7CAnJx%40tD%5ClA%60%40v%40TfAz%40xBrAnCbq%40bmA%7C%40rApA%7CAh%40f%40xAdAdBz%40tAf%40bFfApAf%40~A%60AvArArAhBfAtBjC%60G%7CBlE%7CCfFzCtExBrChE%60FRZh%40tAXvAVdDT~AhCjKjAfEd%40nAxArClA%60Cf%40rAj%40xBNz%40RzBFn%40%40xBAbE%40hBJ%7CCTfDJdAXpBd%40nBtAdFL%7C%40%40XJLF%40h%40t%40~CtIp%40lBtApFHTb%40l%40%5Cx%40bAzD%60JzX~CxKtHzZjBpGzApEfBhEzBpEfBzCxCnE%60EhF%7CHjKhLjOfBrCjApBx%40dA~%40z%40vB~Al%40t%40h%40bAb%40rAVvATzCp%40hLDzCLt%40fAlBt%40nAfEzE%60CjChC~CtAhCh%40tAj%40zBTtAAd%40M%60%40QNc%40%3Fw%40Oa%40S%5B%5DKe%40Cm%40Hm%40LWZWLY%7CLiE%60FsAdEy%40pDg%40bGa%40hHM%7CFH~CLzBN%7CGv%40bBXVRbA%5Cv%40n%40t%40dA%7C%40fBr%40t%40f%40Tj%40Bt%40EbAUFEd%40fCl%40fCr%40bCn%40fBLNz%40tBnAdCvG%7CJpA%60C%60A%7CB%60AdDj%40jCZzBd%40xER%7CDFvC%3F~BK%7CESfEc%40%7CEuIjz%40i%40hHMzDCpEJlEZfFxBdXn%40~JVdGF~DElEKrCQrCe%40dEq%40%60Ey%40dD_A%7CCaB%7CDkDnHiAxCcArDw%40rDw%40%60GkBrPyAlIgCpLyAlHmCdM_AnFo%40xFi%40nHk%40pHk%40zF%7D%40lGcAnFqAxFmHhX%7DGxVqC%7CImD%60KmD~IcVdk%40cBvE%7DAhFgAvEaChM_AxDeA%60Dq%40dBqAfCcA%7CA%7BAjBmBjB%7DC%7CBsF%7CDyBlBkBtBwB%7CCgBfD%7BAnDmAzDuArFk%40tCw%40tE%7D%40~Gk%40zG_%40dHInCKlIBpHPnGh%40pNHhFAxEObFYhEc%40%60Ek%40nDaBdIq%40%60C%7BGvSaAhDeA%7CEs%40jEs%40tG%5BtFK~EBzFB%60ACRHfCvAnXLvGAxEAd%40%3Fr%40SxEk%40%7CFs%40rEo%40xCmAlE%7DAfEeBzDeCtEgDhFaFxG_Wh%5BmFjHeEpGwDvGuDvH_FbLqE~Kg%40t%40cG%60PE%5CqL~%5BYh%40%7BMn_%40ETAFgCjH%7B%40%60DyArHuCnRsFx_%40IZwC~Rw%40rDqAtEu%40tBkBtEgDpFg%60%40lm%40SNkEhFgDhDeDnCmEpC%7DHfEqF%60DeDbCw%40p%40sE%7CEwC%7CDgDnFkGhKyC%60E%7BCjD%7DBzBWNgF%60EwCjBsHrEEHeQpJSFiDzBiCnBmC~BeBlBmBnC_AlBkAvCq%40nBoAlFSfAObAA%60%40S%7CAStCI%60D%3F%7CCJhDVzCZhCp%40fDbCpJ%5C%7CA%60%40%7CCVxCNxC%40nEEjDQlDQjCK%60%40q%40lG_AlHo%40vDkBnIyAhFeAfDmHvSuBrGu%40zCe%40jC_%40zDO%7CB%5B~KS%7CC_%40nCg%40%60Co%40zBu%40jBeApBaBxBkX~XyApBsD%7CFeBdDyArDuA~D_ChI%7BBfJ%7DAnH_B%7CI_BrKuA%60L_AxJw%40%7CKi%40%60K_%40fLIdG%40tENtEVlDn%40jEt%40hDp%40vBz%40pB~%40hBzA~BjE%60G%7CAlCbA%7CBr%40zBd%40nBd%40lC%60%40xDz%40jLb%40vDl%40pDj%40jC~%40~CrBpFlC%60HbAdDx%40dDl%40lDd%40fEv%40jK%7C%40tMP%60B%5EzAn%40xA~%40zA%7C%40%7C%40t%40%60%40v%40%60%40dAv%40~%40vA%5Ct%40Z%7C%40xEnVp%40lChA%60DpArCnD%7CGRh%40J%5Ct%40jBp%40%7CBl%40hDZtCNxCD%60DAxBItB%40H%5DfDYfBs%40%7CCm%40lBqAvCoFrKaA%7CBw%40dC%5BtAe%40dDWzCIjC%3F~CLvCXxCb%40fCj%40bCz%40bCjA%60CnAfB~AbBhEtDvAdB%7CAzBxA%7CCbAnCz%40~Cz%40zE%3FX%5C~CFp%40BFNxDDvDE%7CCOfDaBh%5Bo%40nHe%40pDc%40fCq%40%7CCaEdQ%7BA%7CHqAfIiBbMcAvFiAbFaB%7CFiElLqBfE_CxDoDpEgAnBoAzCqErN_D%7CL%7D%40rEq%40fEmBjRo%40zDg%40bBcAbCeAjBoA%60BkAdA%7DAdAyC~AgBnAmAhAaBpBqCxEiCjFsAzCaFrOeAlCiAvB%7BBfDmHdKkB%60DcBpD%7D%40tCm%40fC%5DvBY~CK%60AIbDC~DE%5C%3FhBIhCSpC%5BdCk%40rCg%40vBaAxCo%40dBiB~D%5Bn%40GAe%40%60%40s%40%5CiAVgAl%40i%40j%40c%40r%40%5B~%40UlAOtBAxAFzAAVBtAEXOFGTDXLJNERl%40Ll%40%5CzDD%7CAC%60CK%60BKt%40a%40lAgAdCUv%40MjAG%7CA%40lGGp%40%7B%40pEi%40bBk%40hAgDdGW~%40Gx%40B~AJt%40RhBLf%40nA%60BRf%40Pp%40Ff%40Bj%40CpBK%60AYdAo%40fBq%40hD%5Bx%40q%40rACTDXHJP%3FHKPi%40b%40_Bz%40qBtCyFNKL%40JNBXU%7CFGh%40%3FbCAh%40Ij%40Un%40m%40rAcCxD%5Bf%40k%40rAc%40zAWnBGz%40EdABtCBfATzCLnAPhA%60%40tBf%40%60BrFhNp%40jBj%40lBpOdr%40bAzF%7CU~nBzG%60h%40r%40hE%7C%40dEvEpRxGfV%60%40dA%40NQx%40HdCAzAm%40tHG~BoApPC%60BBzBL~ARx%40Xb%40d%40ZrBx%40zDfAnE~A%60An%40p%40r%40j%40fAJ%60%40R%7CAVjENx%40Zt%40XXr%40Th%40%3FhG%7DAp%40Cv%40Pt%40b%40tBnBfEvDf%40x%40Xz%40P~%40FlAFnGLbAH%5COZId%40Q~NChELxIHzD%60%40vJH~%40%3FdAT~BH%60%40eAL%5DRi%40h%40%7B%40nAgAzB%5B%60AiA%60EEZcFzQ%7D%40zC%7BCbLQTw%40fCg%40pBNL&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Lac de Constance" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Camping Fischerhaus</div>
+            <div class="accom-address">Promenadenstrasse 52, Kreuzlingen</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 20 août 2026 02:00</span>
+              <span>🚪 Départ : 21 août 2026 02:00</span>
+              
+              <span>💰 89.50 €</span>
+            </div>
+            <div class="accom-notes">Rating: 4.5 (710 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784667090267.jpg?width=400&quality=60" alt="Lac de Constance" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 16</div>
+        <div class="step-title">Europa-Park</div>
+        <div class="step-location">Europa-Park, Europa-Park-Straße, Rust, Allemagne</div>
+        <div class="step-dates">
+          21 août 2026 → 23 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>406.5 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>4h13</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=47.6779808%2C9.1736741%7C48.2660194%2C7.7220076&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C47.6779808%2C9.1736741&markers=color%3Ared%7Clabel%3AA%7C48.2660194%2C7.7220076&path=color:red|weight:4|enc:kb_bHmv~v%40OMiBnGeA~E%7BA%60LK~%40%3F%60%40Y~CiCxTc%40pCNL%60%40Hf%40Iz%40i%40f%40Ir%40B~%40j%40R%40xEzCp%40t%40Zj%40Rh%40Nl%40l%40jD%5EdAl%40%60AVP%40TFJkIn_%40oIt_%40%7DAvGKLo%40pCYLO%5CE%5EHd%40LTXHXKP%5BVDtE%7CCdBrAR%7C%40HdAoAjHiAlFkCjKoLxc%40kCpImElLqApCqDjJs%40%60CmLhZgFpMqAzCuAhCeBzCkBpCuBnC%7BCbD_A~%40_B~%40aDhAsFhByCdA%7DBlAgE%60DqFbDoDpAeCv%40sCjAiC%7CAmAfAy%40bAsAtB%7B%40fBs%40nBiAbEE%60%40u%40vBG%5EOvAk%40tBmA%60DwItQO%60%40UpAo%40zESbAk%40pBaAxBmAlCYv%40_%40%7CAUrAI~%40SnCA~ADlCEPCv%40Kv%40Qh%40O%5E%5Dd%40%7B%40fAy%40dBWxAyB%60N%5DnBc%40xBkA%7CGs%40%7CCe%40hBmAtDs%40~%40ADcBhAc%40h%40%5Bp%40Sr%40YpBSv%40s%40jBiAdCmBlEeAlBwE~I_B%7CBuBnCgE~DaAh%40yCdA%7DL%60IkA~%40c%40h%40cClDsBfD_%40v%40MlA%7B%40jB%7D%40tCo%40%60Cs%40dDq%40pE%5DzD_%40jFMfHK~UM%60GY%60Gk%40fHy%40tHm%40vE%7DCxTkAzJw%40tIqAbQe%40rEo%40~Eg%40rCmAbGmDtNi%40rBmFbR_AhDmF%7COmAhDiDjIaEhI%7BD%7CGqDtFgEvFeE%7CEkEnEkFrEaSdOgFpEuDtD%7BCtDoDlFgCnEuCbG%7BBlFcF%7CMuHzSmDtIgDfHmCbFuDnGeGbJoOrTsHjLiD%60GqE%7CImEtJcEjK_DzIeDpKcDnLuC%7CLsBxJ%7BBbMqAtI%7BAjL%7B%40vHeA%60Ly%40zKs%40zMe%40vMYbNK%7COBbMLlLZ~Lh%40vMr%40~LtA%7CQhDv%60%40t%40rK%5C%7CHP~GD%60IEbHS%7CH%5DbHo%40~Hs%40rGoAlIwAnH%7DArGeB~F%7DBxGeC~FsBhE%7DCpFkDlF_EtFqFvGwIlJwWnX_HzHoEvFyDnFgE~GkDjGcD~G_DlHyCbIcDjKoC%60KaDhN%7DEjTgBfHqBdHsBbGmCvGuBjEyB%60EuCtEaDjEuDlEmFpFq%5Et%5CaElDiD%60C%7BBlA_PhH%7DCjBsBdB%7BBzByAlBwBhDkBtDkEdKCf%40cLbU%7DJ~Re_%40ju%40%7BFvKsEhI_GnJ_GtI%7BFvHyG~HyFfG_HxGkHlGoJnHcVhQuIbHkGzFkFrFiE%60FwEbGuEvG%7BEtHwElIuEbJ%7DJdTuKnUsFpK%7BD~G%7DDpGkEvGqGvIsF%7CGwIvJeIzH%7DFdFsFhEoFlDwE%60CyDzAeD%60A_F%60A%7DDb%40_ERqEJsGOeHUwCAwDLoCZiCf%40cD%60AeDxAgDrBaChB%7DAvAgCpC%7BB%60DiBxCgAxBcBxD%7BAhEwA%60Fq%40zCw%40lEc%40zCw%40jHUlEUbH%3FhGJzFVjFd%40%7CFr%40pF%60AnFfAxEbB~FdE%7CL~BxHz%40fD%5CnBbAjHp%40nGVjFHhF%40%60GKpF%5D%60Je%40pFq%40dF_A%60FcA%60EyAvE%7DEdNgA%7CDiAfF_A%60Gm%40nFc%40dGKrDErF%40%7CPEnFQtEYpEWxCk%40rFg%40xCkArFeB~F%7BAfEcBrD%7DBdEyBbD%7DBlCmBnBoB~AcDtByDlBiFbC%7BErCeE~C_D%7CCqD%60EkEpFcE%60GwDfGiDnG_C~Es%40bBwD%60LkB~GeCjKqApEcBvEqBnE%7DApCaClDiC%7CCcBdB%7BCfC%7DGlFcDxCqCzCuBpC%5BH_BtAm%40V%5DFuBNo%40XY%5Cc%40t%40wAfDk%40%7CAvBnCfA%7CAhBpCfDvGh%40pAvAnDxAdEjB%60H~AlHFh%40J%5EV~AXjAHf%40LXt%40bMVvE%5EfR%3FxEP%60NTlGDVPlJ%40vIA~LLpQCdJO~J%5DdLIzBGb%40%5BnICrABPEzGFxEP%7CEZfFb%40nEt%40nFpDlV%60%40hEV~ED%7CEE%7CCM%7CC_%40zE_%40vCc%40rCa%40zBiBnIaElQ_AjFm%40pEuBnQq%40~Dw%40fDmAbE_BdE%7BBvEcBzCoFrIaI%7CLeDhGgBbEqAtDiAlEu%40tDi%40jDGVMt%40SrBUdEK~E%3Ft%40w%40tu%40Gd%40AxJDpDDd%40D%7CFV%60Kf%40fLjB~%5EVtHPpJ%3FdJGvF%5D~Ik%40jIs%40~GqBfOqAzJ%5D%7CDSrEIfE%40xDLfEX%7CEjAtL%40%60%40v%40vI%60%40lDHVtBrTLhBd%40jFXlCJZlEnd%40f%40%60IV~HFjGB%7CNFjGT%60Gd%40~Fp%40%7CFr%40hEhAlFhBxG%7C%40rCHb%40pGtRnBxGlBrHhAxElAhH%60AhHl%40%60Gr%40hJXlG%5CjLPpXTbH%3Ff%40Bn%40%40z%40L~A%5CvCp%40%7CDz%40dDr%40zBfAnC%7CAbDxC~FzBfFrAbE~B%60JlA~Dj%40~AlAdCjAjBjOlShD~EhCdEvBnEpDvHpFtJtJ%7CO~CzF%7C%40dBxAxDdAhDv%40jD%60DbPBb%40fAfGpA~E%60DnK%7CO%7Ce%40d%40%60Bj%40%60DV~BZ%7CE%3F~BKfDWhDUdBgAnHu%40xFi%40%60GWvFG%60EDpDTdHJ%7CBj%40tFNnA~%40dFlAtE~A%7CEdB~DxAjCz%40rAzBxCxDhEpBjCtA~Bn%40xAb%40pAj%40bC%60%40~BXhCTbETjINtLVj%5B%40hEMtZKlXBjIPlIzAv%60%40XxJRpOJjPPjIXnId%40vIl%40~Hl%40%7CFtAzJ%7C%40zF%60%40dD~BvOPx%40%7C%40zHr%40xH%5ClFJrD%40pEK~ESxDc%40%7CEi%40lDw%40~DS~%40kBlGmCjHeCzFkAfCkItP%7BFdMsEvKaErK%7BApEa%40zAyDjM%7BCrLsChMoBlKaB%60KiAhIk%40xFe%40zGMdECxEAtNInDQfEgA%7CNWvD%5BzHSbLMxOAvOJpPJbHZdOf%40lMd%40zHn%40%7CI%7CArOlAxJnClQv%40xF%40ZV%60DNvD%40nBGrCW%60EBj%40Kb%40i%40bDwGxYiAnDi%40vAuD%60Iw%40vBu%40bCy%40tDm%40zD_A%7CIq%40hGo%40bEg%40vCUd%40eD~OcAhHUnDE%7CC%40fBJ%60DNdCDpDIjKH%7CBTbCZjBn%40vBr%40%7CAb%40v%40r%40bAdEvGbAnBlAxCv%40hCj%40rCf%40nDRjCHtDE%7CDQlD%5BjDs%40bEa%40fBqAxDoDdKiAdEcCrLcExScBfHgCxJm%40pCo%40hEu%40~Do%40lCaArCmAlCoBhEs%40pBm%40zBq%40dDaDtSs%40xC%7D%40lCmAzC%7B%40xAg%40h%40%7BD~DmJ~HcF%60EkBpB%7BDlFmAjBoA%60Cu%40%60Bg%40p%40qA%7CC%7D%40fCeAlDqAdFeAvFkCrO%7BCfOi%40xDSxBIlC%3FpBJnCV%60CTrAb%40lBx%40zBh%40lAhAdBhAtA%60BzA~AhBL%5C%60AfBhArCx%40%7CB%5E%60ANRx%40%7CAz%40nAd%40j%40vHtGx%40~%40tCtDnFlF%60ApAv%40%7CA%5Cz%40n%40zBn%40xCtAjIz%40%60DnAfDjCbGb%40rAj%40dC%5C%60CPnBDvFM%7CCYlCqDxQ_AlH%5DzDS%60FItEBbENbFZbFj%40hF%7C%40nFjAnFlBnHhBvGhAbFhA%60Gp%40lF%5CrD%5CzFRtG%40jEAhEQ%60MBtCFxAPtBbC%7CRZvDJdD%40lEIrCOxB_%40tCg%40zCy%40jD%7BAbFsBzFmPnc%40mCdIgBvG%7D%40dEkAbH_%40%60COnAMn%40k%40bGIhBEpEBvCZdIBpBEfFC%7CBOdDOtAU%7CAe%40jB_BvEW~%40Qb%40g%40%60C_%40xBQjBMbDApCFxBPrBz%40tFZjDHlBBhCCbBSrDW%7CBi%40xC_DvMWjBM~B%3FzAJ%60ATv%40dAnBNn%40Bh%40Cb%40Mf%40%5B%60%40_%40Lm%40%3FaAMm%40HmAl%40mAvA%7D%40vAk%40%60BYnA_%40lBW%5EQFSIeA_AaA_%40u%40Um%40o%40QEQFMRC%5CB%5CV%5CL%40t%40Uh%40Dd%40LnAlAl%40t%40b%40VRARQt%40eBf%40iAxAgCh%40iAZ%5BTEPHJ%5C%40TMv%40c%40rBEj%40%3Fv%40Hh%40Vh%40XV%60%40Jb%40Cj%40%5DTYfB%7BD~%40aCzCmJTY%60%40IX%40XNP%60%40Fj%40A~AK~BWnBo%40zCy%40hC%7B%40nB%7DCjFiDvFcCxFqA%60E%7D%40vDoAjFcAzCgAzCu%40pCiAdHcAjEwG~WeA%60FiFhXeApF%5BvBWbAe%40dDWtCWzEGtCEfQMrECf%40%40t%40E~%40i%40%60G%5DlCiAzG_BjI_%40xCyB%7CUk%40jEw%40%60FSz%40WzCU%7CEMz%40M%5C%5B%60%40%5BNi%40BcEWmDaAeDkAeAQiBEiIHsALkAVoAl%40eAx%40kApA%7BBvCiBlBm%40fA_%40bAUpASxBA%5EwAhP_%40hBaAzCO%5EoB%60Dq%40zBMVa%40%5E_CzA%7B%40~%40Uj%40Gv%40Ax%40OpAOl%40EJ%5D%5EsAr%40q%40h%40SXo%40rAqAjDQ%60AYtDQr%40c%40p%40wBxCoC~D_ApBs%40vBe%40fCqBfSSrD%5B~IS~AkAnEs%40pDo%40jDsC~JyBdJg%40pAaAfBeFvHeAxB%7BBxGyA%7CBm%40dAaApA%7BArAeAl%40u%40Rg%40FuDFgHfA%7DEH%7B%40JoKxD_IpBwEzAaKxAsEvAqClAaCvAaCbByClCyCjDwClEqBtDeBzDcBrEkAzDeBvGeBtIuAjI%7D%40rG%5BfCSl%40mCtW%3Ft%40wBfWiAbQk%40bKu%40jPKlAy%40~Y%5BtSOdPEbX%3Frc%40KjPSrL_%40%7CK_%40pHe%40xGs%40zHcA%7CHeApGqAlGqAdFoA%7CDgBnEuGlNqAdDcAbDs%40tCu%40nEi%40%7CE%5BzDa%40xJ%5D%60L%5BpF%5BdD%7B%40%60HcKnu%40gFt_%40wAxJe%40nE%7DI%7CgAiBnP%7BAzJyA~IkC~PKb%40W%60%40s%40x%40Wl%40O~%40QlGoAtM%5BtCU%7CAa%40rBa%40lAYn%40s%40dAwBrCm%40dAe%40nAOr%40KnAIrA%3FtAFxBLhAv%40nDd%40~DVrCFdBCjBQrEu%40dT%3FjBMlDQ%60B%7B%40jEgAtFc%40zCiAzMg%40jDeC%60Ow%40~CyItZwFlQcm%40ztBkB%60G%7D%40%7CB%7DA~CgBxCkA%7CAoCzCcNlMe%5BrYeGbG%7DEjFiMbOaGpH%7DF%60IaEtGUDaA~%40o%40Zq%40NqAHuBC_BO_AWs%40_%40m%40u%40QUOIeD_HQEaCcFiG%7DLkG%7BK%7BFiJ_FmHwG_J%7BFeH%7DFoGeGaGsHsG%7BGiFoGgEuFgDaHqDuGyCyHwCcH%7BB_J%7DBaEy%40_K%7DAqFo%40%7BHi%40aIWcJEcINgH%5EgJz%40uFv%40%7DEx%40oIlBkGfBsKvD%7BEnBoFhCkIpEuFlDoJzG%7DVfRuFxDsJfGmKfGmKrFwRvIcJjD%7BMjEuKzCeKbCmOvC%7D%5BxFqNxCmKfCkPrE_OtEaN%7CE_M%7CEaOpGuLzFiDbBaOfIeLxG%7BDbCwAdAoAv%40mOfK%7DJlHmN%60LwMdLwL%7CKeOjNmIjH_F%7CDwHrF%7BHbFsKhGeJtEoNhGqKjEaPbG%7BQfGgQdFeQnEaK%7CB%7BNvCsOlCiNpBoPpBeSfB%7DM~%40%7BPz%40_O%60%40qPRoP%40%7DQS%7BPe%40gQ%7B%40_QoA%7BNuAsLuAoQgC%7BRiDcQqDuNiDyLcDaQiFuOmFcOuFmQoHiM%7DFmIaEcXwNK_%40c%40m%40Ik%40%3Fs%40Jq%40Vc%40%5EW%5CQrAIZ%40r%40VXVN%5EFb%40%3Fn%40KfAuEfNqAnDq%40xAcA%60BSf%40wBvCqMfRg%40~%40sAbDmAvD_C~JwB%7CKY%7CBIlACjCAr%40FbBRzB%5CrBh%40nBv%40rBbAhCb%40bBRpALjB%40~AEvASrBiCfOUbBQbBOhDCtCLf%5D%3FZKd%40GN%5BRIDsHA%5B%40oEpC%5D%5EwPdL%5BSkCu%40SCu%40Dm%40%5Co%40p%40%7B%40rA%5BNNjC&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Europa-Park" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+        <div class="section">
+          <h3 class="section-title">🏠 Hébergement</h3>
+          
+          <div class="accommodation-card">
+            <div class="accom-type-badge">🏕️ CAMPING</div>
+            <div class="accom-name">Europa-Park-Camping</div>
+            <div class="accom-address">Rheinweg 5, Rust</div>
+            <div class="accom-details">
+              <span>🛏️ Arrivée : 21 août 2026 02:00</span>
+              <span>🚪 Départ : 23 août 2026 02:00</span>
+              <span>🔖 Réf : CR14447013</span>
+              <span>💰 181.60 €</span>
+            </div>
+            <div class="accom-notes">Rating: 4.3 (1699 avis)</div>
+          </div>
+          
+        </div>
+        
+
+        
+
+        
+
+        
+        <div class="section step-photos">
+          <img src="https://hogiubowtkkaadnqchlv.supabase.co/storage/v1/object/public/photos/cmmheg1660002tr2061oq6u72/1784667271635.jpg?width=400&quality=60" alt="Europa-Park" class="step-photo" />
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 17</div>
+        <div class="step-title">Reims</div>
+        <div class="step-location">51100 Reims</div>
+        <div class="step-dates">
+          23 août 2026 → 24 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>253.7 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>2h47</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=48.2660194%2C7.7220076%7C49.258329%2C4.031696&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C48.2660194%2C7.7220076&markers=color%3Ared%7Clabel%3AA%7C49.258329%2C4.031696&path=color:red|weight:4|enc:ibreHatcn%40J%7BCjBeCbBc%40jD~%40%60GvFhD%5CdFoHj%40MrEwC~C%5BhEMx%40m%40%5CaBAk%40WkAoAi%40c%40_AGoJCk%5B%5CiE~CkRXkEOkEw%40uD%7BB%7DFgAcF%5BgFH%7BEjAeIjE_StD%7DJdQ_WnCyDdCyFrEqOf%40sCEu%40a%40AeBDyAF_ABkDzAoBHu%40I%7DWyP_%5B%7BTah%40gb%40sZyTqZwQeZoNoVkJo%5EmKqSiEkYgEg%5BmCmd%40oAg%60%40O%7Bn%40t%40wl%40pCok%40jDmVJqWsAyTaDgToFyQaHeQwIqReMaR%7BOwQkRi%5Cqa%40uh%40ms%40e_%40gj%40oMkSiWec%40cZgk%40wc%40waAe%5Bat%40mT_c%40%7BR_%5D%7DSq%5BoTsYs%5Bm%5EoYqXiSqP%7DZoToVcOq%5EkQgY%7DKaa%40wLyX%7DFqTaCaTs%40aTX%7DOjAkGIoB%40c%40q%40OoEg%40_As%40Uu%40h%40_BdGm%40jGApFLlDLnDUtC%7BCnLaJlRoBtEaAlDiBrHgDrQ%7DEtX%7BUffAeLnj%40uBpIoGhR%7DGbRcBtF%7BClLwE%60UaLh%5CqEfOwAbI%7D%40dKUfMBbr%40QtAAz%40TfBAjN_%40fS%5BxEYh%40Nr%40%3FfB%7D%40%7CQcCt%5EOdKJ%7CKVnJdEhs%40%60%40tKZtI%5CzFz%40dSGxJw%40xGwBjJa%40jGJnG%60AtGrErOtClFpAhBtCxEhArEXhEgCfm%40eAtIoBfHeExIqCtGoDlMeBdM%7BErh%40_Frg%40yClOoFdTkBbN%7DN%60aBkFlj%40cCtLgF%60PuEtN%5Bn%40sBfK%7D%40%60Ho%40jCkAdAaBx%40k%40%7CACnB%5Dz%40%7B%40PuK%5BeF_%40sEaAwD_CwCqBwCkAoDSyDv%40kTfK%7BR~H%7DQnFgDb%40_CEiBgAaJqKiAwA%7DIwP_DeJ_CqL_AuI_%40kK_%40iUkAmMsBuKwBcHsDeIuFcIan%40qw%40oHkG%7DGyDwIuCsIsA_r%40iEeJVmM~Bil%40fNyE%7CBwHhHeA~%40%7DNlO%7DDdC%7DEvA%7BGZwFq%40iE_ByEmDcEeF%7BQ%7D%5C%7DGiPgEwOgC%7BGkCkDsDyBcFgAiF%3FiEbAwCnBkCpDkFlNmHjQsEvKgDtFsEvEsEpCkHjBad%40bCwp%40t%40_Jl%40qLpCuWfHoGd%40mHSkJoBqG%7BC_HkFkW_VuJiGiGmC_LkDe%7B%40%7BU_NeB_OWix%40bC_SpAyNdCmQvFyVtL_QlH_d%40fVeOdJyNbMgN%60PyJzNqQt%5BmOvXaTb_%40sHpJiJtIgLlH%7DaApi%40yPvGqP~DkPnBm%60%40hCoPhCiPrEcNpG%7DInG%7DJdKgInL%7BGxMyQja%40sQd%5CwGrNuE%60N%7DEjS_Hb%5BsKr%5E%7BGrX%7BDdToDzXyBnXaA%7CT_%40zYPbZfAf%5BxBhi%40h%40tb%40f%40%7CTfD~e%40tDba%40bAhRRdS%5DbSaBvh%40KdX%7C%40%60q%40F%7C%5Bi%40zZmB%7C_%40gE~p%40y%40p%5BGr%5B%7CA%7Cx%40Rp%5B%5DnZmBbe%40%7BB%60f%40UzTT%7CSfDvn%40v%40~W%3FfSo%40bUaBhUkCtSwHnf%40aB~Qo%40%7CQGxd%40%5D%60SsAfS%7DBxQoFb%5EoBrUk%40lSM%60%5Do%40%7CSmCl%60%40u%40dSElPf%40nRxAzR%60CfQnEjTfFfRnJ%7CXhUth%40lI%60T%7CN%7Cd%40xErKlIhOjC%60IhBrJt%40zILtPUvg%40i%40dJ%7DApIaD~ImOp%5CeGlH%7DNpNqFvHeElIeCdH%7BChMyCnQe%40lHFpIx%40vHzB%60KrCdMj%40pGB%60KYlS%5EdJjBjUB%60Jq%40xKkEfWcClQ%7BA%7CSa%40~OL%7CVj%40lZ%5BbOqA%60O%7BGxf%40iCnYoAzWc%40%7CVF%7CXbB%7Cm%40PnS_%40pRsAzRkBvMsCjLqEfL%7BFlJuFfGkQ%60O_N%7CM_KlM%7DJrPaIvP_HjReD~KiFlU%7BEtYeIxh%40iFbXsHzYiItV_KzU%7BPn_%40kExNqD%60RaFvW%7DDtNwFbOcHvMcI%60LgIhIkHpFkIhEc%5DzLuQdHqM%7CHcKxIsIrJmKvO%7De%40fx%40mJrLyKdKsKjHmLtFm%5CfLkNrCcPpA%7DN%40kb%40_AwK%5CwDRqXjDqNn%40uNa%40mMmBaMsDoXuL%7BOqFuNoCmOiAiQ%40eRfA%7DSvCqpAvZgTtDoZzCiIdB%7DItDaHvE%7BGzGgGtIcQt%5D%7BH~MgJ%7CLwKtKmKxHkUpMoMhIqLtJaLrLkMjQwJbQyUbg%40mMxU_NxR_LrMyOzN_OjK%7DNxH_O~FqLpCgLlAeMLuLu%40mOwC%7BM_FaOsI_XuP%7DLiFsMeDkTsBud%40_B%7DQ%3F%7DKdAyQ~Dkk%40xO_LnF%7DJpH%7DIlJmI~LkH%7CNuHfSiGrTsDbQoC%7CRyAnRi%40%7CRFpRv%40jSbG%7Cx%40~%40lTJdP%5BzPaAjNkBrM_CzJoGfQ_FfNaDxNcBzMmDzs%40_BpRqCxQyDxOqFlOmG~LoIrLsLpOmFjKeD%7CJaC%60LaBvMq%40tNYdg%40g%40vOuA%60OgCrNsEnOaGnMuKxSyEtMyCbLwCrPaBdPs%40tPY%60Xm%40pSgAfNqBlNkEtRoS%60y%40kEzSsDjYcD%60SkEfQqEpMaGjMwGpKiIvJoJdIsLvGit%40xX%7BKfFgJrGoJlJiIjL%7DH%60Ou%7B%40viBeFvNmQ~p%40kF%60PsFpLyHrLqGbHcHfFaJ~DoJjBsPdBiIlC%7BGlEgFzFaE%7CGmD%7CIcDxKmA~IQ~G%5C%7CHrDrW~BxTdCtf%40fA%7CKtEhWvFv%5DrBhSTxJUrKgAhK%7BRbw%40cC%60MwAjNg%40%7CL%3FdPj%40xM~A~NvUn~An%40xK%3FzIe%40tIgBpMsCzPo%40hIMjPEfrBZ%7CRP%7Cc%40f%40%60O~A%7CNjBrJ%60Jv%5EpBdNbApNXzQ%5BhPmDfo%40oErk%40kEpc%40eMdcAwAbNa%40%60JKfKL%7CHv%40zLdBdMzFdYxB%7CNn%40nIXrOM%7CJk%40zJ_BlMqEvVuAvKo%40~JO%7CGF%7CLl%40%7CLdUxgBzApPf%40tQ%5C~a%40%60B%60%5Cj%40~RCzNu%40%7CQkCnXaC%7CTo%40rOBxN~%40nQdCnXpBdYjA~%5BXxWWp%5EiAb%5B_C%60%5CqDxZmEvWmIx%5EoQ%60t%40yCfRiBfSw%40%60U%40nS~DtyBD~Se%40%60ReBzUyDhb%40m%40vNGzP%5EnNxAvRjBrMbE%7CQhIpY%7CBxK%60BpNf%40~K%40zNm%40tMsBnPaFlVwBjMmAnMe%40rOLdPbAhOrBtNjOt%7C%40hBjRz%40vSF%60VQ~h%40%60%40fi%40pAzg%40~B%60f%40dDrd%40vEfe%40zFnc%40jHjc%40rH%60%60%40pC%7CQvAfPt%40nRDpSy%40~%5DEpQl%40hRfBl%5DDhNa%40jNeBtQqEjVsBfN%7D%40fNUdEaAbWwAvLiCnL%7BCxIqEvIqF%60HaGzEoHhDmI%60ByI%60%40wL%5BqKeBkIoCo%60%40gSqKwEqMcD%7BK_A%7BK%3FcJbA%7DNlD_PjEcLfAuPD%7BOf%40_JjBcHrCkJnGeItImFbIwE%7CJgEfM%7DChNaGx_%40uDzRuElPoFfNsPh%5CcNtXaHjQwFxReDxOkD%7CUqEnd%40%7DA%60UgAz%60%40%7BAv%7D%40PfJhAlOlBxLdRhv%40zCrOhA%7CKb%40nOQfMiAjNuBzLiDfLwEzJmHvJaVfWoE%60H%7BCjH_CxI_BtKq%40pK%3F~Lb%40~IlA%7CJlGda%40vEz%5EnCfJvDfLtClOpBhHnDnHjGtK~BdHxDxOvC%7CGnD~EdHvGhDlEdDnHtIhWjD%7CFfF~EnKnHbD~DhDjHpBrHfArI%5EdKVdTz%40bJzBpK~J%7C%60%40bBhM%7CGvtAVnIAfKm%40dLkH~l%40_BvSi%40rUmAv%7B%40cBzWgCdToEpVsFpSmGdQeHbO%7BHjM%7BJfMaR~RcFnIgEpKeD~MkBtMkBlXuAxLmErSmNdl%40cCtPuAxQo%40b%5EIzUl%40nL%7CA%7CKdCrJvJfWjCxIrA~I~%40%60Ux%40f%5CCvR%5CfJtAzPx%40%7C%5CUhToAff%40JvVtDfw%40%7CBlh%40%60%40bh%40t%40h%5BhBf%5BnCfYrEr%5BtUjzAbCbWrA~Wp%40%60%5DjAbXpBhUxFzh%40pBv%5B~Bvd%40nBbVfEh%5CtWxvArFv%5EhNnaApF%7CWlHfXdIvUxK~VvLnTzo%40l%60AjNjUfMrV%7CMd%5BnKfZfXh_AhMv%60%40jVfs%40~Ix%5BdIf%5ElLbo%40hId_%40fTj~%40dEdW%60DjZdBxXv%40fZ%60A%60x%40dC~l%40l%40%7CXApu%40VzZfApXzB%60YrDnY%60Gb%5CbDjU~Elb%40hDtQxDnNzFfOjHfNtUj%5D%7CDxH~ChJrBdKhAbK%60%40hLInL%7B%40hMgBzKwClKk%5Ep%7C%40cDjKoBjKeAfLYlLVxNlB%7Cg%40%3FxSoBxl%40k%40p%5CNteAU%7CPqAdToChUoE%60%5Di%40~LFnMx%40zLrCfShAbMTlL%5DvOaAhVLxLfAfNjBnKzDhMlF%7COvBxKhA%7CKrBdd%40x%40jJtBtLrDfMdHxPzQp%60%40rEdNnCfMlAzK%60%40xLOtMgAvM%7DAdJuUf%60AoDzJsEvIkLlOkEnHiD%7CImCbLuA~Ki%40nLBxNz%40zOtBpRhDdRdDrLdSvf%40xFxPbD~M~CvRbBrQtBhe%40fBhV%60Frd%40dJf%60AdFj%5C%60Gd%5D%7CBnTnCx_%40jB%60L%7CDlN%7CExPfCnNzAhOf%40%7COh%40xh%40xCpo%40tGzsAvB%7CXzDh%5BxCfUtAfStAlY%7CA%7CMdGj%5CvAtLd%40bLGrM_BnTmEdi%40QhJd%40hRhBze%40FxUDfYh%40tVzAhXzGny%40%60AtTF~TiAbj%40JvM%60%40tHbFz%5EhAzMRtLc%40vNwA%60MiM%7Cl%40yBnM%7BAbOw%40lP%7BFpaB%3FnOr%40rOzDrk%40J%60Pe%40buAe%40nTsApPwBbO%7BExReKr%60%40qBlMqA~O%5BfPT~N%7C%40lNpIfz%40x%40pR%40jSg%40xOuAtPyCnSwRpiA%7D%40rLOpN%60%40fLpAnL%7CAxHtCdJ%7CDhIlMdQlGxKfCxG%60C%7CJbAdGbArLPbNoB~g%40kD~p%40i%40rO%40rLt%40%7CNvAhLlBhJlAlEfGfOvHdNtFpMhDtLhDpRpRllApKnq%40fDlVlC%60%5BnJtxA%5Ed%5C%60%40nJ%60BfNbJfl%40xFn%5EhB~QhAjSTrSc%40dZcEz~AsAz%5EcF%60p%40kAnUe%40v%5CNju%40KbL_ApPuA%60LgGb_%40gAzNYjOXxQnGl%7BAbDd_%40v_%40%7CyDbBj%5Ch%40%7CXAb%5C%7B%40%60j%40Jh%5C%7C%40vWbBrU~BbSpE%7CXbGpWlIb%5EfDxRnNpfAhVpkBfEhUjH~XlPpj%40hH%7CXfGnZhHhg%40rGhi%40dFpXnWjdAzGjZzF%60%5ChF%60%60%40hCrYtBfb%40~%40r%5EFza%40%7DA%60%60BGpX%5EzT%60B%60ZxFzh%40pEjc%40hDbj%40xBdWbGvj%40bBrWxE%60mA%7CAdUlEjl%40jAz%5BNfVUjWeArXgDzb%40oEfi%40sDp%60A%7DAtWaDrYcHhj%40yBxY%7D%40tYe%40zs%40q%40rXcFhz%40yAp%5Da%40p%5CNzY%60Ah%5BlGraAlAzYRjZe%40vZkC%60t%40%5D%7CTNnZfBzk%40VtVa%40fRsA%7CQ%7DBdPeDhOwJf%5BiEbQmCtPwAfPoBxf%40cBjXuCtWuJ~j%40_Olz%40uG~d%40%7BD%60ScFvRaGrQoI%60S%7BHzN_PlUekAlzAwKvKwMbKkOrIeKjEcRlF_WrGwObG%7D%5D~NyRpEyN%7CAma%40~BwMvBwOlEgQ%60IoN%60JaMlKaL%7CLyKjO%7DKxR%7DKbWsSxh%40sItPgK%60PoLrNsMrLmZtTgQdOgMnNkLbPmZvc%40ySfW_a%40%7Cc%40iLfP%7DJbQqKnU%7BG%7CQaHjUoQjn%40uJvWyN~Zss%40lwAuL%60YoLv%5CgMlc%40eb%40v_BuEbVgE~ZmMtbAqEvUuFnUsDlMyCvFgFjLiAfC_FpIkLlPqEzFoKhMe%5C~ZiL%7CKqDxDmEvGoD%7CHwChKmFrXgOhw%40iDtNmEjLwEjIaY~%5DsPjSmh%40te%40mIlJmPvViEjG%7BEjIgCfH_A~%40%7B%40I%5BKgImJcEaFsa%40sl%40k%40kAjAsDrAw%40%5EB%60%40%60AxHOdEcEBaFmBpA&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Reims" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+
+        
+
+        
+
+        
+      </div>
+    </div>
+    
+    <div class="page step-page">
+      <div class="step-header">
+        <div class="step-day">Jour 18</div>
+        <div class="step-title">Clévilliers</div>
+        <div class="step-location">28300 Clévilliers</div>
+        <div class="step-dates">
+          24 août 2026 → 24 août 2026
+        </div>
+      </div>
+
+      
+      <div class="route-info-bar">
+        <div class="route-stat">
+          <span class="route-icon">🛣️</span>
+          <span>209.0 km</span>
+        </div>
+        <div class="route-stat">
+          <span class="route-icon">⏱️</span>
+          <span>2h19</span>
+        </div>
+      </div>
+      
+
+      
+      <div class="map-container">
+        <img src="https://maps.googleapis.com/maps/api/staticmap?visible=49.258329%2C4.031696%7C48.543237%2C1.38867&size=640x220&scale=2&maptype=roadmap&markers=color%3Agreen%7Clabel%3AD%7C49.258329%2C4.031696&markers=color%3Ared%7Clabel%3AA%7C48.543237%2C1.38867&path=color:red|weight:4|enc:cxskHcorWqAj%40sIbD%7DB%60BKBUCE%5Cy%40~Ac%40x%40%5EbA~%5Bzd%40tGvJvKpMZj%40d%40z%40ZjAPfA%40zAIpFQtEBXwC~%60%40%7DBh%5EuBt_%40gB~%5EoA%60%5B%5B%7CLKlJ%3FvHJtGZ%60Jb%40vHn%40pH%60AfIbAzGfBnJnClMh%40jC~Hf_%40~A%60I%7CBrMnAzIfDzVx%40xFh%40dFj%40jJnAvXh%40nIf%40fKJN%5E%60Hx%40zIj%40dFvAlKlBpLtB%7CLlBrM%7CAlMhAxKlAnNdAvPzCfh%40b%40dLNxIBxIGrJYhLuAf%5EOjHGfIBbHR~IXzG%60%40jGv%40xIbAlIhAfH%60BpI%7CBdKdOrm%40p%40tCxD%60PrClMdB~IrAfIfAtHlAbKdAlLx%40%7CLd%40lKh%40%60Pt%40xY%60%40%60Kf%40nJ%60ApMz%40jJ%7CAlMvAvJdBzJhBxIbCdKtCfKnCpIjDpJ~CvHbDfH%7CEjJzJrQjErIdEhJjDtIlDvJtCbJvDrMfXfaAnB~H%7CBjKlAhGbCtNhHbe%40hC~NzBxKpBtIhBxGrCfJbDfJ%60D~HnDzH%7CCdGxDvG~DfGrEhGjEhFbEjEvElEtFpExF~DdC%7CAjFrCzG%60D%60JnD%7Cp%40~V%7CHbDjFdCjItE%60IdF%7CGbFnGjF~FnFtHbIbF%7CFdFtGbGpIlFnIvFvJrExIzDhI%60GhNnFfNlFzOfBvFrE%7COxCfLvDdPzBrKlEpVdCrOtBxOzAxMvA%7CNvAfQhApQt%40jOl%40vQ%5CtPRtPf%40jaABhLHhMZzQb%40pPd%40hL%60AbRvAnSrAzOtA%7CMdB%7CNpBfOvBhNlB~KtDhRjDtOjDhN~DxN%7CE%7CO%7CFjQ~Zf%7D%40rDfLvCdKrCfLzBjK~B%60MhBjLvArKnAfLdAhL%7C%40jMj%40tK%5CfKVvKLtKBrMC%7CNg%40vnAAjSHrRThQXjMd%40dOv%40lQhApRtA%7CQxAjPxBvRbA%60IxBlOhCdOrBlKxBzJnCbLjDdMfEfN~DlLxEdMtMt%5CpBtFdD%60KtBjH%60DtMpB%60KfBfK%60BrL%7CAxNbAxKrAnQbA%7CN%7CAjSzAjP~%40rIpAhLrBdOfCvPvCpPbDjPfDhOdDbNbEfOjFfQrOlf%40nEbOvFzSxMxh%40lDtMhErNtDbLrErMfGdPvM%60%5DrKrXxDlKdDvJ%7CC%60KtCpKxBjJbC%7CLvArIxA%60KrA%60L%60AfK%7C%40~Lf%40lJb%40lMRrLFtME%7C%5CAtVFdPPtMXdKl%40lMr%40%60KbA%7CKbA%7CItAtJzA~ItBnK%60C~JhClJxCfJrC~HjDnIfDfH%60EtHxE~HhHnKtn%40v%7C%40fCxD~EbIpD%7CGvD~H%7CCrH%7CCpI%60DzJjCtJvB%7CIjBdJpBrLzAtKbBdOzBzUhBrU%7CAhUjA%60ThAjWx%40tVj%40hWT%60P%5C%60_%40TdJ%60%40~Ih%40xH~%40%7CJjAdJzAjJfClMnH%60%5E%60CtMnBzLnArJnA~KhAdMz%40hMp%40nN%60%40rNPpMBpLI~Na%40zQi%40vOyAl%5Ee%40vNOjKCzJHbOTjJ%5EzJp%40nL%60AzL~%40zIfAzI%60BlKbBdJjBvIfC~JjE%60OdInWzBdIlBfIxHj%5E%7CAhG%60BfFrBrFzB~EtBzDfC%60EhDpExBdCnChC%7CD%7CC%7CUpPjEfD%60DrC~ExErEbFbEdFrEtGdDhFrEjI%60EpI%60DhHrArD%60DhHlBrE%60BtDpAnC%7CW~n%40xF%7CNjDxJ%7CD%60MhDtL%60F%7CRxUnaAtCvKhD~KxFtPzSbn%40dDtKbCdJtE%7CRzGxYpCtKrCnJ~CdJxCtHtDlIzDxHjEpHnDrFtFvH%60StWtEtGhEdHhE~HpKjTjD%7CGvC%60F%60DtEfDdEpDvDhEtDfDdC%7CDbCtZbQfD~BlC~BhBnBjChDfQpVbD%7CDvFvFnEzDnGzEjJjGlIrFvDzCnDlDbCrC~KnOxEnFnC%60CfEbDzMnJ%7CE%60EbE~D%7CDpE%60FzGnDtFhDhGxCpGlCzGbChHxBrHnB~HtB%60Kbf%40rhC%7CBtKjCvKvLpc%40bCxJbC~KnBfKzAjJbBtLnAxKjAbMz%40lLvArVvAfWz%40%7CK~%40zJfAjJrAhJjBxKhBfJ~BzJhCrJfCjIzDzKrKfY%60ChHrBnH%60B%60H%7CAbInCvPtCjQrAfH%60BlHlBlHlBrG~C%60J~CvH~CtGvBbE~ClF%7CM~SjFdJhF%60Kte%40t%60AnHrOtEhKhDpIxB~FbDxJrCnJjDxMrCxLdOxq%40jDrNnBbH%60DjKzCzI%60EhKlEzJ~CrG%60ErHjFxIhDdF%60DlElG%60I%7CFlGdG%60GtJpIrEzDxIlJxAxAfF~DhInFfCvBbF%60FpGfHfGvHlFrHvD%7CFdFzInFjK%60D%60HtE~KdApCfFbObDpKfCnJrCxLzBzKdBvJxApJrAfKtAnLhAdMn%40xIl%40lKh%40zLbApZlAr_%40pFpbBpMt_E%60%40fPRzMFjNAlNOfPa%40%60SsEvmB%7BLrhFWhPKpQBhNPjNl%40xWtFv%7DAvBnm%40%5EdJITHdHCjBSdBQ%7C%40a%40nAyCxFa%40dAWlAIhA%3FlAJhAVbA%5Ex%40d%40l%40x%40p%40tEvCxWrObDhBnBz%40~Ad%40%60Cb%40nBJfA%3FxBOjB%5BfCw%40dBy%40jBoAnBiB%60BoB%60BiCbAqBnAeD%60BqFrHcXv%40gC~%40%7DBrBgE~AcCdBsBnBiBnBuAbCmA~Bw%40hB_%40rBShCEjCJfC%5E%60Bd%40%60C~%40xBnA~ApAxE%60Edv%40vh%40bGzDhE~BpEpBnExAdFjAtSfD%60e%40lHrCv%40vClAzAx%40xDlCdGnEnBfAjBx%40lBj%40bCb%40hBTdDFhCKxCc%40bJ%7DBzGmBrD%7BAjQiJhBq%40pBa%40tBStB%3FvDXjHp%40hFPnHRbD%5CzIrArOlBpH~%40rETbKBbCRdCj%40xCjAdEbBjCp%40vBVbC%40lCSjHeAjCOtBDtBVpBf%40nBv%40~c%40hTpAv%40z%40r%40hAtAdAfBx%40jBl%40lBf%40xB%5EpCXjEXfE%5ErCd%40~Bx%40rChAjChAnBtAbBrAjAtA%7C%40nBv%40%60B%5CtBLrBErDc%40vKcBjDo%40lDe%40tPmCvD%5BxDKvDFxDZj%5E%7CE~Bh%40jBl%40pAl%40hCzA~C%60CtH~GvB%7CAdBz%40%7CAh%40bCf%40pCRd%40%3F%7CDWxZaDnGg%40pNeBpDq%40%7CC%7D%40%7CBaA%7CDuB~BcBbCsBvAyArCgDzBcDvByD%7CB%7DEhGyNvBgEdCaE%60C_DdCoCpCeCjCkBjDmBzAo%40bCw%40vD%7D%40pHgAnEe%40nn%40qJlCShCA~AHrEh%40lIhA~BNbCElBSvA_%40xBy%40TDbGmCxA_%40zAKjADrATbA%5EhAr%40bA~%40~BrC~FzHfDjFfBtDpBdF%7CA%7CEpAhFfArFt%40hFl%40rF%5EzFTxFFxFChIcDjrDBdJNdKf%40hNn%40pJzBnY%60%40jHzJzoBRhBZxAf%40vAl%40bAv%40x%40~%40h%40bAVdABbAO%7C%40a%40t%40k%40hCmCz%40k%40%60A%5BdBQhACRKlVUFD%60CF%7C%40P%60Ad%40%7C%40p%40p%40%7C%40p%40tAd%40vAZ%60BPpBbAd%5Cz%40%60%5Cb%40hWd%40rb%40BvLInMYhP%5B%7COM~WAhGBzMPlL%5CnK%5CzGVbDl%40rFz%40~FjA%60G%60%40dBlMff%40%7CPzn%40dB~GbBfGzCfL~CvKxBlGdBfE%7CB%7CErChF%60BpCjD%7CExFfHfI%7CJ%7CCpEpCvEbFzJvAbD~FvOjAvDn%40pCnAfHdHjc%40PnAPjC%40~AGvAC%60%40g%40nCk%40dBm%40nAa%40h%40y%40v%40cCxAgH%7CDsDbCcMfH_KlGeDdCuDbD%7BC%60DaCpCqCzDuCnEaEpHqDlGiErIec%40ty%40_HnM%7DEhJqB~CgAlAeAv%40mAh%40aBZcAPo%40Xi%40f%40_%40n%40OTIr%40%3FjAJp%40Rn%40%5Cb%40%5CZtDlC~%40f%40l%40FbAUjB%5Dv%40%3F~%40NbEdBr%40RlDb%40xA%3FpEGnBF~%40N%7CAl%40rA%60AnAtAj%40z%40j%40lARb%40DD~F%60Rb%40xA~%40%7CDx%40lEDTPx%40l%40hEh%40zFXfGHbEAvGObGuBpe%40sBpcAUfF%7BAdVaC%60q%40cA%60O%5B%7CGOdHErF%40nINjIVlG%60AnNnEln%40J~C%3FdDkAtbAAbKJ~JL%60KJdt%40HnG%60%40dL%60%40rHb%40pEhAtIlBvMb%40%7CEzAfW%3FVfAhPd%40~Ij%40nNZ%7CMLbM%3FhJOzK%5DxJY%60Fq%40nI_AbI%7D%40dGs%40bEsAhGkBlHoBnGgCbH%7DC~GuIpQwBbFgB%60FsArEkAdFw%40fE%7D%40xGm%40nG%5DxGMxFAnGFtHZbMt%40vTNvIAzGOrF%5BrFi%40pF%7D%40lGyAbIaGtX%7DApIoAnI%7B%40dH%7B%40xIgClZw%40%60Iu%40jGgAdHaA%60FcAhEoAbEgBxE_BlDwBvDuBzCuDpE%7BJpKoB~B%7DB~CoB%60DaBbDgBlEyBhG%7BGtS%7DBhGsBnE%7DBhEkBxC%7BQtXg%40d%40%7D%40~%40wA~%40w%40ZiARcA%40w%40SsCyAu%40Qw%40Bi%40Pm%40j%40c%40x%40St%40MhAAnAF~%40R%7C%40d%40dAXZh%40%5ErBj%40jA%5CfAp%40~%40fA~%40zAb%40r%40T%40xw%40%7C~A~MbXdHtMtEbI~DnGhHhKzFrHpEnF~GpHfFdFtL~KnWzU~HvHdGpGnGpH%7CElGlEvGnDbGdEdIlBdErC%7CGrCxHjCjInBdHzBdJzBhKfCbNpCbQnE~Zzv%40rsFvCxQfChNtCbNfDlNvCrKxDhMpExMbQpe%40vEhNdEhN%60EfObDzM%7CLjj%40jDfNjCnJfEbNdDrJfFxMrEnK%60JtRhGtMnHxPxGhPlHrR~G~R%7CFrQhGxSzEdQ~EvRhEdRbD%60PrBfLbB~KdBzMpAvLhAxM~%40lNjBnZhAdOlAvMhBtOfBvMhBbLzBbMrCbNxChMnX%60eAfEzPbDvLxErPdQdp%40fCtIzBxGpBfFxB~EvB%60EtBhDH%5CrDbGtAhChAhCr%40lBjAnDlAzEn%40%7CCr%40zElAbKxQfgBvBzQxBtOpCtPjG%60%5EpDfUpD~VnLh~%40rCxR%60CzN%60DfQnHv_%40bCrNnDvUlCdShB~OpBbShOxeBt%40rHhAxJ~AbM~AzKnClPzEtVfFpW%7CBpMrCpQbDjWvJ~w%40bBnOnAzMx%40nKjAhRp%40hNlHfhBz%40zPjApRrAnRbMl~A~B~VrB~P~BzPhCzOfC%7CMtBzJ~B%60KfDpMnDfMbHjUrU~s%40tOze%40fGpSxFrSpElQnEtRlEnSxf%40pgCfExUnDrTpD~V%60DfWlDv%5BfZ%60rCbCfShBnM%60CfOlStkApCnQ%60BxLlAlKzAfOfC%7CYjBrTbAlJnAfJ%60AzFtAxGtArFhBhGtBdGdC%60GjB~DrAfCBf%40lCbFb%40pAZ%60BRdCLbBFn%40ZhAnB%7CE~%40bERf%40%5Ed%40%60CrBj%40~%40Tv%40RtAJlAHRn%40rIn%40fEDdAEl%40SPM%5EEb%40%40PaD%60AiAXqABQSSCSNMVANWX%5DNqm%40tOiUrFcErA%5DBm%40VUPm%40v%40a%40~%40GTCX%3FhBNvAnAxF%60%40rCB%5C%40bDG%7CDYvGDl%40%60%40jBVhAJtA%3Fl%40MlAWfA%5Bp%40eJhM%7BE~FQGS%40EFsDsESKmCiD_JwJ%7BScU%7B%40oAOm%40Ga%40QWWGWJWEqAkAyB%7DBmAgAwGoGkGiGKGy%40mAq%40kAi%40gAeDmIU%5DYKeAVkErAa%40ANdAnAhG%5C%60CHnA%40%5EAd%40OfAoA~EQjBY%60FYvBOv%40_%40xAiAdDWdBO~BYbC%40l%40VpAtAzFNn%40H~%40CvCSlHObBYjAkApCUv%40S%7C%40SjA%5B%5EaC%60GqCnFaA~BYb%40WZoBfBeBdBgAh%40w%40ZOLKXAZLjCAhAEt%40Mp%40g%40xAqAnD%7B%40hCkCxJmAzDwCfKqDdNc%40nAwCjG_%40r%40%7DH%60QgLvS%7DA~DUf%40yAfCm%40~AUx%40eBvHc%40fAkBhDwI%60Qs%40~AsAzEwApDcAlB%7BClEl%40%60AfAvAVf%40nBnHFb%40iC%7C%40oBnBQNu%40VQ%3FIzF%40%60AJjCX~Bd%40tBdErOu%40p%40g%40%5Cu%40Lo%40AaDeAwASs%40%3Fi%40B%7BAZ%7DWrIip%40%60TkNvEyB%5EwBX%7BAVi%5EfL%5DBuGjBs%40TB%7CA%3FfBJpB%7C%40rLBpAAnDHl%40d%40nA%3Fh%40Ql%40%5B%60%40w%40r%40cADOd%40_%40dCI%60%40s%40%60By%40fBIVGf%40Ct%40TdQB%60CCvFBlDV~H%3FlCU~Ea%40xGM%7CDKzAm%40bDe%40%60C%7B%40tGOnBU%60LG~HFfELlBXjBl%40xBb%40fBR~AN%7CB%3FjBEhJ%40rER%7COCrHArCM%60CW%60BmBnJ%7D%40lD_DtJUjAcC%7CQcAhJW~CY~Dw%40zGOz%40e%40lB%5D~%40_BzCsGvJ_C~DiApBoIxQ%7B%40dBw%40z%40So%40&key=AIzaSyB8UiFrV7NxMQcbqvwyu-E3kPQowFmztMc" alt="Carte Clévilliers" class="step-map" />
+      </div>
+      
+
+      <div class="step-details">
+        
+
+        
+
+        
+
+        
+      </div>
+    </div>
+    
+
+  <!-- ═══ SUMMARY PAGE ═══ -->
+  <div class="page summary-page">
+    <h2 class="page-title">Récapitulatif</h2>
+    <p class="page-subtitle">Budget et informations du roadtrip</p>
+
+    <div class="section">
+      <h3 class="section-title">💰 Budget</h3>
+      <table class="budget-table">
+        <thead>
+          <tr>
+            <th>Catégorie</th>
+            <th style="text-align:right">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hébergements</td>
+            <td style="text-align:right">2719.19 €</td>
+          </tr>
+          <tr>
+            <td>Activités</td>
+            <td style="text-align:right">120.00 €</td>
+          </tr>
+          <tr class="budget-total">
+            <td>Total</td>
+            <td style="text-align:right">2839.19 €</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    
+    <div class="section">
+      <h3 class="section-title">👥 Voyageurs</h3>
+      <div class="members-list">
+        
+        <div class="member-chip">
+          <div class="member-avatar">T</div>
+          <span>Test</span>
+          <span style="font-size:11px;color:#a0aec0;">✏️</span>
+        </div>
+        
+        <div class="member-chip">
+          <div class="member-avatar">M</div>
+          <span>Marielle HERON</span>
+          <span style="font-size:11px;color:#a0aec0;">✏️</span>
+        </div>
+        
+        <div class="member-chip">
+          <div class="member-avatar">M</div>
+          <span>Manou</span>
+          <span style="font-size:11px;color:#a0aec0;">✏️</span>
+        </div>
+        
+        <div class="member-chip">
+          <div class="member-avatar">L</div>
+          <span>Leni</span>
+          <span style="font-size:11px;color:#a0aec0;">✏️</span>
+        </div>
+        
+      </div>
+    </div>
+    
+
+    <div class="footer-note">
+      Généré par Mon Petit Roadtrip • 22/07/2026
+    </div>
+  </div>
+
+</body>
+</html>
