@@ -181,19 +181,11 @@ function getEffectiveArrival(step) {
 /**
  * Génère l'URL Google Maps Static pour une étape du roadbook.
  *
- * Logique de tracé :
- * - Départ  → point de départ EFFECTIF de l'étape PRÉCÉDENTE
- *              (item isDeparture de prevStep, ou prevStep.departureLatitude, ou prevStep lui-même)
- * - Arrivée → point d'arrivée EFFECTIF de l'étape COURANTE
- *              (item isArrival de step, ou step.arrivalLatitude, ou step lui-même)
- * - Polyline → routeEncodedPolyline de l'étape PRÉCÉDENTE
- *              (stockée sur prevStep = route FROM prevStep TO step)
- *
  * @param {object} step - L'étape courante
  * @param {object|null} prevStep - L'étape précédente
- * @param {object|null} nextStep - Non utilisé (conservé pour signature)
+ * @param {boolean} skipPolyline - Si true, n'ajoute pas le tracé (1ère étape)
  */
-function buildStepMapUrl(step, prevStep, nextStep) {
+function buildStepMapUrl(step, prevStep, skipPolyline) {
   if (!step.latitude && !step.longitude) return '';
   const key = process.env.GOOGLE_MAPS_API_KEY || '';
 
@@ -208,27 +200,29 @@ function buildStepMapUrl(step, prevStep, nextStep) {
   const arrLng = arr?.lng ?? step.longitude ?? null;
 
   const markers = [];
-  if (depLat && depLng) {
+  if (!skipPolyline && depLat && depLng) {
     markers.push(`color:green|label:D|${depLat},${depLng}`);
   }
   markers.push(`color:red|label:A|${arrLat},${arrLng}`);
 
-  // ── Polyline : celle de l'étape PRÉCÉDENTE (route FROM prevStep TO step) ──
+  // ── Polyline (uniquement si skipPolyline est false) ──
   let pathParam = '';
-  const sourcePolyline = prevStep?.routeEncodedPolyline || step.routeEncodedPolyline;
-  if (sourcePolyline) {
-    const simplified = simplifyPolyline(sourcePolyline, 6000);
-    pathParam = `&path=color:red|weight:4|enc:${encodeURIComponent(simplified)}`;
+  if (!skipPolyline) {
+    const sourcePolyline = prevStep?.routeEncodedPolyline || step.routeEncodedPolyline;
+    if (sourcePolyline) {
+      const simplified = simplifyPolyline(sourcePolyline, 6000);
+      pathParam = `&path=color:red|weight:4|enc:${encodeURIComponent(simplified)}`;
+    }
   }
 
-  // visible= pour que départ ET arrivée soient visibles
+  // visible= pour que tous les points soient visibles
   const visible = depLat && depLng
     ? `${depLat},${depLng}|${arrLat},${arrLng}`
     : `${arrLat},${arrLng}`;
 
   return `https://maps.googleapis.com/maps/api/staticmap` +
     `?visible=${encodeURIComponent(visible)}` +
-    `&size=640x220&scale=2&maptype=roadmap` +
+    `&size=480x160&scale=2&maptype=roadmap` +
     markers.map(m => `&markers=${encodeURIComponent(m)}`).join('') +
     pathParam +
     `&key=${key}`;
@@ -238,19 +232,19 @@ function buildOverviewMapUrl(coords) {
   if (!coords || coords.length === 0) return '';
   const key = process.env.GOOGLE_MAPS_API_KEY || '';
 
+  // Utiliser visible= pour que tous les points soient cadrés sans marges excessives
+  const visible = coords.join('|');
+
   const markers = coords.map((c, i) =>
     `&markers=${i === 0 ? 'color:green|label:1|' : i === coords.length - 1 ? 'color:red|label:' + (i + 1) + '|' : 'color:blue|label:' + (i + 1) + '|'}${c}`
   ).join('');
 
-  const center = coords[Math.floor(coords.length / 2)];
-  const zoom = coords.length <= 3 ? 8 : coords.length <= 8 ? 6 : 5;
-
-  // Relier les points par un chemin pour voir le trajet complet
+  // Relier les points par un chemin
   const pathCoords = coords.join('|');
 
   return `https://maps.googleapis.com/maps/api/staticmap` +
-    `?center=${center}` +
-    `&zoom=${zoom}&size=700x300&scale=2&maptype=roadmap` +
+    `?visible=${encodeURIComponent(visible)}` +
+    `&size=520x200&scale=2&maptype=roadmap` +
     `&path=color:red|weight:4|${pathCoords}` +
     markers +
     `&key=${key}`;
@@ -272,6 +266,7 @@ function generateHTML(roadtrip) {
   // Budget
   let totalAccomPrice = 0;
   let totalActivityCost = 0;
+  let totalDeposits = 0;
   const currencyCounts = {};
   steps.forEach(s => {
     (s.accommodations || []).forEach(a => {
@@ -279,21 +274,29 @@ function generateHTML(roadtrip) {
         totalAccomPrice += a.totalPrice;
         currencyCounts[a.currency] = (currencyCounts[a.currency] || 0) + a.totalPrice;
       }
+      if (a.depositPaid) totalDeposits += a.depositPaid;
     });
     (s.activities || []).forEach(a => {
       if (a.cost) {
         totalActivityCost += a.cost;
         currencyCounts[a.currency] = (currencyCounts[a.currency] || 0) + a.cost;
       }
+      if (a.depositPaid) totalDeposits += a.depositPaid;
     });
   });
+
+  const totalBudget = totalAccomPrice + totalActivityCost;
+  const totalBalance = totalBudget - totalDeposits;
 
   const mainCurrency = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'EUR';
 
   // Construire les pages étapes
   const stepPages = steps.map((step, index) => {
     const dayNum = index + 1;
-    const hasRoute = step.routeDistanceMeters || step.routeDurationSeconds;
+    // La route est stockée sur l'étape de DÉPART : steps[i].routeDistance = trajet steps[i] → steps[i+1]
+    // Pour l'étape courante, on veut le trajet DEPUIS l'étape précédente, donc on regarde steps[i-1]
+    const prevStepData = index > 0 ? steps[index - 1] : null;
+    const hasRoute = prevStepData && (prevStepData.routeDistanceMeters || prevStepData.routeDurationSeconds);
     const accommodations = step.accommodations || [];
     const activities = step.activities || [];
 
@@ -311,10 +314,9 @@ function generateHTML(roadtrip) {
       `<img src="${optimizeUrl(p.url)}" alt="${p.caption || step.name}" class="step-photo" />`
     ).join('');
 
-    // Carte Google Maps Static (avec l'étape précédente pour le départ et la suivante pour l'arrivée)
+    // Carte Google Maps Static (avec ou sans tracé selon l'étape précédente)
     const prevStep = index > 0 ? steps[index - 1] : null;
-    const nextStep = index < steps.length - 1 ? steps[index + 1] : null;
-    const stepMapUrl = buildStepMapUrl(step, prevStep, nextStep);
+    const stepMapUrl = buildStepMapUrl(step, prevStep, !hasRoute);
 
     return `
     <div class="page step-page">
@@ -331,17 +333,17 @@ function generateHTML(roadtrip) {
       <div class="route-info-bar">
         <div class="route-stat">
           <span class="route-icon">🛣️</span>
-          <span>${formatDistance(step.routeDistanceMeters)}</span>
+          <span>${formatDistance(prevStepData.routeDistanceMeters)}</span>
         </div>
         <div class="route-stat">
           <span class="route-icon">⏱️</span>
-          <span>${formatDuration(step.routeDurationSeconds)}</span>
+          <span>${formatDuration(prevStepData.routeDurationSeconds)}</span>
         </div>
       </div>
       ` : ''}
 
       ${stepMapUrl ? `
-      <div class="map-container">
+      <div class="map-container${hasRoute ? '' : ' map-container-noroute'}">
         <img src="${stepMapUrl}" alt="Carte ${step.name}" class="step-map" />
       </div>
       ` : ''}
@@ -414,9 +416,6 @@ function generateHTML(roadtrip) {
     }
     return url;
   };
-  const coverBg = coverPhotoUrl
-    ? `style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url('${optimizeUrl(coverPhotoUrl)}')"`
-    : 'style="background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%)"';
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -432,10 +431,10 @@ function generateHTML(roadtrip) {
   }
 
   body {
-    font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    color: #1a202c;
-    line-height: 1.6;
-    background: #f7fafc;
+    font-family: 'Courier New', Courier, monospace;
+    color: #3d2e1e;
+    line-height: 1.5;
+    background: #fef6e9;
   }
 
   .page {
@@ -446,342 +445,382 @@ function generateHTML(roadtrip) {
     overflow: hidden;
   }
 
+  /* ═══ RETRO PATTERN ═══ */
+  .retro-bg-dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(230,168,23,0.08) 1.5px, transparent 1.5px);
+    background-size: 20px 20px;
+    pointer-events: none;
+  }
+
   /* ═══ COVER PAGE ═══ */
   .cover-page {
+    background: linear-gradient(135deg, #e6a817 0%, #d4574a 100%);
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    background-size: cover;
-    background-position: center;
-    color: white;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #fff;
     padding: 40px 50px;
     position: relative;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
   }
 
-  .cover-page::before {
+  .cover-page.has-photo::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.1) 100%);
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.1) 100%);
   }
 
-  .cover-content {
-    position: relative;
-    z-index: 1;
+  .cover-page > * { position: relative; z-index: 1; }
+
+  .cover-circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
   }
+  .cover-circle:nth-child(1) { width: 220px; height: 220px; background: #f5c542; top: -60px; left: -60px; }
+  .cover-circle:nth-child(2) { width: 140px; height: 140px; background: #e87a60; bottom: 30px; right: 40px; }
+  .cover-circle:nth-child(3) { width: 80px; height: 80px; background: #f5c542; bottom: 100px; left: 50px; }
 
   .cover-badge {
     display: inline-block;
     background: rgba(255,255,255,0.2);
-    backdrop-filter: blur(10px);
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-size: 12px;
-    letter-spacing: 3px;
+    padding: 5px 20px;
+    border: 2px solid rgba(255,255,255,0.4);
+    font-size: 11px;
+    letter-spacing: 4px;
     text-transform: uppercase;
     margin-bottom: 20px;
-    border: 1px solid rgba(255,255,255,0.3);
   }
 
   .cover-title {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 52px;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 56px;
     font-weight: 900;
-    line-height: 1.1;
-    margin-bottom: 10px;
-    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    line-height: 1;
+    text-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+    margin-bottom: 4px;
+    letter-spacing: 2px;
   }
 
-  .cover-subtitle {
-    font-size: 20px;
-    font-weight: 300;
+  .cover-title-year {
+    display: block;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 32px;
+    letter-spacing: 12px;
+    font-weight: 400;
     opacity: 0.9;
-    margin-bottom: 30px;
-  }
-
-  .cover-dates {
-    font-size: 16px;
-    opacity: 0.8;
-    font-weight: 300;
   }
 
   .cover-divider {
-    width: 60px;
-    height: 3px;
-    background: white;
-    margin: 15px 0;
+    width: 100px;
+    height: 4px;
+    background: rgba(255,255,255,0.4);
+    margin: 16px auto;
     border-radius: 2px;
+  }
+
+  .cover-subtitle {
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+
+  .cover-dates {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-top: 6px;
+    letter-spacing: 2px;
   }
 
   .cover-footer {
     margin-top: 40px;
-    font-size: 13px;
-    opacity: 0.6;
+    font-size: 11px;
+    opacity: 0.4;
+    letter-spacing: 2px;
+  }
+
+  .cover-wavy {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent, transparent 8px,
+      rgba(255,255,255,0.06) 8px, rgba(255,255,255,0.06) 16px
+    );
   }
 
   /* ═══ OVERVIEW PAGE ═══ */
   .overview-page {
-    padding: 40px 50px;
-    background: white;
+    padding: 20px 28px;
+    background: #fef6e9;
   }
 
   .page-title {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 32px;
-    color: #1a365d;
-    margin-bottom: 5px;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 28px;
+    color: #d4574a;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
   }
 
   .page-subtitle {
-    font-size: 14px;
-    color: #718096;
-    margin-bottom: 30px;
+    font-size: 12px;
+    color: #b8a088;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+    font-weight: 600;
   }
 
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 35px;
+    gap: 10px;
+    margin-bottom: 20px;
   }
 
   .stat-card {
-    background: #f7fafc;
-    border-radius: 12px;
-    padding: 20px;
+    background: #fff;
+    border: 2px solid #e6a817;
+    padding: 12px 8px;
     text-align: center;
-    border: 1px solid #e2e8f0;
+    position: relative;
   }
 
-  .stat-icon {
-    font-size: 28px;
-    margin-bottom: 8px;
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border: 1px solid #d4574a;
+    pointer-events: none;
   }
 
+  .stat-icon { font-size: 22px; margin-bottom: 4px; }
   .stat-value {
-    font-size: 24px;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 20px;
     font-weight: 700;
-    color: #2d3748;
+    color: #d4574a;
   }
-
   .stat-label {
-    font-size: 12px;
-    color: #718096;
+    font-size: 9px;
+    color: #8a7a6a;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-top: 4px;
+    margin-top: 2px;
   }
 
   .overview-map-container {
-    border-radius: 12px;
+    border: 3px solid #e6a817;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
-    background: #f0f0f0;
+    margin: 0 auto 20px;
+    background: #f0e4cc;
+    width: 75%;
   }
 
-  .overview-map-container img {
-    width: 100%;
-    display: block;
-  }
-
-  .map-placeholder {
-    width: 100%;
-    height: 180px;
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #718096;
-    font-size: 14px;
-  }
+  .overview-map-container img { width: 100%; display: block; }
+  .overview-map { width: 100%; display: block; }
 
   .itineraire-list {
     list-style: none;
+    columns: 2;
+    column-gap: 20px;
+    column-rule: 1px dashed #e6a817;
   }
 
   .itineraire-item {
     display: flex;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 5px 0;
+    border-bottom: 1px dashed #e6a817;
+    break-inside: avoid;
   }
 
   .itineraire-item:last-child { border-bottom: none; }
 
   .itineraire-day {
-    width: 40px;
-    height: 40px;
-    background: #1a365d;
-    color: white;
-    border-radius: 50%;
+    width: 28px; height: 28px;
+    background: #e6a817;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-    margin-right: 15px;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 12px;
+    margin-right: 8px;
     flex-shrink: 0;
   }
 
-  .itineraire-info {
-    flex: 1;
-  }
-
-  .itineraire-name {
-    font-weight: 600;
-    font-size: 15px;
-  }
-
-  .itineraire-meta {
-    font-size: 13px;
-    color: #718096;
-  }
+  .itineraire-info { flex: 1; min-width: 0; }
+  .itineraire-name { font-weight: 700; font-size: 13px; color: #3d2e1e; }
+  .itineraire-meta { font-size: 10px; color: #8a7a6a; margin-top: 1px; }
 
   /* ═══ STEP PAGE ═══ */
-  .step-page {
-    padding: 0;
-    background: white;
-  }
+  .step-page { padding: 0; background: #fef6e9; }
 
   .step-header {
-    background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
-    color: white;
-    padding: 30px 50px;
+    background: linear-gradient(135deg, #d4574a 0%, #e6a817 100%);
+    color: #fff;
+    padding: 16px 30px;
+    position: relative;
+  }
+
+  .step-header::after {
+    content: '✦';
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px;
+    color: #e6a817;
+    background: #fef6e9;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid #d4574a;
   }
 
   .step-day {
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 3px;
     text-transform: uppercase;
     opacity: 0.7;
-    margin-bottom: 5px;
+    font-weight: 600;
   }
 
   .step-title {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 28px;
-    font-weight: 700;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 30px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    margin-top: 2px;
   }
 
   .step-location {
-    font-size: 15px;
+    font-size: 14px;
     opacity: 0.8;
     margin-top: 4px;
+    letter-spacing: 1px;
   }
 
   .step-dates {
-    font-size: 13px;
+    font-size: 12px;
     opacity: 0.6;
     margin-top: 6px;
+    letter-spacing: 1px;
   }
 
   .route-info-bar {
     display: flex;
-    gap: 15px;
-    padding: 12px 50px;
-    background: #f7fafc;
-    border-bottom: 1px solid #e2e8f0;
-  }
-
-  .route-stat {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    gap: 20px;
+    padding: 8px 36px;
+    background: #e6a817;
+    color: #fff;
+    font-weight: 700;
     font-size: 14px;
-    font-weight: 500;
-    color: #4a5568;
+    letter-spacing: 1px;
   }
 
+  .route-stat { display: flex; align-items: center; gap: 6px; }
   .route-icon { font-size: 16px; }
 
   .map-container {
-    width: 100%;
+    width: 80%;
+    margin: 0 auto;
     overflow: hidden;
-    background: #f0f0f0;
+    background: #f0e4cc;
+    border-bottom: 4px double #e6a817;
   }
 
-  .map-container img {
-    width: 100%;
-    display: block;
+  .map-container-noroute {
+    border-bottom: none;
+    border: 2px solid #e6a817;
+    margin: 0 auto 16px;
+    width: 70%;
   }
 
-  .step-map {
-    width: 100%;
-    display: block;
-  }
+  .map-container img { width: 100%; display: block; }
+  .step-map { width: 100%; display: block; }
 
-  .overview-map {
-    width: 100%;
-    display: block;
-  }
+  .step-details { padding: 18px 30px 24px; }
 
-  .step-details {
-    padding: 25px 50px 40px;
-  }
-
-  .section {
-    margin-bottom: 25px;
-  }
+  .section { margin-bottom: 25px; }
 
   .section-title {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 18px;
-    color: #1a365d;
-    margin-bottom: 12px;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    font-size: 16px;
+    color: #d4574a;
+    margin-bottom: 10px;
     padding-bottom: 6px;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 3px double #e6a817;
+    letter-spacing: 1px;
+    text-transform: uppercase;
   }
 
   .accommodation-card {
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 15px;
+    background: #fff;
+    border: 2px solid #e6a817;
+    padding: 14px;
     margin-bottom: 10px;
+    position: relative;
   }
 
   .accom-type-badge {
-    font-size: 12px;
-    color: #718096;
-    margin-bottom: 4px;
-  }
-
-  .accom-name {
-    font-size: 16px;
+    display: inline-block;
+    background: #d4574a;
+    color: #fff;
+    padding: 2px 10px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
     font-weight: 600;
   }
 
-  .accom-address {
-    font-size: 13px;
-    color: #718096;
-    margin-top: 2px;
-  }
+  .accom-name { font-size: 16px; font-weight: 700; color: #3d2e1e; }
+  .accom-address { font-size: 12px; color: #8a7a6a; margin-top: 2px; }
 
   .accom-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     margin-top: 8px;
-    font-size: 13px;
-    color: #4a5568;
+    font-size: 12px;
+    color: #6a5a4a;
   }
 
   .accom-notes {
     margin-top: 8px;
-    font-size: 13px;
-    color: #718096;
+    font-size: 12px;
+    color: #8a7a6a;
     font-style: italic;
     padding: 8px;
-    background: #edf2f7;
-    border-radius: 6px;
+    background: #fef6e9;
+    border: 1px dashed #e6a817;
   }
 
   .activity-item {
     display: flex;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid #f0f0f0;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e6a817;
   }
 
   .activity-item:last-child { border-bottom: none; }
@@ -789,140 +828,123 @@ function generateHTML(roadtrip) {
   .activity-time {
     min-width: 80px;
     font-size: 12px;
-    color: #718096;
-    font-weight: 500;
+    color: #8a7a6a;
+    font-weight: 600;
     padding-top: 2px;
   }
 
   .activity-content { flex: 1; }
-
-  .activity-name {
-    font-weight: 600;
-    font-size: 14px;
-  }
-
-  .activity-location {
-    font-size: 13px;
-    color: #718096;
-  }
-
-  .activity-notes {
-    font-size: 13px;
-    color: #4a5568;
-    margin-top: 3px;
-  }
-
-  .activity-cost {
-    font-size: 13px;
-    color: #38a169;
-    font-weight: 500;
-    margin-top: 2px;
-  }
+  .activity-name { font-weight: 700; font-size: 14px; color: #3d2e1e; }
+  .activity-location { font-size: 12px; color: #8a7a6a; }
+  .activity-notes { font-size: 12px; color: #6a5a4a; margin-top: 2px; }
+  .activity-cost { font-size: 12px; color: #d4574a; font-weight: 600; margin-top: 2px; }
 
   .step-notes {
-    font-size: 14px;
-    color: #4a5568;
-    line-height: 1.7;
-    padding: 12px;
-    background: #fffbeb;
-    border-left: 3px solid #d69e2e;
-    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    color: #3d2e1e;
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: #fff;
+    border-left: 4px solid #e6a817;
+    font-style: italic;
   }
 
-  .step-photos {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-  }
+  .step-photos { display: flex; gap: 10px; margin-top: 15px; }
 
   .step-photo {
     width: calc(50% - 5px);
     height: 180px;
     object-fit: cover;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 3px solid #e6a817;
   }
 
   /* ═══ SUMMARY PAGE ═══ */
   .summary-page {
-    padding: 40px 50px;
-    background: white;
+    padding: 24px 36px;
+    background: #fef6e9;
   }
 
   .budget-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
+    border: 2px solid #e6a817;
   }
 
   .budget-table th {
     text-align: left;
     padding: 10px 12px;
-    background: #1a365d;
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
+    background: #d4574a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
-
-  .budget-table th:first-child { border-radius: 8px 0 0 0; }
-  .budget-table th:last-child { border-radius: 0 8px 0 0; }
 
   .budget-table td {
     padding: 10px 12px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px dashed #e6a817;
     font-size: 14px;
+    background: #fff;
   }
 
   .budget-table tr:last-child td { border-bottom: none; }
 
-  .budget-total td {
-    font-weight: 700;
-    background: #f7fafc;
-    border-top: 2px solid #1a365d;
+  .budget-deposit td {
+    background: #fff8f0;
+    border-bottom: 1px dashed #e6a817;
   }
 
-  .members-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 15px;
+  .budget-balance td {
+    background: #fff8f0;
   }
+
+  .budget-total td {
+    font-weight: 700;
+    background: #fef6e9;
+    border-top: 3px double #d4574a;
+    color: #d4574a;
+  }
+
+  .members-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
 
   .member-chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 13px;
+    gap: 6px;
+    background: #fff;
+    border: 2px solid #e6a817;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #3d2e1e;
   }
 
   .member-avatar {
-    width: 24px;
-    height: 24px;
+    width: 24px; height: 24px;
+    background: #e6a817;
+    color: #fff;
     border-radius: 50%;
-    background: #1a365d;
-    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
   }
 
   .footer-note {
     margin-top: 40px;
     text-align: center;
-    font-size: 12px;
-    color: #a0aec0;
-    border-top: 1px solid #e2e8f0;
-    padding-top: 20px;
+    font-size: 11px;
+    color: #b8a088;
+    border-top: 2px dashed #e6a817;
+    padding-top: 16px;
+    letter-spacing: 1px;
   }
 
   @media print {
-    body { background: white; }
+    body { background: #fef6e9; }
     .page { box-shadow: none; margin: 0; }
   }
 </style>
@@ -930,12 +952,17 @@ function generateHTML(roadtrip) {
 <body>
 
   <!-- ═══ COVER ═══ -->
-  <div class="page cover-page" ${coverBg}>
+  <div class="page cover-page${coverPhotoUrl ? ' has-photo' : ''}"${coverPhotoUrl ? ` style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url('${optimizeUrl(coverPhotoUrl)}')"` : ''}>
+    <div class="cover-circle"></div>
+    <div class="cover-circle"></div>
+    <div class="cover-circle"></div>
+    <div class="retro-bg-dots"></div>
+    <div class="cover-wavy"></div>
     <div class="cover-content">
-      <div class="cover-badge">Roadbook</div>
+      <div class="cover-badge">★ Roadbook ★</div>
       <h1 class="cover-title">${title}</h1>
-      ${owner?.name ? `<div class="cover-subtitle">Par ${owner.name}</div>` : ''}
       <div class="cover-divider"></div>
+      ${owner?.name ? `<div class="cover-subtitle">Avec ${owner.name}</div>` : ''}
       <div class="cover-dates">${formatDateRange(startDate, endDate)}</div>
       <div class="cover-footer">Mon Petit Roadtrip • roadtrip.harmonixe.fr</div>
     </div>
@@ -975,21 +1002,25 @@ function generateHTML(roadtrip) {
     </div>
     ` : ''}
 
-    <h3 style="font-family:Georgia,'Times New Roman',serif;font-size:18px;color:#1a365d;margin-bottom:12px;">🗺️ Itinéraire</h3>
+    <h3 style="font-family:'Impact','Arial Black',sans-serif;font-size:20px;color:#d4574a;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">🗺️ Itinéraire</h3>
     <ul class="itineraire-list">
-      ${steps.map((s, i) => `
+      ${steps.map((s, i) => {
+        const prev = i > 0 ? steps[i - 1] : null;
+        const routeKm = prev?.routeDistanceMeters ? formatDistance(prev.routeDistanceMeters) : '';
+        const routeDur = prev?.routeDurationSeconds ? formatDuration(prev.routeDurationSeconds) : '';
+        const routeStr = routeKm && routeDur ? ` • ${routeKm} • ${routeDur}` : routeKm || routeDur ? ` • ${routeKm}${routeDur}` : '';
+        const dateLabel = s.startDate ? formatDate(s.startDate) : '';
+        return `
       <li class="itineraire-item">
         <div class="itineraire-day">${i + 1}</div>
         <div class="itineraire-info">
           <div class="itineraire-name">${s.name}</div>
           <div class="itineraire-meta">
-            ${s.location || ''}
-            ${s.routeDistanceMeters ? ' • ' + formatDistance(s.routeDistanceMeters) : ''}
-            ${s.routeDurationSeconds ? ' • ' + formatDuration(s.routeDurationSeconds) : ''}
+            ${dateLabel ? `${dateLabel}${s.location ? ' · ' : ''}` : ''}${s.location || ''}${routeStr}
           </div>
         </div>
       </li>
-      `).join('')}
+      `;}).join('')}
     </ul>
   </div>
 
@@ -1019,9 +1050,19 @@ function generateHTML(roadtrip) {
             <td>Activités</td>
             <td style="text-align:right">${formatMoney(totalActivityCost, mainCurrency)}</td>
           </tr>
+          <tr class="budget-deposit">
+            <td style="color:#8a7a6a;">💳 Acomptes versés</td>
+            <td style="text-align:right;color:#8a7a6a;">${formatMoney(totalDeposits, mainCurrency)}</td>
+          </tr>
+          <tr class="budget-balance">
+            <td style="color:#d4574a;">📅 Reste à payer</td>
+            <td style="text-align:right;color:${totalBalance > 0 ? '#d4574a' : '#22c55e'};font-weight:600;">
+              ${formatMoney(Math.max(totalBalance, 0), mainCurrency)}
+            </td>
+          </tr>
           <tr class="budget-total">
-            <td>Total</td>
-            <td style="text-align:right">${formatMoney(totalAccomPrice + totalActivityCost, mainCurrency)}</td>
+            <td>💰 Budget total</td>
+            <td style="text-align:right">${formatMoney(totalBudget, mainCurrency)}</td>
           </tr>
         </tbody>
       </table>
@@ -1051,152 +1092,318 @@ function generateHTML(roadtrip) {
 </html>`;
 }
 
-// ── Route : GET /api/roadtrips/:roadtripId/roadbook ──────────────────────────
+// ── Helpers pour charger/enrichir un roadtrip ────────────────────────────────
+
+async function loadAndEnrichRoadtrip(roadtripId, userId) {
+  const roadtrip = await prisma.roadtrip.findUnique({
+    where: { id: roadtripId },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      members: {
+        include: {
+          user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        },
+      },
+      steps: {
+        orderBy: { order: 'asc' },
+        include: {
+          accommodations: { orderBy: { checkIn: 'asc' } },
+          activities: { orderBy: { startTime: 'asc' } },
+        },
+      },
+    },
+  });
+
+  if (!roadtrip) throw Object.assign(new Error('Roadtrip non trouvé'), { status: 404 });
+
+  const isOwner = roadtrip.userId === userId;
+  const isMember = roadtrip.members.some(m => m.userId === userId && m.status === 'ACCEPTED');
+  if (!isOwner && !isMember) throw Object.assign(new Error('Accès refusé'), { status: 403 });
+
+  const stepIds = roadtrip.steps.map(s => s.id);
+  const allPhotos = await prisma.photo.findMany({
+    where: { OR: [{ roadtripId }, { stepId: { in: stepIds } }] },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const stepsWithPhotos = roadtrip.steps.map(step => ({
+    ...step,
+    photos: allPhotos.filter(p => p.stepId === step.id),
+  }));
+
+  return {
+    ...roadtrip,
+    steps: stepsWithPhotos,
+    coverPhotoUrl: roadtrip.coverPhotoUrl || allPhotos.find(p => p.isCover)?.url || null,
+  };
+}
+
+/**
+ * Upload un buffer PDF vers Supabase Storage.
+ */
+async function uploadPdfToStorage(buffer, filename) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
+
+  const storagePath = `roadbooks/${Date.now()}_${filename}`;
+  const res = await fetch(`${supabaseUrl}/storage/v1/object/roadbooks/${storagePath}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      'Content-Type': 'application/pdf',
+    },
+    body: buffer,
+  });
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Supabase upload failed: ${detail}`);
+  }
+
+  return {
+    url: `${supabaseUrl}/storage/v1/object/public/roadbooks/${storagePath}`,
+    storagePath,
+  };
+}
+
+/**
+ * Génère le PDF (Puppeteer) à partir du roadtrip enrichi.
+ */
+async function generatePdfFromHTML(html) {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 60000 });
+    await new Promise(r => setTimeout(r, 5000));
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: { top: 0, bottom: 0, left: 0, right: 0 },
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+
+    return Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Génération asynchrone du roadbook (lancée en arrière-plan).
+ */
+async function generateRoadbookJob(roadbookId, roadtrip, enriched) {
+  try {
+    // ⏳ Statut → generating
+    await prisma.roadbook.update({
+      where: { id: roadbookId },
+      data: { status: 'generating' },
+    });
+
+    // 1. Générer le HTML
+    let html = generateHTML(enriched);
+
+    // 2. Redimensionner les photos
+    const photoRegex = /<img[^>]+src="([^"]*supabase\.co[^"]*)"[^>]*class="step-photo"[^>]*>/g;
+    let photoCount = 0;
+    let match;
+    while ((match = photoRegex.exec(html)) !== null) {
+      const full = match[0];
+      const src = match[1];
+      const dataUri = await resizeToDataUri(src);
+      html = html.replace(full, full.replace(src, dataUri));
+      photoCount++;
+    }
+    const coverRegex = /url\('([^']*supabase\.co[^']*)'\)/g;
+    while ((match = coverRegex.exec(html)) !== null) {
+      const url = match[1];
+      const dataUri = await resizeToDataUri(url, 700, 60);
+      html = html.replace(url, dataUri);
+      photoCount++;
+    }
+
+    // 3. Générer le PDF
+    const pdfBuffer = await generatePdfFromHTML(html);
+
+    // 4. Uploader vers Supabase Storage
+    const filename = `roadbook-${roadtrip.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50)}.pdf`;
+    const { url } = await uploadPdfToStorage(pdfBuffer, filename);
+
+    // 5. ✅ Statut → ready
+    await prisma.roadbook.update({
+      where: { id: roadbookId },
+      data: { status: 'ready', fileUrl: url, fileSize: pdfBuffer.length },
+    });
+
+    console.log(`✅ Roadbook généré : ${url} (${pdfBuffer.length} bytes)`);
+  } catch (err) {
+    console.error(`❌ Roadbook #${roadbookId} échec :`, err.message);
+    await prisma.roadbook.update({
+      where: { id: roadbookId },
+      data: { status: 'error', error: err.message },
+    }).catch(() => {});
+  }
+}
+
+// ── Route : GET /api/roadtrips/:roadtripId/roadbook (preview HTML) ───────────
 
 router.get('/:roadtripId/roadbook', auth, async (req, res, next) => {
   try {
     const { roadtripId } = req.params;
     const { preview } = req.query;
-
-    // Vérifier l'accès
     const userId = req.user.userId;
 
-    const roadtrip = await prisma.roadtrip.findUnique({
-      where: { id: roadtripId },
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        members: {
-          include: {
-            user: { select: { id: true, name: true, email: true, avatarUrl: true } },
-          },
-        },
-        steps: {
-          orderBy: { order: 'asc' },
-          include: {
-            accommodations: { orderBy: { checkIn: 'asc' } },
-            activities: { orderBy: { startTime: 'asc' } },
-          },
-        },
+    const enriched = await loadAndEnrichRoadtrip(roadtripId, userId);
+    const html = generateHTML(enriched);
+
+    if (preview === '1') return res.send(html);
+    return res.status(400).json({ error: 'Utilise POST /generate pour générer le PDF ou ?preview=1 pour le HTML' });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ── Route : POST /api/roadtrips/:roadtripId/roadbook/generate ────────────────
+
+router.post('/:roadtripId/roadbook/generate', auth, async (req, res, next) => {
+  try {
+    const { roadtripId } = req.params;
+    const userId = req.user.userId;
+
+    const enriched = await loadAndEnrichRoadtrip(roadtripId, userId);
+
+    // Créer l'enregistrement Roadbook (statut pending)
+    const rb = await prisma.roadbook.create({
+      data: { roadtripId, status: 'pending' },
+    });
+
+    // Lancer la génération en arrière-plan (sans attendre)
+    generateRoadbookJob(rb.id, enriched, enriched).catch(err => {
+      console.error(`[RoadbookJob] Erreur fatale:`, err);
+    });
+
+    res.status(201).json({ id: rb.id, status: 'pending' });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ── Route : GET /api/roadtrips/:roadtripId/roadbook/list ──────────────────────
+
+router.get('/:roadtripId/roadbook/list', auth, async (req, res, next) => {
+  try {
+    const { roadtripId } = req.params;
+    const userId = req.user.userId;
+
+    await loadAndEnrichRoadtrip(roadtripId, userId); // vérifie l'accès
+
+    const list = await prisma.roadbook.findMany({
+      where: { roadtripId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        fileUrl: true,
+        fileSize: true,
+        error: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
-    if (!roadtrip) {
-      return res.status(404).json({ error: 'Roadtrip non trouvé' });
-    }
+    res.json(list);
+  } catch (e) {
+    next(e);
+  }
+});
 
-    // Vérifier que l'utilisateur est owner ou member ACCEPTED
-    const isOwner = roadtrip.userId === userId;
-    const isMember = roadtrip.members.some(
-      m => m.userId === userId && m.status === 'ACCEPTED'
-    );
-    if (!isOwner && !isMember) {
-      return res.status(403).json({ error: 'Accès refusé' });
-    }
+// ── Route : GET /api/roadtrips/:roadtripId/roadbook/download/:roadbookId ─────
 
-    // Récupérer les photos associées
-    const stepIds = roadtrip.steps.map(s => s.id);
-    const allPhotos = await prisma.photo.findMany({
-      where: {
-        OR: [
-          { roadtripId },
-          { stepId: { in: stepIds } },
-        ],
-      },
-      orderBy: { createdAt: 'asc' },
+router.get('/:roadtripId/roadbook/download/:roadbookId', auth, async (req, res, next) => {
+  try {
+    const { roadtripId, roadbookId } = req.params;
+    const userId = req.user.userId;
+
+    await loadAndEnrichRoadtrip(roadtripId, userId); // vérifie l'accès
+
+    const rb = await prisma.roadbook.findFirst({
+      where: { id: roadbookId, roadtripId },
     });
 
-    // Associer les photos aux étapes
-    const stepsWithPhotos = roadtrip.steps.map(step => ({
-      ...step,
-      photos: allPhotos.filter(p => p.stepId === step.id),
-    }));
-
-    const enrichedRoadtrip = {
-      ...roadtrip,
-      steps: stepsWithPhotos,
-      coverPhotoUrl: roadtrip.coverPhotoUrl || allPhotos.find(p => p.isCover)?.url || null,
-    };
-
-    // Générer le HTML
-    let html = generateHTML(enrichedRoadtrip);
-
-    // Mode preview : retourner le HTML
-    if (preview === '1') {
-      return res.send(html);
+    if (!rb) return res.status(404).json({ error: 'Roadbook non trouvé' });
+    if (rb.status !== 'ready' || !rb.fileUrl) {
+      return res.status(400).json({ error: `Roadbook non disponible (statut: ${rb.status})` });
     }
 
-    // Redimensionner UNIQUEMENT les photos (pas les cartes Google Maps qui sont déjà optimisées)
-    console.log(`🖼️ Redimensionnement des photos pour le PDF...`);
-    const photoRegex = /<img[^>]+src="([^"]*supabase\.co[^"]*)"[^>]*class="step-photo"[^>]*>/g;
-    let photoMatch;
-    let photoCount = 0;
-    while ((photoMatch = photoRegex.exec(html)) !== null) {
-      const full = photoMatch[0];
-      const src = photoMatch[1];
-      const dataUri = await resizeToDataUri(src);
-      html = html.replace(full, full.replace(src, dataUri));
-      photoCount++;
-    }
-    // Redimensionner aussi l'image de couverture (background-image)
-    const coverRegex = /url\('([^']*supabase\.co[^']*)'\)/g;
-    let coverMatch;
-    while ((coverMatch = coverRegex.exec(html)) !== null) {
-      const url = coverMatch[1];
-      const dataUri = await resizeToDataUri(url, 700, 60);
-      html = html.replace(url, dataUri);
-      photoCount++;
-    }
-    console.log(`✅ ${photoCount} photo(s) redimensionnée(s)`);
+    // Proxy : télécharger depuis Supabase et renvoyer
+    const resp = await fetch(rb.fileUrl);
+    if (!resp.ok) throw new Error('Impossible de récupérer le PDF depuis le stockage');
 
-    // Générer le PDF avec Puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-      ],
+    const buffer = Buffer.from(await resp.arrayBuffer());
+    const filename = `roadbook-${roadtripId.slice(0, 8)}.pdf`;
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length,
     });
 
-    try {
-      const page = await browser.newPage();
+    res.end(buffer);
+  } catch (e) {
+    next(e);
+  }
+});
 
-      // Charger le HTML avec timeout long pour les images Google Maps
-      await page.setContent(html, {
-        waitUntil: 'networkidle0',
-        timeout: 60000,
-      });
+/**
+ * Supprime un fichier du bucket Supabase roadbooks.
+ */
+async function deleteFromStorage(storagePath) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey || !storagePath) return;
+  await fetch(`${supabaseUrl}/storage/v1/object/roadbooks/${storagePath}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${serviceKey}` },
+  }).catch(() => {});
+}
 
-      // Laisser le temps aux images Google Maps de finir de charger
-      await new Promise(r => setTimeout(r, 5000));
+// ── Route : DELETE /api/roadtrips/:roadtripId/roadbook/:roadbookId ──────────────
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        margin: { top: 0, bottom: 0, left: 0, right: 0 },
-        printBackground: true,
-        preferCSSPageSize: true,
-      });
+router.delete('/:roadtripId/roadbook/:roadbookId', auth, async (req, res, next) => {
+  try {
+    const { roadtripId, roadbookId } = req.params;
+    const userId = req.user.userId;
 
-      // S'assurer que c'est un vrai Buffer (Puppeteer peut retourner Uint8Array)
-      const pdfBinary = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
+    await loadAndEnrichRoadtrip(roadtripId, userId); // vérifie l'accès
 
-      const filename = `roadbook-${roadtrip.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50)}.pdf`;
+    const rb = await prisma.roadbook.findFirst({
+      where: { id: roadbookId, roadtripId },
+    });
 
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': pdfBinary.length,
-      });
+    if (!rb) return res.status(404).json({ error: 'Roadbook non trouvé' });
 
-      res.end(pdfBinary);
-    } finally {
-      await browser.close();
+    // Supprimer le fichier Supabase si présent
+    if (rb.fileUrl) {
+      const storagePath = rb.fileUrl.split('/').slice(-2).join('/');
+      await deleteFromStorage(storagePath);
     }
+
+    await prisma.roadbook.delete({ where: { id: roadbookId } });
+
+    res.status(204).send();
   } catch (e) {
     next(e);
   }
 });
 
 module.exports = router;
-module.exports.generateHTML = generateHTML;

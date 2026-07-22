@@ -78,6 +78,7 @@ model Roadtrip {
   steps         Step[]
   members       RoadtripMember[]
   todoitems     TodoItem[]
+  roadbooks     Roadbook[]
 
   @@map("roadtrips")
 }
@@ -225,6 +226,20 @@ model Photo {
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("photos")
+}
+
+model Roadbook {
+  id         String   @id @default(cuid())
+  roadtripId String
+  status     String   @default("pending") // pending | generating | ready | error
+  fileUrl    String?
+  fileSize   Int?
+  error      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  roadtrip   Roadtrip @relation(fields: [roadtripId], references: [id], onDelete: Cascade)
+
+  @@map("roadbooks")
 }
 
 model Document {

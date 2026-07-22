@@ -17,6 +17,8 @@ import CollaboratorsScreen from '../screens/CollaboratorsScreen';
 import RoadtripSettingsScreen from '../screens/RoadtripSettingsScreen';
 import RoadtripGeneralInfoScreen from '../screens/RoadtripGeneralInfoScreen';
 import TodoListScreen from '../screens/TodoListScreen';
+import RoadbookScreen from '../screens/RoadbookScreen';
+import RoadbookPreviewScreen from '../screens/RoadbookPreviewScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -105,6 +107,16 @@ export default function AppNavigator() {
               name="TodoList"
               component={TodoListScreen}
               options={{ title: 'Todo list', headerShown: true }}
+            />
+            <Stack.Screen
+              name="Roadbook"
+              component={RoadbookScreen}
+              options={{ title: 'Roadbook', headerShown: true }}
+            />
+            <Stack.Screen
+              name="RoadbookPreview"
+              component={RoadbookPreviewScreen}
+              options={{ title: 'Roadbook', headerShown: true }}
             />
           </>
         )}

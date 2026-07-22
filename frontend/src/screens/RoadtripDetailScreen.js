@@ -1158,7 +1158,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     navigation.navigate('EditStep', { step });
   }, [navigation, steps]);
 
-  // Fonction de recherche par catégorie (clic bouton)
+  // ─── Recherche par catégorie (clic bouton) ─────────────────────────────────
   const handleCategoryPress = useCallback(async (cat) => {
     const isActive = activeOverlays[cat.key];
 
@@ -2045,6 +2045,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 <View style={styles.menuItemContent}>
                   <Text style={styles.menuItemLabel}>Todo list</Text>
                   <Text style={styles.menuItemDesc}>Gérer les tâches du roadtrip</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Roadbook */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('Roadbook', { roadtripId: id, roadtripTitle: roadtrip?.title });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>📖</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Roadbook</Text>
+                  <Text style={styles.menuItemDesc}>Générer et consulter les roadbooks PDF</Text>
                 </View>
               </TouchableOpacity>
 
