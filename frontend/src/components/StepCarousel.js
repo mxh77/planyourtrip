@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_WIDTH = 230;
+const CARD_WIDTH = 255;
 const CONNECTOR_WIDTH = 48;
 const CARD_HEIGHT = 175;
 // Distance réelle entre le début d'une carte et le début de la suivante
