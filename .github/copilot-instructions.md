@@ -363,3 +363,53 @@ main
 - `2026-03-17_180852_chore-corriger-save-context-sh-et-ajouter-horodata.md` — Contexte — chore: corriger save-context.sh et ajouter horodatage dans les noms de fichiers de contexte
 <!-- CONTEXT-AUTO:END -->
 
+---
+
+## 🧠 Leçons apprises — À NE PLUS REPRODUIRE
+
+### Checklist ajout d'une nouvelle colonne dans une table
+Avant de modifier ou ajouter un champ dans une table, vérifier SYSTÉMATIQUEMENT ces 5 fichiers :
+
+| # | Fichier | Vérifier |
+|---|---------|----------|
+| 1 | `backend/prisma/schema.prisma` | Colonne déclarée côté PostgreSQL |
+| 2 | `frontend/src/powersync/schema.js` | **Obligatoire** — colonne dans le schéma PowerSync (source de vérité locale) |
+| 3 | `frontend/src/powersync/localWrite.js` | Colonne dans l'UPDATE SQL |
+| 4 | `backend/src/routes/*.js` | Colonne dans les routes PUT/PATCH correspondantes |
+| 5 | `frontend/src/powersync/db.js` — `runMigrations()` | Migration ALTER TABLE (backup) |
+
+### Règles strictes
+
+1. **TOUJOURS importer `useEffect`** quand tu ajoutes un `useEffect` dans un composant. Ne jamais supposer qu'il est déjà importé.
+
+2. **`JSON.parse` doit TOUJOURS être dans un try-catch.** Les données peuvent être `null`, malformées, ou double-encodées. Un `JSON.parse` qui plante hors try-catch fait planter tout le rendu.
+
+3. **`...spread` sur une variable inconnue = danger.** Si `existingSettings` peut être `null` (car `JSON.parse('null')` renvoie `null`), le spread `...null` plante. Toujours vérifier que la variable est un objet avant de la spread.
+
+4. **Ne JAMAIS ajouter `forceSyncSchema`** au démarrage. Chaque ALTER TABLE dans les migrations déclenche déjà `powersync_replace_schema` automatiquement. En rajouter une en plus = 14 reconstructions de base à la suite = PowerSync asphyxié.
+
+5. **Le pattern `if (data && !initialized)` ne rattrape pas les mises à jour tardives de PowerSync.** Si PowerSync reçoit les données après le premier rendu, les champs ne sont pas mis à jour. Utiliser un `useEffect` avec la bonne dépendance à la place.
+
+6. **Toute fonction `async` qui construit un payload doit avoir le payload dans un try-catch.** Une erreur synchrone dans la construction (JSON.parse, spread, etc.) avant le try-catch fait que `setLoading(false)` n'est jamais appelé → l'utilisateur reste bloqué sur un spinner infini.
+
+7. **Modifier l'emplacement d'un bouton ne résout pas un bug de logique.** Si la sauvegarde ne marche pas, le problème n'est pas dans le header natif mais dans la fonction appelée.
+
+8. **PowerSync double-encode les JSON stockés.** Si un champ JSON est stocké en SQLite via `JSON.stringify(obj)`, PowerSync le re-sérialise lors du re-sync. Au parse, il faut DEUX `JSON.parse` consécutifs pour obtenir l'objet. Appliquer ce pattern PARTOUT où on lit `roadtrip.settings` (ou tout champ similaire).
+
+### Architecture PowerSync — Rappel
+```
+schema.js (définit les colonnes locales)
+    ↓
+PowerSync crée les tables SQLite locales
+    ↓
+localWrite.js écrit via db.execute() → PowerSync tracke la mutation
+    ↓
+connector.js uploadData() → PUT/PATCH vers le backend
+    ↓
+routes backend → Prisma → PostgreSQL
+    ↓
+PowerSync re-sync → retour au client
+```
+
+Le maillon le plus souvent oublié : **`schema.js`**. Sans lui, la colonne n'existe pas dans la DB locale même si elle est dans PostgreSQL.
+

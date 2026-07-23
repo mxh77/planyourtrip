@@ -44,6 +44,7 @@ export async function runMigrations() {
     `ALTER TABLE roadtrips ADD COLUMN fuelPricePerL REAL`,
     `ALTER TABLE steps ADD COLUMN routeDistanceMeters INTEGER`,
     `ALTER TABLE steps ADD COLUMN routeDurationSeconds INTEGER`,
+    `ALTER TABLE roadtrips ADD COLUMN settings TEXT`,
     `CREATE TABLE IF NOT EXISTS expenses (
       id TEXT PRIMARY KEY,
       roadtripId TEXT NOT NULL,

@@ -2,7 +2,7 @@
  * Écritures offline-first dans SQLite local via PowerSync.
  * PowerSync gère la queue CRUD et appelle uploadData() quand le réseau revient.
  */
-import { db, runMigrations } from './db';
+import { db } from './db';
 
 // Génère un ID type CUID localement (sans dépendance externe)
 export const generateId = () =>
@@ -48,6 +48,7 @@ export async function localUpdateRoadtrip(id, data) {
   if (data.fuelConsumption !== undefined){fields.push('fuelConsumption = ?');values.push(data.fuelConsumption); }
   if (data.fuelType !== undefined)     { fields.push('fuelType = ?');     values.push(data.fuelType); }
   if (data.fuelPricePerL !== undefined){ fields.push('fuelPricePerL = ?');values.push(data.fuelPricePerL); }
+  if (data.settings !== undefined)    { fields.push('settings = ?');    values.push(JSON.stringify(data.settings)); }
   fields.push('updatedAt = ?');
   values.push(now(), id);
 
@@ -59,22 +60,9 @@ export async function localUpdateRoadtrip(id, data) {
     await db.execute(sql, values);
     console.log('[localWrite] ✅ UPDATE OK');
   } catch (e) {
+    // Propager l'erreur telle quelle — les migrations sont gérées au démarrage (db.js)
     console.warn('[localWrite] ❌ UPDATE error:', e.message);
-    // Si la colonne n'existe pas → créer la colonne manquante et réessayer
-    if (e.message?.includes('no such column') || e.message?.includes('has no column')) {
-      console.log('[localWrite] ⚠️ Colonne manquante, tentative de migration...');
-      try {
-        await runMigrations();
-        console.log('[localWrite] ✅ Migration OK, retry UPDATE...');
-        await db.execute(sql, values);
-        console.log('[localWrite] ✅ UPDATE OK après migration');
-      } catch (e2) {
-        console.error('[localWrite] ❌ Échec total:', e2.message);
-        throw e2;
-      }
-    } else {
-      throw e;
-    }
+    throw e;
   }
 }
 
@@ -163,7 +151,7 @@ export async function localCreateActivity({
 }
 
 export async function localUpdateActivity(id, data) {
-  const allowed = ['type', 'name', 'location', 'latitude', 'longitude', 'parkingAddress', 'parkingLatitude', 'parkingLongitude', 'isDeparture', 'isArrival', 'startTime', 'endTime', 'bookingRef', 'bookingUrl', 'cost', 'depositPaid', 'currency', 'notes', 'status', 'order'];
+  const allowed = ['stepId', 'type', 'name', 'location', 'latitude', 'longitude', 'parkingAddress', 'parkingLatitude', 'parkingLongitude', 'isDeparture', 'isArrival', 'startTime', 'endTime', 'bookingRef', 'bookingUrl', 'cost', 'depositPaid', 'currency', 'notes', 'status', 'order'];
   const fields = [];
   const values = [];
   for (const key of allowed) {
@@ -239,7 +227,7 @@ export async function localCreateAccommodation({
 }
 
 export async function localUpdateAccommodation(id, data) {
-  const allowed = ['type', 'name', 'address', 'latitude', 'longitude', 'isDeparture', 'isArrival', 'checkIn', 'checkOut', 'bookingRef', 'bookingUrl', 'pricePerNight', 'totalPrice', 'depositPaid', 'currency', 'amenities', 'notes', 'status']; 
+  const allowed = ['stepId', 'type', 'name', 'address', 'latitude', 'longitude', 'isDeparture', 'isArrival', 'checkIn', 'checkOut', 'bookingRef', 'bookingUrl', 'pricePerNight', 'totalPrice', 'depositPaid', 'currency', 'amenities', 'notes', 'status']; 
   const fields = [];
   const values = [];
   for (const key of allowed) {

@@ -4,6 +4,8 @@
 const express      = require('express');
 const { PrismaClient } = require('@prisma/client');
 const aiSvc        = require('../services/openai');
+const timeChecker  = require('../services/timeCoherenceChecker');
+const auth         = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -192,6 +194,23 @@ router.post('/generate-description', async (req, res, next) => {
     });
     res.json({ description: result.content });
   } catch (e) { next(e); }
+});
+
+// ── POST /api/ai/check-coherence ─────────────────────────────────────────────
+// Analyse la cohérence temporelle d'un roadtrip (chevauchements, trous, etc.)
+// Body: { roadtripId, thresholds?: { gapAfterArrival, gapBeforeDeparture, gapBetweenActivities, maxArrivalHour } }
+
+router.post('/check-coherence', auth, async (req, res, next) => {
+  try {
+    const { roadtripId, thresholds } = req.body;
+    if (!roadtripId) return res.status(400).json({ error: 'roadtripId requis' });
+
+    const result = await timeChecker.checkTimeCoherence(roadtripId, thresholds || {});
+    res.json(result);
+  } catch (e) {
+    if (e.status === 404) return res.status(404).json({ error: e.message });
+    next(e);
+  }
 });
 
 module.exports = router;

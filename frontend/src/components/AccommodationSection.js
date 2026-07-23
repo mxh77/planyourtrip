@@ -8,6 +8,7 @@ import { useQuery } from '@powersync/react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
+import { db } from '../powersync/db';
 import API_URL from '../api/config';
 import LocationPicker from './LocationPicker';
 import DateTimePickerModal from './DateTimePickerModal';
@@ -15,8 +16,11 @@ import {
   localCreateAccommodation,
   localUpdateAccommodation,
   localDeleteAccommodation,
+  localUpdateStep,
 } from '../powersync/localWrite';
 import { validateAccommodationDates } from '../utils/dateValidation';
+import CoherenceAlertModal from './CoherenceAlertModal';
+import { localCheckCoherence } from '../powersync/coherenceCheck';
 import DocumentSection from './DocumentSection';
 
 const DEF_RADIUS = 5000;
@@ -237,6 +241,8 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [coherenceIssues, setCoherenceIssues] = useState(null);
+  const [pendingCorrectionItem, setPendingCorrectionItem] = useState(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [dtPickerVisible, setDtPickerVisible] = useState(false);
   const [dtPickerTarget, setDtPickerTarget] = useState(null); // 'checkin' | 'checkout'
@@ -362,6 +368,77 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
       } else {
         await localCreateAccommodation({ ...data, stepId, roadtripId }, userId);
       }
+
+      // Synchroniser l'arrivalTime/departureTime de l'étape avec le min des items
+      try {
+        const accRows = await db.getAll(
+          'SELECT checkIn, checkOut FROM accommodations WHERE stepId = ?',
+          [stepId]
+        );
+        const actRows = await db.getAll(
+          'SELECT startTime, endTime FROM activities WHERE stepId = ?',
+          [stepId]
+        );
+        const allItems = [...(accRows ?? []), ...(actRows ?? [])];
+        const extractTime = (str) => {
+          if (!str) return null;
+          if (str.includes('T')) return str.split('T')[1]?.slice(0, 5) || null;
+          if (str.includes(' ')) return str.split(' ')[1]?.slice(0, 5) || null;
+          return /^\d{2}:\d{2}/.test(str) ? str.slice(0, 5) : null;
+        };
+        let minIn = null, maxOut = null;
+        for (const item of allItems) {
+          const d = item.checkIn || item.startTime;
+          if (d && (!minIn || d < minIn)) minIn = d;
+        }
+        for (const item of allItems) {
+          const d = item.checkOut || item.endTime;
+          if (d && (!maxOut || d > maxOut)) maxOut = d;
+        }
+        const payload = {};
+        if (minIn) {
+          const t = extractTime(minIn);
+          if (t) payload.arrivalTime = t;
+        } else {
+          payload.arrivalTime = '10:00';
+        }
+        if (maxOut) {
+          const t = extractTime(maxOut);
+          if (t) payload.departureTime = t;
+        } else {
+          payload.departureTime = payload.arrivalTime;
+        }
+        await localUpdateStep(stepId, payload);
+      } catch (e) {
+        console.warn('[AccomSection] ⚠️ Sync step times:', e.message);
+      }
+
+      // Vérifier la cohérence LOCALEMENT — filtrer sur l'étape courante uniquement
+      const allIssues = await localCheckCoherence(roadtripId, db);
+      const localIssues = allIssues.filter(i => i.stepId === stepId);
+      if (localIssues.length > 0) {
+        const savedData = data;
+        setPendingCorrectionItem({
+          id: editingId,
+          type: savedData.type,
+          name: savedData.name,
+          address: savedData.address,
+          latitude: savedData.latitude,
+          longitude: savedData.longitude,
+          checkIn: savedData.checkIn || stepStartDate || '',
+          checkOut: savedData.checkOut || stepEndDate || '',
+          pricePerNight: savedData.pricePerNight,
+          bookingRef: savedData.bookingRef,
+          totalPrice: savedData.totalPrice,
+          depositPaid: savedData.depositPaid,
+          currency: savedData.currency,
+          amenities: savedData.amenities,
+          notes: savedData.notes,
+        });
+        setModalVisible(false);
+        setCoherenceIssues(localIssues);
+      }
+
       setModalVisible(false);
     } catch (err) {
       console.error('[AccomSection] Erreur sauvegarde:', err);
@@ -839,6 +916,33 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
           </Pressable>
         </View>
       </Modal>
+
+      {coherenceIssues && (
+        <CoherenceAlertModal
+          issues={coherenceIssues}
+          onClose={() => { setCoherenceIssues(null); setPendingCorrectionItem(null); }}
+          onFix={() => {
+            if (pendingCorrectionItem) openEdit(pendingCorrectionItem);
+            setCoherenceIssues(null);
+            setPendingCorrectionItem(null);
+          }}
+          onApplySuggestion={(suggestedTime, issue) => {
+            const nowStr = new Date().toISOString();
+            const stepId = issue.stepId;
+            const fullTime = stepStartDate ? `${stepStartDate} ${suggestedTime}` : suggestedTime;
+            Promise.all([
+              db.execute('UPDATE steps SET "arrivalTime" = ?, "updatedAt" = ? WHERE id = ?', [suggestedTime, nowStr, stepId]),
+              pendingCorrectionItem?.id
+                ? db.execute('UPDATE accommodations SET "checkIn" = ?, "updatedAt" = ? WHERE id = ?', [fullTime, nowStr, pendingCorrectionItem.id])
+                : Promise.resolve(),
+            ]).then(() => {
+              console.log('[Suggestion] Arrivée →', suggestedTime, '→ checkIn', fullTime);
+              setCoherenceIssues(null);
+              setPendingCorrectionItem(null);
+            }).catch(e => console.warn('[Suggestion]', e));
+          }}
+        />
+      )}
     </View>
   );
 }

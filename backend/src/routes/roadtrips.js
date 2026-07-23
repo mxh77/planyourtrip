@@ -105,7 +105,7 @@ router.get('/:id', async (req, res) => {
 // Création : l'utilisateur devient owner. Mise à jour : owner uniquement.
 router.put('/:id', async (req, res) => {
   const userId = req.user.userId;
-  const { title, startDate, endDate, coverPhotoUrl, status } = req.body;
+  const { title, startDate, endDate, coverPhotoUrl, status, settings } = req.body;
 
   // Si le roadtrip existe déjà, vérifier que l'appelant est bien l'owner
   const existing = await prisma.roadtrip.findUnique({ where: { id: req.params.id } });
@@ -122,6 +122,7 @@ router.put('/:id', async (req, res) => {
       endDate: endDate ? new Date(endDate) : null,
       coverPhotoUrl: coverPhotoUrl || null,
       status: status || 'DRAFT',
+      settings: settings || undefined,
       userId,
     },
     update: {
@@ -130,6 +131,7 @@ router.put('/:id', async (req, res) => {
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
       ...(coverPhotoUrl !== undefined && { coverPhotoUrl }),
       ...(status !== undefined && { status }),
+      ...(settings !== undefined && { settings }),
     },
   });
 
@@ -138,7 +140,7 @@ router.put('/:id', async (req, res) => {
 
 // PATCH /api/roadtrips/:id — modification partielle (EDITOR+)
 router.patch('/:id', checkMemberRole('EDITOR'), async (req, res) => {
-  const { title, startDate, endDate, coverPhotoUrl, status, budgetTarget, fuelConsumption, fuelType, fuelPricePerL } = req.body;
+  const { title, startDate, endDate, coverPhotoUrl, status, budgetTarget, fuelConsumption, fuelType, fuelPricePerL, settings } = req.body;
 
   const roadtrip = await prisma.roadtrip.update({
     where: { id: req.params.id },
@@ -152,6 +154,7 @@ router.patch('/:id', checkMemberRole('EDITOR'), async (req, res) => {
       ...(fuelConsumption !== undefined && { fuelConsumption }),
       ...(fuelType !== undefined && { fuelType }),
       ...(fuelPricePerL !== undefined && { fuelPricePerL }),
+      ...(settings !== undefined && { settings }),
     },
   });
 

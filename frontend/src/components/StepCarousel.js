@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Dimensions,
   Image,
+  Linking,
+  Modal,
 } from 'react-native';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -56,6 +58,40 @@ function formatTime(t) {
   return null;
 }
 
+// ── Statut du trajet entre deux étapes ─────────────────────────────────────
+// Retourne { color, label, status } pour le code couleur du connecteur
+function getTravelStatus(prevStep, nextStep) {
+  const duration = nextStep?.durationFromPrev || prevStep?.durationFromPrev;
+  if (!duration || duration <= 0) return { color: '#4ade80', label: '', status: 'unknown' };
+
+  const minutes = duration;
+  const hours = minutes / 60;
+
+  // Heure de départ (departureTime ou 10h par défaut) — inclut les minutes
+  const depMatch = prevStep?.departureTime?.match(/^(\d{1,2}):(\d{2})/);
+  const depHour = depMatch ? parseInt(depMatch[1]) + parseInt(depMatch[2]) / 60 : 10;
+  // Heure d'arrivée souhaitée (arrivalTime ou 20h par défaut) — inclut les minutes
+  const arrMatch = nextStep?.arrivalTime?.match(/^(\d{1,2}):(\d{2})/);
+  const arrHour = arrMatch ? parseInt(arrMatch[1]) + parseInt(arrMatch[2]) / 60 : 20;
+
+  const availableMinutes = (arrHour - depHour) * 60;
+
+  // 🟢 OK : route confortable
+  if (minutes <= availableMinutes && minutes <= 240) {
+    return { color: '#4ade80', label: '✓', status: 'good' };
+  }
+  // 🟡 Long : route > 4h mais faisable
+  if (minutes <= availableMinutes && minutes <= 360) {
+    return { color: '#facc15', label: '⚠', status: 'moderate' };
+  }
+  // 🟠 Très long : route > 6h
+  if (minutes > 360 && minutes <= availableMinutes) {
+    return { color: '#fb923c', label: '⚠', status: 'long' };
+  }
+  // 🔴 Trop long : dépasse le temps disponible
+  return { color: '#ef4444', label: '✗', status: 'tight' };
+}
+
 /**
  * StepCarousel — bandeau horizontal d'étapes défilable en bas de l'écran.
  * Met à jour la carte au scroll via onScrollIndexChange.
@@ -73,11 +109,16 @@ export default function StepCarousel({
   selectedIndex,
   onEditStep,
   onScrollIndexChange,
+  onConnectorPress,
 }) {
   const scrollRef = useRef(null);
   const isMomentum = useRef(false);
   const lastReportedIndex = useRef(selectedIndex);
   const isExternalUpdate = useRef(false);
+  const [travelModal, setTravelModal] = useState(null); // { prevStep, nextStep, distance, duration, travelStatus, mapsUrl }
+
+  // Fermer la modal
+  const closeTravelModal = useCallback(() => setTravelModal(null), []);
 
   // Positions exactes de snap pour chaque carte
   const snapOffsets = useMemo(
@@ -186,18 +227,41 @@ export default function StepCarousel({
           // ── Connecteur (toujours présent pour le snap, vide si pas de distance) ──
           if (index > 0) {
             const connColor = ORDER_COLORS[(index - 1) % ORDER_COLORS.length];
+            const travelStatus = getTravelStatus(steps[index - 1], step);
             elements.push(
-              <View key={`conn-${step.id}`} style={styles.connectorWrapper}>
+              <TouchableOpacity
+                key={`conn-${step.id}`}
+                style={styles.connectorWrapper}
+                activeOpacity={0.6}
+                onPress={() => {
+                  if (!onConnectorPress) return;
+                  const prev = steps[index - 1];
+                  const nxt = step;
+                  const prevLat = prev?.latitude || prev?.departureLatitude;
+                  const prevLng = prev?.longitude || prev?.departureLongitude;
+                  const origin = prevLat && prevLng ? `${prevLat},${prevLng}` : (prev?.location || '');
+                  const dest = nxt?.latitude && nxt?.longitude
+                    ? `${nxt.latitude},${nxt.longitude}`
+                    : (nxt?.location || '');
+                  const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&travelmode=driving`;
+
+                  if (travelStatus.status === 'tight' || travelStatus.status === 'long' || travelStatus.status === 'moderate') {
+                    setTravelModal({ prevStep: prev, nextStep: nxt, distance, duration, travelStatus, mapsUrl });
+                  } else {
+                    Linking.openURL(mapsUrl);
+                  }
+                }}
+              >
                 {/* Trait de liaison vertical */}
                 <View style={[styles.connectorLine, { backgroundColor: connColor }]} />
                 {distance > 0 && prevStep ? (
                   <>
-                    {/* Pastille ronde avec 🚐 */}
-                    <View style={[styles.connectorDot, { borderColor: connColor }]}>
+                    {/* Pastille ronde 🚐 avec code couleur */}
+                    <View style={[styles.connectorDot, { borderColor: travelStatus.color }]}>
                       <Text style={styles.connectorIcon}>🚐</Text>
                     </View>
                     {/* Infos distance */}
-                    <Text style={styles.connectorDist}>
+                    <Text style={[styles.connectorDist, { color: travelStatus.color }]}>
                       {distance} km
                     </Text>
                     {duration > 0 && (
@@ -212,7 +276,7 @@ export default function StepCarousel({
                     <View style={styles.connectorEmptyDot} />
                   </>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           }
 
@@ -319,7 +383,95 @@ export default function StepCarousel({
           return elements;
         })}
       </ScrollView>
+
+      {/* ─── MODAL TRAJET ─────────────────────────────────────────────── */}
+      <Modal visible={!!travelModal} transparent animationType="fade" onRequestClose={closeTravelModal}>
+        {travelModal && <TravelOptionsModal data={travelModal} onClose={closeTravelModal} onNavigate={onConnectorPress} />}
+      </Modal>
     </View>
+  );
+}
+
+// ─── Modal d'options pour un trajet ─────────────────────────────────────────
+function TravelOptionsModal({ data, onClose, onNavigate }) {
+  const { prevStep, nextStep, distance, duration, travelStatus, mapsUrl } = data;
+
+  const depStr = prevStep?.departureTime || '10:00';
+  const routeStr = duration >= 60
+    ? `${Math.floor(duration / 60)}h${String(Math.round(duration % 60)).padStart(2, '0')}`
+    : `${Math.round(duration)}min`;
+
+  // Calculer les créneaux d'arrivée (triés du plus tôt au plus tard)
+  const depMatch = prevStep?.departureTime?.match(/^(\d{1,2}):(\d{2})/);
+  const depHour = depMatch ? parseInt(depMatch[1]) + parseInt(depMatch[2]) / 60 : 10;
+  const minArrivalMins = Math.round(depHour * 60 + duration);
+  const roundTo30 = (mins) => Math.ceil(mins / 30) * 30;
+  const slots = [
+    roundTo30(minArrivalMins),
+    roundTo30(minArrivalMins) + 30,
+    roundTo30(minArrivalMins) + 60,
+  ];
+
+  const fmtTime = (mins) => {
+    const h = Math.floor((mins % 1440) / 60);
+    const m = mins % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
+
+  return (
+    <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
+      <View style={styles.modalSheet}>
+        {/* Titre */}
+        <View style={styles.modalHandleRow}>
+          <View style={styles.modalHandle} />
+        </View>
+        <Text style={styles.modalTitle}>
+          {travelStatus.status === 'tight' ? '⏱️ Trajet trop serré' : '🚗 Long trajet'}
+        </Text>
+        <Text style={styles.modalSubtitle}>
+          {prevStep?.name || 'Départ'} → {nextStep?.name || 'Arrivée'}
+        </Text>
+        <View style={styles.modalRouteRow}>
+          <Text style={styles.modalRouteText}>🕐 {depStr} · {routeStr}</Text>
+        </View>
+
+        {/* Créneaux d'arrivée */}
+        <Text style={styles.modalSectionLabel}>AJUSTER L'ARRIVÉE</Text>
+        {slots.map((mins, idx) => {
+          const time = fmtTime(mins);
+          const isMin = idx === 0;
+          return (
+            <TouchableOpacity
+              key={time}
+              style={styles.modalSlotBtn}
+              onPress={() => {
+                onNavigate?.({ nextStep, arrivalTime: time });
+                onClose();
+              }}
+            >
+              <View style={[styles.modalSlotDot, isMin && styles.modalSlotDotMin]} />
+              <Text style={styles.modalSlotText}>
+                {isMin ? '⭐' : '✅'} Arrivée à <Text style={styles.modalSlotTime}>{time}</Text>
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* Google Maps */}
+        <Text style={[styles.modalSectionLabel, { marginTop: 12 }]}>NAVIGATION</Text>
+        <TouchableOpacity
+          style={styles.modalSlotBtn}
+          onPress={() => { Linking.openURL(mapsUrl); onClose(); }}
+        >
+          <Text style={styles.modalSlotText}>📍 Google Maps</Text>
+        </TouchableOpacity>
+
+        {/* Annuler */}
+        <TouchableOpacity style={styles.modalCancelBtn} onPress={onClose}>
+          <Text style={styles.modalCancelText}>Annuler</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -566,5 +718,100 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.08)',
     marginBottom: 2,
+  },
+
+  // ─── Modal trajet ────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#1A1A2E',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 12,
+  },
+  modalHandleRow: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F2EFE8',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: 'rgba(242,239,232,0.6)',
+    marginBottom: 8,
+  },
+  modalRouteRow: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginBottom: 20,
+    alignSelf: 'flex-start',
+  },
+  modalRouteText: {
+    fontSize: 13,
+    color: 'rgba(242,239,232,0.7)',
+  },
+  modalSectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(242,239,232,0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  modalSlotBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 6,
+  },
+  modalSlotDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(242,239,232,0.15)',
+    marginRight: 10,
+  },
+  modalSlotDotMin: {
+    backgroundColor: '#E8A435',
+  },
+  modalSlotText: {
+    fontSize: 15,
+    color: '#F2EFE8',
+  },
+  modalSlotTime: {
+    fontWeight: '700',
+    color: '#E8A435',
+  },
+  modalCancelBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+  },
+  modalCancelText: {
+    fontSize: 15,
+    color: 'rgba(242,239,232,0.5)',
+    fontWeight: '600',
   },
 });

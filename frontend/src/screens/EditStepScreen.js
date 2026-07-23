@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef } from 'react';
+import React, { useState, useLayoutEffect, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, Modal,
@@ -19,6 +19,9 @@ import AccommodationSection from '../components/AccommodationSection';
 import ActivitySection from '../components/ActivitySection';
 import { useRoadtripSettings } from '../hooks/useRoadtripSettings';
 import { validateStepDates } from '../utils/dateValidation';
+import { db } from '../powersync/db';
+import { localCheckCoherence } from '../powersync/coherenceCheck';
+import CoherenceAlertModal from '../components/CoherenceAlertModal';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -115,6 +118,8 @@ export default function EditStepScreen({ route, navigation }) {
     if (minDt) {
       const { date, time } = splitDt(minDt);
       if (date) dispStartDate = date;
+      // Toujours dériver l'affichage depuis les items (réactifs PowerSync)
+      // L'arrivalTime de l'étape est mis à jour en base par AccommodationSection.handleSave
       dispArrivalTime = time ?? FORCED_DEFAULT_TIME;
     } else {
       dispArrivalTime = FORCED_DEFAULT_TIME;
@@ -135,6 +140,7 @@ export default function EditStepScreen({ route, navigation }) {
   // Photo action menu
   const [photoMenuVisible, setPhotoMenuVisible] = useState(false);
   const [menuPhoto, setMenuPhoto] = useState(null);
+  const [coherenceIssues, setCoherenceIssues] = useState(null);
 
   const openPhotoMenu = (photo) => {
     setMenuPhoto(photo);
@@ -264,6 +270,42 @@ export default function EditStepScreen({ route, navigation }) {
       Alert.alert('Dates incohérentes', dateErrors.join('\n'));
       return;
     }
+    // Calculer les heures effectives depuis les items si l'étape en a
+    // (règle : l'étape se cale sur l'horaire le plus tôt de ses items)
+    let effectiveArrival = dispArrivalTime;
+    let effectiveDeparture = dispDepartureTime;
+    if (hasItems) {
+      const allItems = [...acs, ...acts];
+      const extractTime = (str) => {
+        if (!str) return null;
+        if (str.includes('T')) return str.split('T')[1]?.slice(0, 5) || null;
+        if (str.includes(' ')) return str.split(' ')[1]?.slice(0, 5) || null;
+        return /^\d{2}:\d{2}/.test(str) ? str.slice(0, 5) : null;
+      };
+      let minDt = null, maxDt = null;
+      for (const item of allItems) {
+        const d = item.checkIn || item.startTime;
+        if (d && (!minDt || d < minDt)) minDt = d;
+      }
+      for (const item of allItems) {
+        const d = item.checkOut || item.endTime;
+        if (d && (!maxDt || d > maxDt)) maxDt = d;
+      }
+      const FORCED_DEFAULT_TIME = '10:00';
+      if (minDt) {
+        const time = extractTime(minDt);
+        if (time) effectiveArrival = time;
+      } else {
+        effectiveArrival = FORCED_DEFAULT_TIME;
+      }
+      if (maxDt) {
+        const time = extractTime(maxDt);
+        if (time) effectiveDeparture = time;
+      } else {
+        effectiveDeparture = effectiveArrival;
+      }
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -273,13 +315,26 @@ export default function EditStepScreen({ route, navigation }) {
         longitude: longitude ?? null,
         startDate: toLocalDateString(dispStartDate),
         endDate: dispEndDate ? toLocalDateString(dispEndDate) : null,
-        arrivalTime: dispArrivalTime ?? null,
-        departureTime: dispDepartureTime ?? null,
+        arrivalTime: effectiveArrival ?? null,
+        departureTime: effectiveDeparture ?? null,
         notes: notes.trim() || null,
         stopType: null,
       };
-      console.log('[EditStepScreen] 💾 handleSubmit → payload envoyé à updateStep:', JSON.stringify(payload), 'step.id:', step.id);
+      console.log('[EditStepScreen] 💾 handleSubmit → payload:', JSON.stringify(payload), 'step.id:', step.id);
       await updateStep(step.id, payload);
+      // Vérifier la cohérence après sauvegarde
+      const roadtripId = step.roadtripId || route.params.roadtripId;
+      if (roadtripId && db) {
+        const issues = await localCheckCoherence(roadtripId, db);
+        if (issues.length > 0) {
+          const localIssues = issues.filter(i => i.stepId === step.id);
+          if (localIssues.length > 0) {
+            setCoherenceIssues(localIssues);
+            setLoading(false);
+            return; // Ne pas naviguer, laisser l'utilisateur voir l'alerte
+          }
+        }
+      }
       navigation.goBack();
     } catch {
       Alert.alert('Erreur', "Impossible de modifier l'étape.");
@@ -531,6 +586,28 @@ export default function EditStepScreen({ route, navigation }) {
         onCancel={() => setDtPickerVisible(false)}
       />
       </KeyboardAvoidingView>
+
+      {coherenceIssues && (
+        <CoherenceAlertModal
+          issues={coherenceIssues}
+          onClose={() => { setCoherenceIssues(null); navigation.goBack(); }}
+          onFix={() => { setCoherenceIssues(null); navigation.goBack(); }}
+          onApplySuggestion={(suggestedTime, issue) => {
+            const nowStr = new Date().toISOString();
+            const fullTime = startDate ? `${toLocalDateString(startDate)} ${suggestedTime}` : suggestedTime;
+            Promise.all([
+              db.execute('UPDATE steps SET "arrivalTime" = ?, "updatedAt" = ? WHERE id = ?', [suggestedTime, nowStr, issue.stepId]),
+              issue.culpritId && issue.culpritType === 'accommodation'
+                ? db.execute('UPDATE accommodations SET "checkIn" = ?, "updatedAt" = ? WHERE id = ?', [fullTime, nowStr, issue.culpritId])
+                : Promise.resolve(),
+            ]).then(() => {
+              console.log('[EditStepScreen Suggestion] Arrivée →', suggestedTime);
+              setCoherenceIssues(null);
+              navigation.goBack();
+            }).catch(e => console.warn('[EditStepScreen Suggestion]', e));
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

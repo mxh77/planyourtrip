@@ -12,14 +12,24 @@ import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useRoadtripStore } from '../store/roadtripStore';
 import { useRoadtripRole } from '../hooks/useRoadtripRole';
-import { localUpdateAccommodation, localUpdateActivity } from '../powersync/localWrite';
+import { localUpdateAccommodation, localUpdateActivity, localUpdateStep } from '../powersync/localWrite';
+import { db } from '../powersync/db';
 import API_URL from '../api/config';
 import { log, warn } from '../services/logger';
 import { LogsViewer } from '../components/LogsViewer';
+import CoherencePanel from '../components/CoherencePanel';
 import StepCarousel from '../components/StepCarousel';
 import { getEnabledCategories } from '../constants/categories';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+
+// Helper : extraire l'heure HH:mm depuis "YYYY-MM-DD HH:mm" ou "YYYY-MM-DDTHH:mm:SS.000000"
+function extractTimeFromDt(str) {
+  if (!str) return null;
+  if (str.includes('T')) return str.split('T')[1]?.slice(0, 5) || null;
+  if (str.includes(' ')) return str.split(' ')[1]?.slice(0, 5) || null;
+  return /^\d{2}:\d{2}/.test(str) ? str.slice(0, 5) : null;
+}
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const CAROUSEL_BOTTOM = 195; // Hauteur du carrousel (CARD_HEIGHT 175 + padding 20)
@@ -449,6 +459,16 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     return { min: null, max: null };
   }, [trailDistanceFilter, psRoadtrip?.settings]);
 
+  // Extraire les seuils de cohérence depuis les settings du roadtrip
+  const coherenceThresholds = useMemo(() => {
+    try {
+      let s = psRoadtrip?.settings;
+      if (typeof s === 'string') s = JSON.parse(s);
+      if (typeof s === 'string') s = JSON.parse(s); // double-encoding PowerSync
+      return (s && typeof s === 'object' && !Array.isArray(s)) ? (s.coherence || {}) : {};
+    } catch { return {}; }
+  }, [psRoadtrip?.settings]);
+
   const [roadtrip, setRoadtrip] = useState({ title: psRoadtrip?.title ?? 'Europe', distance: 3610, id: psRoadtrip?.id ?? id });
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -456,12 +476,16 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [routesVersion, setRoutesVersion] = useState(0);  // Incrémenté pour forcer le re-render natif des Polyline
   const [loadingFromAPI, setLoadingFromAPI] = useState(false);
   const [showLogs, setShowLogs] = useState(false);  // Pour afficher le viewer de logs
+  const [showCoherence, setShowCoherence] = useState(false);  // Pour afficher le panneau de cohérence
   const [refreshingRoutes, setRefreshingRoutes] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [searchResultMarker, setSearchResultMarker] = useState(null);  // Marqueur de résultat de recherche
   const [showSearchResultModal, setShowSearchResultModal] = useState(false);  // Modal d'options
   const [menuMarker, setMenuMarker] = useState(null); // { item, type: 'accommodation'|'activity', stepId }
   const [showMarkerMenu, setShowMarkerMenu] = useState(false);
+
+  // ─── Modal de propagation d'arrivée (connecteur carrousel) ──────────────
+  const [propagateModal, setPropagateModal] = useState(null); // { item, arrivalTime, isAcc, itemName, dateStr }
 
   // ─── Météo ──────────────────────────────────────────────────────────────────
   const [weatherMap, setWeatherMap] = useState({});
@@ -1743,7 +1767,122 @@ export default function RoadtripDetailScreen({ route, navigation }) {
               }
             }
           }}
+          onConnectorPress={({ nextStep, arrivalTime }) => {
+            // Sauvegarder l'heure d'arrivée ajustée
+            if (arrivalTime && nextStep?.id) {
+              localUpdateStep(nextStep.id, { arrivalTime, roadtripId: id }).catch((e) =>
+                console.error('[Carousel] ❌ Erreur ajustement:', e.message)
+              );
+
+              // Chercher l'item isArrival pour proposer la propagation
+              const arrivalItems = [
+                ...psAccommodations.filter(a => a.stepId === nextStep.id && a.isArrival),
+                ...psActivities.filter(a => a.stepId === nextStep.id && a.isArrival),
+              ];
+
+              for (const item of arrivalItems) {
+                const isAcc = 'checkIn' in item;
+                const oldTime = extractTimeFromDt(isAcc ? item.checkIn : item.startTime);
+                if (oldTime === arrivalTime) continue; // déjà la même heure
+
+                setPropagateModal({
+                  item,
+                  arrivalTime,
+                  isAcc,
+                  itemName: item.name || item.location || 'Arrivée',
+                  dateStr: nextStep.startDate || '',
+                });
+                break; // Un seul dialogue par étape
+              }
+            }
+          }}
         />
+
+        {/* ─── MODAL DE PROPAGATION D'ARRIVÉE (connecteur carrousel) ──────── */}
+        {propagateModal && (
+          <TouchableOpacity
+            style={styles.propagateOverlay}
+            activeOpacity={1}
+            onPress={() => setPropagateModal(null)}
+          >
+            <View style={styles.propagateSheet}>
+              <View style={styles.propagateHandleRow}>
+                <View style={styles.propagateHandle} />
+              </View>
+              <Text style={styles.propagateTitle}>📌 Propager l'arrivée ?</Text>
+
+              <View style={styles.propagateItemRow}>
+                <Text style={styles.propagateItemIcon}>{propagateModal.isAcc ? '🏕️' : '🎯'}</Text>
+                <Text style={styles.propagateItemName}>{propagateModal.itemName}</Text>
+              </View>
+
+              <View style={styles.propagateTimeRow}>
+                <View style={styles.propagateTimeBlock}>
+                  <Text style={styles.propagateTimeLabel}>Actuelle</Text>
+                  <Text style={styles.propagateTimeValueOld}>
+                    {extractTimeFromDt(
+                      propagateModal.isAcc ? propagateModal.item.checkIn : propagateModal.item.startTime
+                    ) || '--:--'}
+                  </Text>
+                </View>
+                <Text style={styles.propagateArrow}>→</Text>
+                <View style={styles.propagateTimeBlock}>
+                  <Text style={styles.propagateTimeLabel}>Nouvelle</Text>
+                  <Text style={styles.propagateTimeValueNew}>{propagateModal.arrivalTime}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.propagateFieldLabel}>
+                sur le {propagateModal.isAcc ? 'checkIn' : 'startTime'}
+              </Text>
+
+              <View style={styles.propagateActions}>
+                <TouchableOpacity
+                  style={styles.propagateBtnCancel}
+                  onPress={() => setPropagateModal(null)}
+                >
+                  <Text style={styles.propagateBtnCancelText}>Non</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.propagateBtnConfirm}
+                  onPress={() => {
+                    const { item, arrivalTime, isAcc, dateStr } = propagateModal;
+                    // dateStr est un ISO timestamp "2026-08-12T00:00:00.000000" → slicer YYYY-MM-DD
+                    const cleanDate = dateStr ? dateStr.slice(0, 10) : '';
+                    const newValue = `${cleanDate} ${arrivalTime}`;
+                    console.log('[Propagate] item:', JSON.stringify({ id: item.id, stepId: item.stepId, name: item.name, checkIn: item.checkIn }));
+                    console.log('[Propagate] cleanDate:', cleanDate, '→ newValue:', newValue);
+                    const nowStr = new Date().toISOString();
+                    if (isAcc) {
+                      db.execute(
+                        `UPDATE accommodations SET "checkIn" = ?, "updatedAt" = ? WHERE id = ?`,
+                        [newValue, nowStr, item.id]
+                      ).then(() => {
+                        console.log('[Propagate] ✅ checkIn écrit dans SQLite');
+                        db.getAll('SELECT id, checkIn, stepId FROM accommodations WHERE id = ?', [item.id])
+                          .then(r => console.log('[Propagate] 🔍 vérification:', JSON.stringify(r)))
+                          .catch(e => console.warn('[Propagate] ⚠️ vérif erreur:', e.message));
+                      }).catch(e => console.error('❌ Erreur propagation checkIn:', e.message));
+                    } else {
+                      db.execute(
+                        `UPDATE activities SET "startTime" = ?, "updatedAt" = ? WHERE id = ?`,
+                        [newValue, nowStr, item.id]
+                      ).then(() => {
+                        console.log('[Propagate] ✅ startTime écrit dans SQLite');
+                        db.getAll('SELECT id, startTime, stepId FROM activities WHERE id = ?', [item.id])
+                          .then(r => console.log('[Propagate] 🔍 vérification:', JSON.stringify(r)))
+                          .catch(e => console.warn('[Propagate] ⚠️ vérif erreur:', e.message));
+                      }).catch(e => console.error('❌ Erreur propagation startTime:', e.message));
+                    }
+                    setPropagateModal(null);
+                  }}
+                >
+                  <Text style={styles.propagateBtnConfirmText}>Appliquer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* ─── SEARCH RESULT MODAL ──────────────────────────────────────────── */}
         {showSearchResultModal && searchResultMarker && (
@@ -2085,6 +2224,19 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         {/* LogsViewer Modal */}
         <LogsViewer visible={showLogs} onClose={() => setShowLogs(false)} />
 
+        {/* Cohérence du planning */}
+        <CoherencePanel
+          visible={showCoherence}
+          onClose={() => setShowCoherence(false)}
+          roadtripId={id}
+          thresholds={coherenceThresholds}
+          onSelectIssue={(issue) => {
+            setShowCoherence(false);
+            const step = steps.find(s => s.order === issue.stepOrder);
+            if (step) navigation.navigate('EditStep', { step });
+          }}
+        />
+
         {/* ─── MENU HAMBURGER ──────────────────────────────────────────── */}
         <Modal
           visible={menuVisible}
@@ -2161,6 +2313,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 <View style={styles.menuItemContent}>
                   <Text style={styles.menuItemLabel}>Infos générales</Text>
                   <Text style={styles.menuItemDesc}>Modifier le titre, les dates, le statut</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Cohérence du planning */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  setShowCoherence(true);
+                }}
+              >
+                <Text style={styles.menuItemIcon}>🔍</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Cohérence du planning</Text>
+                  <Text style={styles.menuItemDesc}>Détecter chevauchements, trous, liaisons tendues</Text>
                 </View>
               </TouchableOpacity>
 
@@ -2891,15 +3058,14 @@ const styles = StyleSheet.create({
 
   // Dates
   datesRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: SPACING.md,
+    flexDirection: 'column',
+    gap: 8,
+    marginBottom: SPACING.lg,
   },
   dateBox: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    padding: 14,
   },
   dateLabel: {
     fontSize: 9,
@@ -3343,6 +3509,132 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#ef4444',
+  },
+
+  // ─── Modal propagation arrivée ──────────────────────────────────────────
+  propagateOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    zIndex: 1000,
+  },
+  propagateSheet: {
+    backgroundColor: '#1e1e2e',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 8,
+  },
+  propagateHandleRow: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  propagateHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  propagateTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#f1f5f9',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  propagateItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+  },
+  propagateItemIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  propagateItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#e2e8f0',
+    flex: 1,
+  },
+  propagateTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    gap: 16,
+  },
+  propagateTimeBlock: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    minWidth: 100,
+  },
+  propagateTimeLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  propagateTimeValueOld: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#ef4444',
+  },
+  propagateTimeValueNew: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#22c55e',
+  },
+  propagateArrow: {
+    fontSize: 20,
+    color: '#64748b',
+    marginBottom: 16,
+  },
+  propagateFieldLabel: {
+    fontSize: 13,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontStyle: 'italic',
+  },
+  propagateActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  propagateBtnCancel: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  propagateBtnCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#94a3b8',
+  },
+  propagateBtnConfirm: {
+    flex: 1,
+    backgroundColor: '#6366f1',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  propagateBtnConfirmText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
   },
 });
 

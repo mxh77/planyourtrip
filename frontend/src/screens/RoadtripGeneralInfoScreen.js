@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
@@ -50,21 +50,18 @@ export default function RoadtripGeneralInfoScreen({ route, navigation }) {
   const [fuelConsumption, setFuelConsumption] = useState('');
   const [fuelPricePerL, setFuelPricePerL] = useState('');
   const [fuelType, setFuelType] = useState('diesel');
+  // Cohérence
+  const [cohGapAfterArrival, setCohGapAfterArrival] = useState('3');
+  const [cohGapBeforeDeparture, setCohGapBeforeDeparture] = useState('4');
+  const [cohGapBetweenActivities, setCohGapBetweenActivities] = useState('3');
+  const [cohMaxArrivalHour, setCohMaxArrivalHour] = useState('21');
+  const [cohSleepStart, setCohSleepStart] = useState('23');
+  const [cohSleepEnd, setCohSleepEnd] = useState('7');
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   // Initialiser les champs quand les données PowerSync arrivent
   if (roadtrip && !initialized) {
-    console.log('[GeneralInfo] 📥 PowerSync roadtrip data:', JSON.stringify({
-      id: roadtrip.id,
-      title: roadtrip.title,
-      fuelConsumption: roadtrip.fuelConsumption,
-      fuelPricePerL: roadtrip.fuelPricePerL,
-      fuelType: roadtrip.fuelType,
-      budgetTarget: roadtrip.budgetTarget,
-      _raw: roadtrip.fuelPricePerL,
-      _type: typeof roadtrip.fuelPricePerL,
-    }));
     setTitle(roadtrip.title ?? '');
     setStartDate(parseDate(roadtrip.startDate));
     setEndDate(roadtrip.endDate ? parseDate(roadtrip.endDate) : null);
@@ -73,8 +70,39 @@ export default function RoadtripGeneralInfoScreen({ route, navigation }) {
     setFuelConsumption(roadtrip.fuelConsumption != null ? roadtrip.fuelConsumption.toFixed(1) : '');
     setFuelPricePerL(roadtrip.fuelPricePerL != null ? roadtrip.fuelPricePerL.toFixed(2) : '');
     setFuelType(roadtrip.fuelType || 'diesel');
+    // Initialiser les seuils de cohérence DEPUIS les settings PowerSync
+    try {
+      // PowerSync peut double-encoder : on déroule jusqu'à obtenir un objet
+      let s = roadtrip.settings || {};
+      if (typeof s === 'string') s = JSON.parse(s);
+      if (typeof s === 'string') s = JSON.parse(s); // double-encoding
+      const c = (s && typeof s === 'object' && !Array.isArray(s)) ? (s.coherence || {}) : {};
+      if (c.gapAfterArrival != null) setCohGapAfterArrival(String(c.gapAfterArrival));
+      if (c.gapBeforeDeparture != null) setCohGapBeforeDeparture(String(c.gapBeforeDeparture));
+      if (c.gapBetweenActivities != null) setCohGapBetweenActivities(String(c.gapBetweenActivities));
+      if (c.maxArrivalHour != null) setCohMaxArrivalHour(String(c.maxArrivalHour));
+      if (c.sleepStart != null) setCohSleepStart(String(c.sleepStart));
+      if (c.sleepEnd != null) setCohSleepEnd(String(c.sleepEnd));
+    } catch (_) {}
     setInitialized(true);
   }
+
+  // Backup : si PowerSync met à jour settings plus tard (sync après rendu)
+  useEffect(() => {
+    if (!roadtrip || !roadtrip.settings) return;
+    try {
+      let s = roadtrip.settings;
+      if (typeof s === 'string') s = JSON.parse(s);
+      if (typeof s === 'string') s = JSON.parse(s); // double-encoding
+      const c = (s && typeof s === 'object' && !Array.isArray(s)) ? (s.coherence || {}) : {};
+      if (c.gapAfterArrival != null) setCohGapAfterArrival(String(c.gapAfterArrival));
+      if (c.gapBeforeDeparture != null) setCohGapBeforeDeparture(String(c.gapBeforeDeparture));
+      if (c.gapBetweenActivities != null) setCohGapBetweenActivities(String(c.gapBetweenActivities));
+      if (c.maxArrivalHour != null) setCohMaxArrivalHour(String(c.maxArrivalHour));
+      if (c.sleepStart != null) setCohSleepStart(String(c.sleepStart));
+      if (c.sleepEnd != null) setCohSleepEnd(String(c.sleepEnd));
+    } catch (_) {}
+  }, [roadtrip?.settings]);
 
   const { updateRoadtrip } = useRoadtripStore();
 
@@ -98,6 +126,17 @@ export default function RoadtripGeneralInfoScreen({ route, navigation }) {
       return;
     }
     setLoading(true);
+
+    let existingSettings = {};
+    try {
+      let s = roadtrip?.settings || {};
+      if (typeof s === 'string') s = JSON.parse(s);
+      if (typeof s === 'string') s = JSON.parse(s); // double-encoding
+      if (s && typeof s === 'object' && !Array.isArray(s)) existingSettings = s;
+    } catch (_) {
+      existingSettings = {};
+    }
+
     const payload = {
       title: title.trim(),
       startDate: toLocalDateString(startDate),
@@ -107,15 +146,23 @@ export default function RoadtripGeneralInfoScreen({ route, navigation }) {
       fuelConsumption: fuelConsumption ? parseFloat(fuelConsumption.replace(',', '.')) : null,
       fuelPricePerL: fuelPricePerL ? parseFloat(fuelPricePerL.replace(',', '.')) : null,
       fuelType,
+      settings: {
+        ...existingSettings,
+        coherence: {
+          gapAfterArrival: parseFloat(cohGapAfterArrival) || 3,
+          gapBeforeDeparture: parseFloat(cohGapBeforeDeparture) || 4,
+          gapBetweenActivities: parseFloat(cohGapBetweenActivities) || 3,
+          maxArrivalHour: parseFloat(cohMaxArrivalHour) || 21,
+          sleepStart: parseInt(cohSleepStart) || 23,
+          sleepEnd: parseInt(cohSleepEnd) || 7,
+        },
+      },
     };
-    console.log('[GeneralInfo] 🚀 Saving:', JSON.stringify(payload, null, 2));
+
     try {
-      // ⬇️ TOUT via PowerSync (offline-first)
       await updateRoadtrip(roadtripId, payload);
-      console.log('[GeneralInfo] ✅ Save success');
       navigation.goBack();
     } catch (err) {
-      console.error('[GeneralInfo] ❌ Save error:', err.message, err.stack);
       Alert.alert('Erreur', `Impossible d'enregistrer : ${err.message}`);
     } finally {
       setLoading(false);
@@ -258,6 +305,86 @@ export default function RoadtripGeneralInfoScreen({ route, navigation }) {
             onFocus={() => scrollToField(fuelPriceRef.current || 600)}
           />
         </View>
+
+        {/* ─── Section Cohérence ──────────────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionHeaderText}>🔍 Cohérence du planning</Text>
+        </View>
+        <Text style={styles.sectionDesc}>Seuils de détection des anomalies temporelles</Text>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Trou max après arrivée (heures)</Text>
+          <TextInput
+            style={styles.input}
+            value={cohGapAfterArrival}
+            onChangeText={setCohGapAfterArrival}
+            keyboardType="decimal-pad"
+            placeholder="3"
+            placeholderTextColor={COLORS.textDim}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Trou max avant départ (heures)</Text>
+          <TextInput
+            style={styles.input}
+            value={cohGapBeforeDeparture}
+            onChangeText={setCohGapBeforeDeparture}
+            keyboardType="decimal-pad"
+            placeholder="4"
+            placeholderTextColor={COLORS.textDim}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Trou max entre activités (heures)</Text>
+          <TextInput
+            style={styles.input}
+            value={cohGapBetweenActivities}
+            onChangeText={setCohGapBetweenActivities}
+            keyboardType="decimal-pad"
+            placeholder="3"
+            placeholderTextColor={COLORS.textDim}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Heure limite d'arrivée</Text>
+          <TextInput
+            style={styles.input}
+            value={cohMaxArrivalHour}
+            onChangeText={setCohMaxArrivalHour}
+            keyboardType="number-pad"
+            placeholder="21"
+            placeholderTextColor={COLORS.textDim}
+          />
+        </View>
+
+        <View style={styles.row}>
+          <View style={[styles.inputGroup, { flex: 1 }]}>
+            <Text style={styles.label}>Début sommeil (h)</Text>
+            <TextInput
+              style={styles.input}
+              value={cohSleepStart}
+              onChangeText={setCohSleepStart}
+              keyboardType="number-pad"
+              placeholder="23"
+              placeholderTextColor={COLORS.textDim}
+            />
+          </View>
+          <View style={{ width: SPACING.md }} />
+          <View style={[styles.inputGroup, { flex: 1 }]}>
+            <Text style={styles.label}>Fin sommeil (h)</Text>
+            <TextInput
+              style={styles.input}
+              value={cohSleepEnd}
+              onChangeText={setCohSleepEnd}
+              keyboardType="number-pad"
+              placeholder="7"
+              placeholderTextColor={COLORS.textDim}
+            />
+          </View>
+        </View>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -295,4 +422,6 @@ const styles = StyleSheet.create({
   statusChipText: { fontSize: 13, fontWeight: '600' },
   sectionHeader: { marginTop: SPACING.md, marginBottom: SPACING.xs },
   sectionHeaderText: { fontSize: 14, fontWeight: '700', color: COLORS.accent, textTransform: 'uppercase', letterSpacing: 1 },
+  sectionDesc: { fontSize: 12, color: COLORS.textMuted, marginBottom: SPACING.sm },
+  row: { flexDirection: 'row' },
 });

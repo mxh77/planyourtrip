@@ -11,6 +11,7 @@ const roadtrips = new Table({
   fuelConsumption: column.real,
   fuelType: column.text,
   fuelPricePerL: column.real,
+  settings: column.text,
   createdAt: column.text,
   updatedAt: column.text,
   userId: column.text,

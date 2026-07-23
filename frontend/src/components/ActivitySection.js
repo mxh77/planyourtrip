@@ -8,16 +8,20 @@ import { useQuery } from '@powersync/react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING } from '../theme';
 import { useAuthStore } from '../store/authStore';
+import { db } from '../powersync/db';
 import API_URL from '../api/config';
+import CoherenceAlertModal from './CoherenceAlertModal';
 import LocationPicker from './LocationPicker';
 import DateTimePickerModal from './DateTimePickerModal';
 import {
   localCreateActivity,
   localUpdateActivity,
   localDeleteActivity,
+  localUpdateStep,
 } from '../powersync/localWrite';
 import { validateActivityDates } from '../utils/dateValidation';
 import DocumentSection from './DocumentSection';
+import { localCheckCoherence } from '../powersync/coherenceCheck';
 
 // ─── Helpers date/heure ──────────────────────────────────────────────────────
 function parseDtString(str) {
@@ -217,6 +221,8 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [coherenceIssues, setCoherenceIssues] = useState(null);
+  const [pendingCorrectionItem, setPendingCorrectionItem] = useState(null);
   const [searchError, setSearchError] = useState(null);
 
   // Ouverture automatique d'un item en édition
@@ -362,6 +368,72 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
           userId
         );
       }
+
+      // Synchroniser l'arrivalTime/departureTime de l'étape avec le min/max des items
+      try {
+        const accRows = await db.getAll(
+          'SELECT checkIn, checkOut FROM accommodations WHERE stepId = ?',
+          [stepId]
+        );
+        const actRows = await db.getAll(
+          'SELECT startTime, endTime FROM activities WHERE stepId = ?',
+          [stepId]
+        );
+        const allItems = [...(accRows ?? []), ...(actRows ?? [])];
+        const extractTime = (str) => {
+          if (!str) return null;
+          if (str.includes('T')) return str.split('T')[1]?.slice(0, 5) || null;
+          if (str.includes(' ')) return str.split(' ')[1]?.slice(0, 5) || null;
+          return /^\d{2}:\d{2}/.test(str) ? str.slice(0, 5) : null;
+        };
+        let minIn = null, maxOut = null;
+        for (const item of allItems) {
+          const d = item.checkIn || item.startTime;
+          if (d && (!minIn || d < minIn)) minIn = d;
+        }
+        for (const item of allItems) {
+          const d = item.checkOut || item.endTime;
+          if (d && (!maxOut || d > maxOut)) maxOut = d;
+        }
+        const payload = {};
+        if (minIn) {
+          const t = extractTime(minIn);
+          if (t) payload.arrivalTime = t;
+        } else {
+          payload.arrivalTime = '10:00';
+        }
+        if (maxOut) {
+          const t = extractTime(maxOut);
+          if (t) payload.departureTime = t;
+        } else {
+          payload.departureTime = payload.arrivalTime;
+        }
+        await localUpdateStep(stepId, payload);
+      } catch (e) {
+        console.warn('[ActivitySection] ⚠️ Sync step times:', e.message);
+      }
+
+      // Vérifier la cohérence LOCALEMENT via PowerSync (toujours à jour)
+      const allIssues = await localCheckCoherence(roadtripId, db);
+      const localIssues = allIssues.filter(i => i.stepId === stepId);
+      if (localIssues.length > 0) {
+        const savedData = data;
+        setPendingCorrectionItem({
+          id: editingId,
+          type: savedData.type, name: savedData.name, location: savedData.location,
+          latitude: savedData.latitude, longitude: savedData.longitude,
+          parkingAddress: savedData.parkingAddress,
+          parkingLatitude: savedData.parkingLatitude, parkingLongitude: savedData.parkingLongitude,
+          startTime: savedData.startTime || stepStartDate || '',
+          endTime: savedData.endTime || stepEndDate || '',
+          bookingRef: savedData.bookingRef,
+          cost: savedData.cost, depositPaid: savedData.depositPaid,
+          currency: savedData.currency, notes: savedData.notes,
+        });
+        setModalVisible(false);
+        setCoherenceIssues(localIssues);
+      }
+
       setModalVisible(false);
     } finally {
       setSaving(false);
@@ -919,6 +991,33 @@ export default function ActivitySection({ stepId, roadtripId, userId, latitude, 
         </Pressable>
         </View>
       </Modal>
+
+      {coherenceIssues && (
+        <CoherenceAlertModal
+          issues={coherenceIssues}
+          onClose={() => { setCoherenceIssues(null); setPendingCorrectionItem(null); }}
+          onFix={() => {
+            if (pendingCorrectionItem) openEdit(pendingCorrectionItem);
+            setCoherenceIssues(null);
+            setPendingCorrectionItem(null);
+          }}
+          onApplySuggestion={(suggestedTime, issue) => {
+            const nowStr = new Date().toISOString();
+            const stepId = issue.stepId;
+            const fullTime = stepStartDate ? `${stepStartDate} ${suggestedTime}` : suggestedTime;
+            Promise.all([
+              db.execute('UPDATE steps SET "arrivalTime" = ?, "updatedAt" = ? WHERE id = ?', [suggestedTime, nowStr, stepId]),
+              pendingCorrectionItem?.id
+                ? db.execute('UPDATE activities SET "startTime" = ?, "updatedAt" = ? WHERE id = ?', [fullTime, nowStr, pendingCorrectionItem.id])
+                : Promise.resolve(),
+            ]).then(() => {
+              console.log('[Suggestion] Arrivée →', suggestedTime, '→ startTime', fullTime);
+              setCoherenceIssues(null);
+              setPendingCorrectionItem(null);
+            }).catch(e => console.warn('[Suggestion]', e));
+          }}
+        />
+      )}
     </View>
   );
 }
