@@ -17,7 +17,7 @@ const TodoSchema = z.object({
   text:       z.string().min(1).max(500),
   roadtripId: z.string().min(1),
   done:       z.boolean().optional(),
-  category:   z.enum(['equipement','courses','admin','divers']).optional().nullable(),
+  category:   z.enum(['equipement','sante','courses','admin','divers']).optional().nullable(),
   notes:      z.string().optional().nullable(),
   dueDate:    z.string().datetime().optional().nullable(),
   country:    z.string().optional().nullable(),
@@ -28,7 +28,7 @@ const TodoSchema = z.object({
 const TodoPatchSchema = z.object({
   text:      z.string().min(1).max(500).optional(),
   done:      z.boolean().optional(),
-  category:  z.enum(['equipement','courses','admin','divers']).optional().nullable(),
+  category:  z.enum(['equipement','sante','courses','admin','divers']).optional().nullable(),
   notes:     z.string().optional().nullable(),
   dueDate:   z.string().datetime().optional().nullable(),
   country:   z.string().optional().nullable(),
