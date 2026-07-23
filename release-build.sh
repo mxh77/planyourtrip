@@ -25,6 +25,22 @@ echo -e "\n${YELLOW}════════════════════
 echo -e "${YELLOW}     PlanYourTrip — Android Release     ${RESET}"
 echo -e "${YELLOW}════════════════════════════════════════${RESET}\n"
 
+# ─── Git push automatique ────────────────────────────────────────────────────
+echo -e "${YELLOW}[0/5]${RESET} Push des changements locaux vers GitHub..."
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+if git diff --cached --quiet 2>/dev/null && git diff --quiet 2>/dev/null; then
+  echo -e "${GREEN}✓ Aucun changement local à pusher${RESET}"
+else
+  git add -A
+  git commit -m "release: build $(date +%Y-%m-%d_%Hh%M)" --no-verify 2>/dev/null || true
+  if git push origin "$BRANCH" 2>/dev/null; then
+    echo -e "${GREEN}✓ Pushé sur origin/$BRANCH${RESET}"
+  else
+    echo -e "${YELLOW}⚠ Push échoué — vérifie ta connexion ou les conflits${RESET}"
+  fi
+fi
+echo
+
 # ─── Android SDK ─────────────────────────────────────────────────────────────
 if [ -z "$ANDROID_HOME" ]; then
   DETECTED="$LOCALAPPDATA/Android/Sdk"
@@ -49,7 +65,7 @@ KEY_ALIAS=$(grep "keyAlias" "$KEYSTORE_PROPS" | cut -d'=' -f2)
 KEY_PASSWORD=$(grep "keyPassword" "$KEYSTORE_PROPS" | cut -d'=' -f2)
 
 # ─── Prebuild (skippé si le projet natif release est déjà présent) ──────────
-echo -e "${YELLOW}[1/4]${RESET} Prebuild Expo (production)..."
+echo -e "${YELLOW}[1/5]${RESET} Prebuild Expo (production)..."
 unset APP_VARIANT
 cd "$FRONTEND_DIR"
 
