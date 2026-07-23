@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   FlatList, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, RADIUS, SPACING } from '../theme';
@@ -24,6 +25,10 @@ export default function TodoListScreen({ route, navigation }) {
   const [newCategory, setNewCategory] = useState('equipement');
   const [filterCat, setFilterCat] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [editCategory, setEditCategory] = useState('equipement');
+  const [editModalVisible, setEditModalVisible] = useState(false);
 
   const fetchTodos = useCallback(async () => {
     try {
@@ -107,6 +112,36 @@ export default function TodoListScreen({ route, navigation }) {
     ]);
   };
 
+  const openEdit = (item) => {
+    setEditItem(item);
+    setEditText(item.text);
+    setEditCategory(item.category || 'equipement');
+    setEditModalVisible(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editText.trim() || !editItem) return;
+    try {
+      const res = await client.patch(`/api/todos/${editItem.id}`, {
+        text: editText.trim(),
+        category: editCategory,
+      });
+      setTodos((prev) => prev.map((t) => (t.id === editItem.id ? res.data : t)));
+      setEditModalVisible(false);
+      setEditItem(null);
+    } catch (err) {
+      Alert.alert('Erreur', "Impossible de modifier la tâche.");
+    }
+  };
+
+  const todoLongPress = (item) => {
+    Alert.alert(item.text, 'Que veux-tu faire ?', [
+      { text: 'Modifier', onPress: () => openEdit(item) },
+      { text: 'Supprimer', style: 'destructive', onPress: () => deleteTodo(item) },
+      { text: 'Annuler', style: 'cancel' },
+    ]);
+  };
+
   const filtered = filterCat
     ? todos.filter((t) => t.category === filterCat)
     : todos;
@@ -120,7 +155,7 @@ export default function TodoListScreen({ route, navigation }) {
     <TouchableOpacity
       style={[styles.todoItem, item.done && styles.todoItemDone]}
       onPress={() => toggleDone(item)}
-      onLongPress={() => deleteTodo(item)}
+      onLongPress={() => todoLongPress(item)}
       activeOpacity={0.7}
     >
       <View style={[styles.checkbox, item.done && styles.checkboxDone]}>
@@ -234,6 +269,45 @@ export default function TodoListScreen({ route, navigation }) {
             </View>
           }
         />
+
+        {/* ─── MODAL ÉDITION ──────────────────────────────────────────── */}
+        <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
+          <Pressable style={styles.modalOverlay} onPress={() => setEditModalVisible(false)}>
+            <Pressable style={styles.modalSheet} onPress={() => {}}>
+              <Text style={styles.modalTitle}>Modifier la tâche</Text>
+
+              <TextInput
+                style={styles.modalInput}
+                value={editText}
+                onChangeText={setEditText}
+                placeholder="Nom de la tâche"
+                placeholderTextColor={COLORS.textDim}
+              />
+
+              <Text style={styles.modalLabel}>Catégorie</Text>
+              <View style={styles.modalCatRow}>
+                {CATEGORIES.filter((c) => c.key).map((cat) => (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[styles.catPickerChip, editCategory === cat.key && styles.catPickerChipActive]}
+                    onPress={() => setEditCategory(cat.key)}
+                  >
+                    <Text style={styles.catPickerText}>{cat.icon}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setEditModalVisible(false)}>
+                  <Text style={styles.modalCancelText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalSaveBtn} onPress={saveEdit}>
+                  <Text style={styles.modalSaveText}>Enregistrer</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -302,4 +376,21 @@ const styles = StyleSheet.create({
   todoCategory: { color: COLORS.textDim, fontSize: 11, marginTop: 4 },
   empty: { paddingVertical: SPACING.xxl, alignItems: 'center' },
   emptyText: { color: COLORS.textMuted, fontSize: 14 },
+
+  // Modal édition
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: SPACING.lg },
+  modalSheet: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: SPACING.lg },
+  modalTitle: { color: COLORS.text, fontSize: 18, fontWeight: '700', marginBottom: SPACING.md },
+  modalInput: {
+    backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border,
+    borderRadius: RADIUS.md, padding: SPACING.md, color: COLORS.text, fontSize: 15,
+    marginBottom: SPACING.md,
+  },
+  modalLabel: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600', marginBottom: SPACING.sm, textTransform: 'uppercase', letterSpacing: 1 },
+  modalCatRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginBottom: SPACING.lg },
+  modalActions: { flexDirection: 'row', gap: SPACING.sm },
+  modalCancelBtn: { flex: 1, paddingVertical: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', backgroundColor: COLORS.surfaceElevated },
+  modalCancelText: { color: COLORS.textMuted, fontSize: 15, fontWeight: '600' },
+  modalSaveBtn: { flex: 1, paddingVertical: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', backgroundColor: COLORS.accent },
+  modalSaveText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });
