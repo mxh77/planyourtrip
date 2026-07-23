@@ -26,7 +26,7 @@ echo -e "${YELLOW}     PlanYourTrip — Android Release     ${RESET}"
 echo -e "${YELLOW}════════════════════════════════════════${RESET}\n"
 
 # ─── Git push automatique ────────────────────────────────────────────────────
-echo -e "${YELLOW}[0/5]${RESET} Push des changements locaux vers GitHub..."
+echo -e "${YELLOW}[0/7]${RESET} Push des changements locaux vers GitHub..."
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
 if git diff --cached --quiet 2>/dev/null && git diff --quiet 2>/dev/null; then
   echo -e "${GREEN}✓ Aucun changement local à pusher${RESET}"
@@ -65,7 +65,7 @@ KEY_ALIAS=$(grep "keyAlias" "$KEYSTORE_PROPS" | cut -d'=' -f2)
 KEY_PASSWORD=$(grep "keyPassword" "$KEYSTORE_PROPS" | cut -d'=' -f2)
 
 # ─── Prebuild (skippé si le projet natif release est déjà présent) ──────────
-echo -e "${YELLOW}[1/5]${RESET} Prebuild Expo (production)..."
+echo -e "${YELLOW}[1/7]${RESET} Prebuild Expo (production)..."
 unset APP_VARIANT
 cd "$FRONTEND_DIR"
 
@@ -142,7 +142,7 @@ else
 fi
 
 # ─── Copie keystore + config Gradle ──────────────────────────────────────────
-echo -e "\n${YELLOW}[2/4]${RESET} Configuration signing..."
+echo -e "\n${YELLOW}[2/7]${RESET} Configuration signing..."
 cp "$ROOT_DIR/planyourtrip.keystore" "$FRONTEND_DIR/android/app/"
 
 # gradle.properties — JDK + signing
@@ -171,7 +171,7 @@ sed -i "/minifyEnabled/a\\            signingConfig signingConfigs.release" "$BU
 echo -e "${GREEN}✓ Signing configuré${RESET}"
 
 # ─── Build release ───────────────────────────────────────────────────────────
-echo -e "\n${YELLOW}[3/4]${RESET} Build APK release...\n"
+echo -e "\n${YELLOW}[3/7]${RESET} Build APK release...\n"
 cd "$FRONTEND_DIR/android"
 
 # Nettoyage préventif du cache Gradle (évite les blocages Windows : verrous sur les caches Kotlin)
@@ -204,7 +204,7 @@ APK_PATH="$ROOT_DIR/planyourtrip.apk"
 if [ -f "$APK_RAW" ]; then
   cp "$APK_RAW" "$APK_PATH"
   echo -e "\n${GREEN}✓ APK : planyourtrip.apk${RESET}"
-  echo -e "\n${YELLOW}[4/5]${RESET} Installation sur le téléphone..."
+  echo -e "\n${YELLOW}[4/7]${RESET} Installation sur le téléphone..."
   DEVICES=$(adb devices 2>/dev/null | grep -v "List of devices" | grep "device$" | wc -l)
   if [ "$DEVICES" -gt 0 ]; then
     adb install -r "$APK_PATH" && echo -e "${GREEN}✓ Installé !${RESET}"
@@ -212,7 +212,7 @@ if [ -f "$APK_RAW" ]; then
     echo -e "${YELLOW}⚠ Pas de téléphone connecté — installe manuellement l'APK.${RESET}"
   fi
 
-  echo -e "\n${YELLOW}[5/5]${RESET} Upload APK vers le serveur..."
+  echo -e "\n${YELLOW}[5/7]${RESET} Upload APK vers le serveur..."
   # Upload via Proxmox (copie dans le conteneur)
   if ssh -o ConnectTimeout=5 proxmox "pct exec 117 -- ls /opt/planyourtrip/downloads" &>/dev/null; then
     # Copier l'APK sur Proxmox d'abord, puis dans le conteneur
@@ -224,7 +224,7 @@ if [ -f "$APK_RAW" ]; then
   fi
 
   # ─── Déploiement backend sur le serveur ─────────────────────────────────
-  echo -e "\n${YELLOW}[6/5]${RESET} Déploiement backend sur le serveur..."
+  echo -e "\n${YELLOW}[6/7]${RESET} Déploiement backend sur le serveur..."
   if ssh -o ConnectTimeout=5 proxmox "pct exec 117 -- bash -c 'cd /opt/planyourtrip && echo ok'" &>/dev/null; then
     ssh proxmox "pct exec 117 -- bash -c '
       set -e
