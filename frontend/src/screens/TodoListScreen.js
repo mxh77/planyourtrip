@@ -12,6 +12,7 @@ const CATEGORIES = [
   { key: null,    label: 'Tout',      icon: '📋' },
   { key: 'equipement', label: 'Équipement', icon: '🎒' },
   { key: 'sante',      label: 'Santé',      icon: '💊' },
+  { key: 'hygiene',    label: 'Hygiène',    icon: '🧼' },
   { key: 'courses',    label: 'Courses',    icon: '🛒' },
   { key: 'admin',      label: 'Admin',      icon: '📄' },
   { key: 'divers',     label: 'Divers',     icon: '🔧' },
@@ -134,14 +135,6 @@ export default function TodoListScreen({ route, navigation }) {
     }
   };
 
-  const todoLongPress = (item) => {
-    Alert.alert(item.text, 'Que veux-tu faire ?', [
-      { text: 'Modifier', onPress: () => openEdit(item) },
-      { text: 'Supprimer', style: 'destructive', onPress: () => deleteTodo(item) },
-      { text: 'Annuler', style: 'cancel' },
-    ]);
-  };
-
   const filtered = filterCat
     ? todos.filter((t) => t.category === filterCat)
     : todos;
@@ -155,7 +148,6 @@ export default function TodoListScreen({ route, navigation }) {
     <TouchableOpacity
       style={[styles.todoItem, item.done && styles.todoItemDone]}
       onPress={() => toggleDone(item)}
-      onLongPress={() => todoLongPress(item)}
       activeOpacity={0.7}
     >
       <View style={[styles.checkbox, item.done && styles.checkboxDone]}>
@@ -171,6 +163,12 @@ export default function TodoListScreen({ route, navigation }) {
           </Text>
         )}
       </View>
+      <TouchableOpacity style={styles.editIcon} onPress={() => openEdit(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Text style={styles.editIconText}>✏️</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.deleteIcon} onPress={() => deleteTodo(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Text style={styles.deleteIconText}>🗑️</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -374,6 +372,10 @@ const styles = StyleSheet.create({
   todoText: { color: COLORS.text, fontSize: 15, lineHeight: 20 },
   todoTextDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
   todoCategory: { color: COLORS.textDim, fontSize: 11, marginTop: 4 },
+  editIcon: { paddingHorizontal: 10, paddingVertical: 8 },
+  editIconText: { fontSize: 18 },
+  deleteIcon: { paddingHorizontal: 10, paddingVertical: 8, marginLeft: 4 },
+  deleteIconText: { fontSize: 18 },
   empty: { paddingVertical: SPACING.xxl, alignItems: 'center' },
   emptyText: { color: COLORS.textMuted, fontSize: 14 },
 
