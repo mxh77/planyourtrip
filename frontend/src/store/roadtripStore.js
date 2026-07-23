@@ -4,6 +4,7 @@ import {
   localCreateStep, localUpdateStep, localDeleteStep,
   localCreateActivity, localDeleteActivity,
   localCreateAccommodation,
+  localCreateExpense, localUpdateExpense, localDeleteExpense,
 } from '../powersync/localWrite';
 import { useAuthStore } from './authStore';
 
@@ -37,5 +38,13 @@ export const useRoadtripStore = create(() => ({
   // ─── Accommodation ─────────────────────────────────────────────────────────
 
   createAccommodation: (data) => localCreateAccommodation(data, getUserId()),
+
+  // ─── Expenses ──────────────────────────────────────────────────────────────
+
+  createExpense: (data) => localCreateExpense(data, getUserId()),
+
+  updateExpense: (id, data) => localUpdateExpense(id, data),
+
+  deleteExpense: (id) => localDeleteExpense(id),
 }));
 

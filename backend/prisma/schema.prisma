@@ -71,6 +71,11 @@ model Roadtrip {
   coverPhotoUrl String?
   status        RoadtripStatus @default(DRAFT)
   settings      Json?
+  budgetTarget  Float?
+  budgetCurrency String        @default("EUR")
+  fuelConsumption Float?       // L/100km
+  fuelType      String?        // diesel, sp95, sp98, electric
+  fuelPricePerL Float?         // Prix du litre estimé
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   userId        String
@@ -79,6 +84,7 @@ model Roadtrip {
   members       RoadtripMember[]
   todoitems     TodoItem[]
   roadbooks     Roadbook[]
+  expenses      Expense[]
 
   @@map("roadtrips")
 }
@@ -118,6 +124,7 @@ model Step {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   accommodations Accommodation[]
   activities    Activity[]
+  expenses      Expense[]
 
   @@map("steps")
 }
@@ -207,6 +214,36 @@ enum BookingStatus {
   BOOKED
   DONE
   CANCELLED
+}
+
+enum ExpenseCategory {
+  FUEL       // Essence / recharge électrique
+  TOLL       // Péage
+  FOOD       // Repas / courses
+  PARKING    // Parking
+  EQUIPMENT  // Équipement / matériel
+  INSURANCE  // Assurance
+  OTHER      // Autre
+}
+
+model Expense {
+  id            String          @id @default(cuid())
+  roadtripId    String
+  category      ExpenseCategory @default(OTHER)
+  label         String
+  amount        Float
+  currency      String          @default("EUR")
+  paid          Boolean         @default(false)
+  paidById      String?
+  stepId        String?
+  date          DateTime?
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  roadtrip      Roadtrip        @relation(fields: [roadtripId], references: [id], onDelete: Cascade)
+  step          Step?           @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@map("expenses")
 }
 
 model Photo {

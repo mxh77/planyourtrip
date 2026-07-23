@@ -30,6 +30,7 @@ const todosRouter        = require("./routes-rp/todos");
 const exportRouter        = require("./routes-rp/export");
 const roadbookRouter       = require("./routes-rp/roadbook");
 const weatherRouter        = require("./routes-rp/weather");
+const budgetRouter         = require("./routes-rp/budget");
 const debugRoutes = require('./routes/debug');
 
 
@@ -92,8 +93,7 @@ app.use("/api/todos",        todosRouter);
 app.use("/api/export",       exportRouter);
 app.use("/api/roadtrips",    roadbookRouter);
 app.use("/api/weather",      weatherRouter);
-app.use("/api/documents",   documentsRouter);
-app.use('/api/debug', debugRoutes);
+app.use("/api/documents",   documentsRouter);app.use("/api/roadtrips",   budgetRouter);app.use('/api/debug', debugRoutes);
 
 
 // 404 handler

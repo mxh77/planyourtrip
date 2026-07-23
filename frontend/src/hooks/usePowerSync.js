@@ -155,3 +155,29 @@ export function useStepPhotos(stepId) {
   );
   return { photos: data ?? [] };
 }
+
+/**
+ * Retourne les dépenses custom d'un roadtrip — lecture réactive PowerSync.
+ */
+export function useExpenses(roadtripId) {
+  const { data, isLoading } = useQuery(
+    roadtripId
+      ? 'SELECT * FROM expenses WHERE roadtripId = ? ORDER BY date ASC, createdAt ASC'
+      : 'SELECT * FROM expenses WHERE 1=0',
+    roadtripId ? [roadtripId] : []
+  );
+  return { expenses: data ?? [], isLoading };
+}
+
+/**
+ * Retourne les dépenses liées à une étape spécifique.
+ */
+export function useStepExpenses(stepId) {
+  const { data, isLoading } = useQuery(
+    stepId
+      ? 'SELECT * FROM expenses WHERE stepId = ? ORDER BY date ASC, createdAt ASC'
+      : 'SELECT * FROM expenses WHERE 1=0',
+    stepId ? [stepId] : []
+  );
+  return { stepExpenses: data ?? [], isLoading };
+}

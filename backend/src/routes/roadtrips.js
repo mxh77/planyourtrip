@@ -138,7 +138,7 @@ router.put('/:id', async (req, res) => {
 
 // PATCH /api/roadtrips/:id — modification partielle (EDITOR+)
 router.patch('/:id', checkMemberRole('EDITOR'), async (req, res) => {
-  const { title, startDate, endDate, coverPhotoUrl, status } = req.body;
+  const { title, startDate, endDate, coverPhotoUrl, status, budgetTarget, fuelConsumption, fuelType, fuelPricePerL } = req.body;
 
   const roadtrip = await prisma.roadtrip.update({
     where: { id: req.params.id },
@@ -148,6 +148,10 @@ router.patch('/:id', checkMemberRole('EDITOR'), async (req, res) => {
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
       ...(coverPhotoUrl !== undefined && { coverPhotoUrl }),
       ...(status !== undefined && { status }),
+      ...(budgetTarget !== undefined && { budgetTarget }),
+      ...(fuelConsumption !== undefined && { fuelConsumption }),
+      ...(fuelType !== undefined && { fuelType }),
+      ...(fuelPricePerL !== undefined && { fuelPricePerL }),
     },
   });
 

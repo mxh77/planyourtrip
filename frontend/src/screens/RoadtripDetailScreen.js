@@ -652,19 +652,17 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             distancesMapRef.current = distancesMap;
             setDistancesVersion(v => v + 1);
             setPolylinesLoaded(true);
-            polylinesFetchedRef.current = true;
           } else {
-            console.log('[Directions] ⚠️ routesFromDB.length === 0, setDistancesVersion NE SERA PAS APPELÉ!');  // 🎯 DEBUG
+            console.log('[Directions] ⚠️ routesFromDB.length === 0, aucune polyline en cache — calcul auto nécessaire');
           }
         }
       } catch (err) {
         console.log('[Directions] Erreur chargement polylines API:', err.message);
       } finally {
         polylinesLoadingRef.current = false;  // Débloquer le recalcul
+        // ⬇️ TOUJOURS débloquer loadRoutes, même si erreur API ou aucune polyline en cache
+        polylinesFetchedRef.current = true;
         // Forcer un re-render pour que le second useEffect (loadRoutes) puisse se déclencher
-        // Ne PAS mettre directionsCalculatedRef à true ici : on veut que depArrChanged soit false
-        // au premier chargement (les polylines en cache sont déjà bonnes).
-        // directionsCalculatedRef sera mis à true seulement APRÈS le premier passage de loadRoutes
         setRefreshCounter(c => c + 1);
       }
     };
@@ -704,29 +702,42 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         if (isDep) currFlags[`dep:${item.stepId}:${item.id}`] = true;
         if (isArr) currFlags[`arr:${item.stepId}:${item.id}`] = true;
       });
-      // Si le cache des polylines n'est pas encore rempli, attendre (loadPolylines async pas fini)
-      if (polylinesRef.current.length === 0) {
+      // Si le cache des polylines n'est pas encore rempli
+      // et que loadPolylines n'a pas encore fini → attendre
+      // Si le cache est vide mais qu'il faut calculer → on continue
+      const cacheVide = polylinesRef.current.length === 0;
+      const polylinesPretes = polylinesFetchedRef.current || polylinesLoadingRef.current;
+      if (cacheVide && !polylinesPretes) {
         log('DIRECTIONS', '[WAIT] Cache polylines vide, on attend loadPolylines');
         return;
       }
 
-      log('DIRECTIONS', `loadRoutes: needsRefresh=${needsRefresh}, needsFlagRecalc=${needsFlagRecalc}`);
+      log('DIRECTIONS', `loadRoutes: refresh=${needsRefresh}, flagRecalc=${needsFlagRecalc}, cache=${polylinesRef.current.length}, override=${Object.keys(_depArrOverride.current).length}, depArrChanged=${depArrChanged}`);
 
       // Vérifier s'il y a des overrides locaux en attente (contourne le délai PowerSync)
       const hasOverride = Object.keys(_depArrOverride.current).length > 0;
       // Vérifier s'il y a des flags actifs en base (besoin de recalcul au premier chargement uniquement)
       const hasActiveFlags = lastDepArrKeyRef.current === null && Object.keys(currFlags).length > 0;
-      const shouldProcess = needsRefresh || needsFlagRecalc || hasOverride || hasActiveFlags;
-      // 🎯 GARDE : skip si tout va bien, SAUF si besoin de recalcul
-      if (!shouldProcess && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
+      // 🎯 Détecter si le cache polylines couvre déjà toutes les routes
+      // (On utilise polylinesRef et non les steps PowerSync qui n'ont pas routeEncodedPolyline)
+      const allCached = steps.length >= 2
+        && polylinesRef.current.length > 0
+        && polylinesRef.current.length === steps.length - 1;
+      const hasMissingRoutes = !allCached;
+      const shouldProcess = needsRefresh || needsFlagRecalc || hasOverride || hasActiveFlags || hasMissingRoutes;
+
+      // 🎯 Si toutes les polylines sont déjà en cache, pas besoin de recalculer
+      if (!shouldProcess && allCached && (polylinesLoadingRef.current || polylinesFetchedRef.current)) {
+        log('DIRECTIONS', '✓ Toutes les polylines en cache, skip recalc');
         directionsCalculatedRef.current = true;
         lastDepArrKeyRef.current = psDepArrKey;
         lastDepArrKeysRef.current = currFlags;
+        if (polylinesRef.current.length > 0) setRoutes(polylinesRef.current);
         return;
       }
 
-      // 🎯 GARDE 2 : directions déjà calculées et rien à traiter
-      if (directionsCalculatedRef.current && !shouldProcess) {
+      // 🎯 GARDE 2 : directions déjà calculées et rien à traiter (polylines en cache)
+      if (directionsCalculatedRef.current && !shouldProcess && allCached) {
         if (polylinesRef.current.length > 0) {
           setRoutes(polylinesRef.current);
         }
@@ -736,7 +747,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       if (steps.length < 2) return;
 
       // Initialiser newRoutes avec les polylines existantes, puis écraser les routes recalculées
-      const newRoutes = polylinesRef.current.length > 0 ? [...polylinesRef.current] : [];
+      let newRoutes = polylinesRef.current.length > 0 ? [...polylinesRef.current] : [];
       const polylinesToSave = {}; // { stepIndex: encodedPolyline }
 
       // Étape 1: Charger les polylines existantes depuis la BD (skip si besoin de recalcul)
@@ -894,12 +905,16 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         // Traiter les résultats : écraser à l'index correspondant
         let apiSuccessCount = 0;
         for (const { i, coordinates, polylineData } of routeResults) {
-          newRoutes[i] = { coordinates, color: ORDER_COLORS[i % ORDER_COLORS.length] };
+          if (coordinates && coordinates.length > 0) {
+            newRoutes[i] = { coordinates, color: ORDER_COLORS[i % ORDER_COLORS.length] };
+          }
           if (polylineData) {
             polylinesToSave[i] = polylineData;
             apiSuccessCount++;
           }
         }
+        // ⬇️ Nettoyer les trous (undefined) pour éviter les erreurs render
+        newRoutes = newRoutes.filter(Boolean);
 
         if (apiSuccessCount > 0) {
           console.log('[Directions] ✓', apiSuccessCount, 'routes calculées via API');
@@ -1442,14 +1457,15 @@ export default function RoadtripDetailScreen({ route, navigation }) {
             }}
           >
             {/* Afficher les itinéraires */}
-            {routes.map((route, idx) => {
-              const first = route.coordinates[0];
-              const last = route.coordinates[route.coordinates.length - 1];
+            {routes.filter(Boolean).map((route, idx) => {
+              const first = route.coordinates?.[0];
+              const last = route.coordinates?.[route.coordinates.length - 1];
+              if (!route.coordinates) return null;
               return (
                 <Polyline
                   key={`r-${routesVersion}-${idx}`}
                   coordinates={route.coordinates}
-                  strokeColor={route.color}
+                  strokeColor={route.color || ORDER_COLORS[idx % ORDER_COLORS.length]}
                   strokeWidth={4}
                   lineCap="round"
                   lineJoin="round"
@@ -1969,10 +1985,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                     <MarkerAction icon="🏁" label="Arrivée" color="#f97316" bg="rgba(249,115,22,0.2)"
                       onPress={async () => {
                         const idx = steps.findIndex(s => s.id === menuMarker.stepId);
+                        console.log('[Flag] 🚩 Arrivée pressée, stepIdx:', idx, 'itemId:', menuMarker.item.id, 'type:', menuMarker.type);
                         if (idx <= 0) { Alert.alert('Aucune étape précédente', ''); setShowMarkerMenu(false); return; }
                         const id2 = menuMarker.item.id;
-                        // Déflaguer les anciens items ET ajouter override mémoire pour éviter
-                        // que getStepArrival ne lise des données PowerSync stales
                         for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isArrival && a.id !== id2)) {
                           _depArrOverride.current[a.id] = { ..._depArrOverride.current[a.id], isArrival: false };
                           await localUpdateAccommodation(a.id, { isArrival: false });
@@ -1984,15 +1999,15 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                         }
                         const fn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
                         _depArrOverride.current[id2] = { ..._depArrOverride.current[id2], isArrival: true };
+                        console.log('[Flag] ✅ Override défini:', JSON.stringify(_depArrOverride.current));
                         await fn(id2, { isArrival: true }); setShowMarkerMenu(false); setRefreshCounter(c => c + 1);
                       }} />
                     <MarkerAction icon="🚀" label="Départ" color="#4ade80" bg="rgba(34,197,94,0.2)"
                       onPress={async () => {
                         const idx = steps.findIndex(s => s.id === menuMarker.stepId);
+                        console.log('[Flag] 🚀 Départ pressée, stepIdx:', idx, 'itemId:', menuMarker.item.id, 'type:', menuMarker.type);
                         if (idx < 0 || idx >= steps.length - 1) { Alert.alert('Aucune étape suivante', ''); setShowMarkerMenu(false); return; }
                         const id2 = menuMarker.item.id;
-                        // Déflaguer les anciens items ET ajouter override mémoire pour éviter
-                        // que getStepDeparture ne lise des données PowerSync stales
                         for (const a of psAccommodations.filter(a => a.stepId === menuMarker.stepId && a.isDeparture && a.id !== id2)) {
                           _depArrOverride.current[a.id] = { ..._depArrOverride.current[a.id], isDeparture: false };
                           await localUpdateAccommodation(a.id, { isDeparture: false });
@@ -2004,6 +2019,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                         }
                         const fn = menuMarker.type === 'accommodation' ? localUpdateAccommodation : localUpdateActivity;
                         _depArrOverride.current[id2] = { ..._depArrOverride.current[id2], isDeparture: true };
+                        console.log('[Flag] ✅ Override défini:', JSON.stringify(_depArrOverride.current));
                         await fn(id2, { isDeparture: true }); setShowMarkerMenu(false); setRefreshCounter(c => c + 1);
                       }} />
                   </View>
@@ -2067,6 +2083,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
                 <View style={styles.menuItemContent}>
                   <Text style={styles.menuItemLabel}>Todo list</Text>
                   <Text style={styles.menuItemDesc}>Gérer les tâches du roadtrip</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Budget */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate('Budget', { roadtripId: id, roadtripTitle: roadtrip?.title });
+                }}
+              >
+                <Text style={styles.menuItemIcon}>💰</Text>
+                <View style={styles.menuItemContent}>
+                  <Text style={styles.menuItemLabel}>Budget</Text>
+                  <Text style={styles.menuItemDesc}>Suivi des dépenses et budget prévisionnel</Text>
                 </View>
               </TouchableOpacity>
 

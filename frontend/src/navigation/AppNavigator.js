@@ -19,6 +19,7 @@ import RoadtripGeneralInfoScreen from '../screens/RoadtripGeneralInfoScreen';
 import TodoListScreen from '../screens/TodoListScreen';
 import RoadbookScreen from '../screens/RoadbookScreen';
 import RoadbookPreviewScreen from '../screens/RoadbookPreviewScreen';
+import BudgetScreen from '../screens/BudgetScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -117,6 +118,11 @@ export default function AppNavigator() {
               name="RoadbookPreview"
               component={RoadbookPreviewScreen}
               options={{ title: 'Roadbook', headerShown: true }}
+            />
+            <Stack.Screen
+              name="Budget"
+              component={BudgetScreen}
+              options={{ title: '💰 Budget', headerShown: true }}
             />
           </>
         )}

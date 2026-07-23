@@ -2,13 +2,25 @@
  * Écritures offline-first dans SQLite local via PowerSync.
  * PowerSync gère la queue CRUD et appelle uploadData() quand le réseau revient.
  */
-import { db } from './db';
+import { db, runMigrations } from './db';
 
 // Génère un ID type CUID localement (sans dépendance externe)
 export const generateId = () =>
   'c' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 
 const now = () => new Date().toISOString();
+
+// Les migrations DDL (ALTER TABLE) utilisent db.database.writeTransaction pour bypasser le CRUD tracking PowerSync
+let _migrationsRan = false;
+async function ensureMigrations() {
+  if (_migrationsRan) return;
+  try {
+    await runMigrations();
+    _migrationsRan = true;
+  } catch (e) {
+    console.warn('[localWrite] Migration error:', e.message);
+  }
+}
 
 // ─── Roadtrips ────────────────────────────────────────────────────────────────
 
@@ -31,9 +43,39 @@ export async function localUpdateRoadtrip(id, data) {
   if (data.endDate !== undefined)      { fields.push('endDate = ?');      values.push(data.endDate); }
   if (data.status !== undefined)       { fields.push('status = ?');       values.push(data.status); }
   if (data.coverPhotoUrl !== undefined){ fields.push('coverPhotoUrl = ?');values.push(data.coverPhotoUrl); }
+  if (data.budgetTarget !== undefined) { fields.push('budgetTarget = ?'); values.push(data.budgetTarget); }
+  if (data.budgetCurrency !== undefined){fields.push('budgetCurrency = ?');values.push(data.budgetCurrency); }
+  if (data.fuelConsumption !== undefined){fields.push('fuelConsumption = ?');values.push(data.fuelConsumption); }
+  if (data.fuelType !== undefined)     { fields.push('fuelType = ?');     values.push(data.fuelType); }
+  if (data.fuelPricePerL !== undefined){ fields.push('fuelPricePerL = ?');values.push(data.fuelPricePerL); }
   fields.push('updatedAt = ?');
   values.push(now(), id);
-  await db.execute(`UPDATE roadtrips SET ${fields.join(', ')} WHERE id = ?`, values);
+
+  const sql = `UPDATE roadtrips SET ${fields.join(', ')} WHERE id = ?`;
+  console.log('[localWrite] 🚀 SQL:', sql);
+  console.log('[localWrite] 📦 Values:', JSON.stringify(values));
+
+  try {
+    await db.execute(sql, values);
+    console.log('[localWrite] ✅ UPDATE OK');
+  } catch (e) {
+    console.warn('[localWrite] ❌ UPDATE error:', e.message);
+    // Si la colonne n'existe pas → créer la colonne manquante et réessayer
+    if (e.message?.includes('no such column') || e.message?.includes('has no column')) {
+      console.log('[localWrite] ⚠️ Colonne manquante, tentative de migration...');
+      try {
+        await runMigrations();
+        console.log('[localWrite] ✅ Migration OK, retry UPDATE...');
+        await db.execute(sql, values);
+        console.log('[localWrite] ✅ UPDATE OK après migration');
+      } catch (e2) {
+        console.error('[localWrite] ❌ Échec total:', e2.message);
+        throw e2;
+      }
+    } else {
+      throw e;
+    }
+  }
 }
 
 export async function localDeleteRoadtrip(id) {
@@ -215,4 +257,49 @@ export async function localUpdateAccommodation(id, data) {
 
 export async function localDeleteAccommodation(id) {
   await db.execute('DELETE FROM accommodations WHERE id = ?', [id]);
+}
+
+// ─── Expenses ─────────────────────────────────────────────────────────────────
+
+export async function localCreateExpense({
+  roadtripId, category, label, amount, currency, paid,
+  paidById, stepId, date, notes,
+}, userId) {
+  const id = generateId();
+  const createdAt = now();
+  await db.execute(
+    `INSERT INTO expenses (id, roadtripId, category, label, amount, currency, paid,
+      paidById, stepId, date, notes, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, roadtripId, category ?? 'OTHER', label, amount ?? 0, currency ?? 'EUR',
+     paid ? 1 : 0, paidById ?? null, stepId ?? null, date ?? null, notes ?? null,
+     createdAt, createdAt]
+  );
+  return {
+    id, roadtripId, category: category ?? 'OTHER', label, amount: amount ?? 0,
+    currency: currency ?? 'EUR', paid: paid ? 1 : 0, paidById: paidById ?? null,
+    stepId: stepId ?? null, date: date ?? null, notes: notes ?? null,
+    createdAt, updatedAt: createdAt,
+  };
+}
+
+export async function localUpdateExpense(id, data) {
+  const allowed = ['category', 'label', 'amount', 'currency', 'paid', 'paidById', 'stepId', 'date', 'notes'];
+  const fields = [];
+  const values = [];
+  for (const key of allowed) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      fields.push(`"${key}" = ?`);
+      values.push(data[key] ?? null);
+    }
+  }
+  if (fields.length === 0) return;
+  fields.push('updatedAt = ?');
+  values.push(now());
+  values.push(id);
+  await db.execute(`UPDATE expenses SET ${fields.join(', ')} WHERE id = ?`, values);
+}
+
+export async function localDeleteExpense(id) {
+  await db.execute('DELETE FROM expenses WHERE id = ?', [id]);
 }

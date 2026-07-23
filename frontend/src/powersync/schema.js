@@ -6,6 +6,11 @@ const roadtrips = new Table({
   endDate: column.text,
   coverPhotoUrl: column.text,
   status: column.text,
+  budgetTarget: column.real,
+  budgetCurrency: column.text,
+  fuelConsumption: column.real,
+  fuelType: column.text,
+  fuelPricePerL: column.real,
   createdAt: column.text,
   updatedAt: column.text,
   userId: column.text,
@@ -27,6 +32,8 @@ const steps = new Table({
   notes: column.text,
   photoUrl: column.text,
   order: column.integer,
+  routeDistanceMeters: column.integer,
+  routeDurationSeconds: column.integer,
   createdAt: column.text,
   updatedAt: column.text,
   roadtripId: column.text,
@@ -87,6 +94,21 @@ const activities = new Table({
   userId: column.text,
 });
 
+const expenses = new Table({
+  roadtripId: column.text,
+  category: column.text,
+  label: column.text,
+  amount: column.real,
+  currency: column.text,
+  paid: column.integer,
+  paidById: column.text,
+  stepId: column.text,
+  date: column.text,
+  notes: column.text,
+  createdAt: column.text,
+  updatedAt: column.text,
+});
+
 const photos = new Table({
   url: column.text,
   cloudinaryId: column.text,
@@ -135,4 +157,5 @@ export const AppSchema = new Schema({
   photos,
   roadtrip_members,
   documents,
+  expenses,
 });
