@@ -69,6 +69,7 @@ function formatTime(t) {
  */
 export default function StepCarousel({
   steps,
+  weatherMap,
   selectedIndex,
   onEditStep,
   onScrollIndexChange,
@@ -241,7 +242,22 @@ export default function StepCarousel({
                 >
                   {step.name || `Étape ${index + 1}`}
                 </Text>
-                {/* Bouton supprimé — le clic sur la carte ouvre l'édition */}
+                {/* Météo */}
+                {weatherMap?.[step.id] && (
+                  <View style={styles.weatherBadge}>
+                    <Text style={styles.weatherIcon}>{weatherMap[step.id].icon}</Text>
+                    <Text style={styles.weatherTemp}>
+                      {weatherMap[step.id].tempMorning != null
+                        ? `${Math.round(weatherMap[step.id].tempMorning)}°`
+                        : weatherMap[step.id].tempMax != null
+                        ? `${Math.round(weatherMap[step.id].tempMax)}°`
+                        : ''}
+                      {weatherMap[step.id].tempAfternoon != null
+                        ? `/${Math.round(weatherMap[step.id].tempAfternoon)}°`
+                        : ''}
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* Espace vide au milieu = la photo respire */}
@@ -441,6 +457,26 @@ const styles = StyleSheet.create({
   },
   stepNameActive: {
     color: '#f59e0b',
+  },
+
+  // ─── Météo ──────────────────────────────────────────────────────────────────
+  weatherBadge: {
+    marginLeft: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 34,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  weatherIcon: {
+    fontSize: 16,
+  },
+  weatherTemp: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: -1,
   },
 
   // ─── Barre inférieure (dates + heures sur une ligne) ──────────────

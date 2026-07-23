@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator, Image,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import client from '../api/client';
+import API_URL from '../api/config';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDate(d) {
@@ -118,10 +118,26 @@ export default function RoadbookPreviewScreen({ route, navigation }) {
   // ─── Météo ──────────────────────────────────────────────────────────────────
   const [weatherMap, setWeatherMap] = useState({});
   const [weatherLoading, setWeatherLoading] = useState(false);
+  const weatherFetchedRef = useRef(false);
+
+  // Reset weather quand on change de roadtrip
+  useEffect(() => {
+    weatherFetchedRef.current = false;
+    setWeatherMap({});
+  }, [roadtripId]);
 
   const fetchWeather = useCallback(async () => {
-    const stepsWithCoords = steps.filter(s => s.latitude && s.longitude && s.startDate);
-    if (stepsWithCoords.length === 0) return;
+    if (weatherFetchedRef.current) return; // Déjà fetché
+    const stepsWithCoords = steps.filter(s => {
+      const hasLat = s.latitude != null && s.latitude !== 0;
+      const hasLng = s.longitude != null && s.longitude !== 0;
+      const hasDate = s.startDate && s.startDate.length >= 10;
+      return hasLat && hasLng && hasDate;
+    });
+    if (stepsWithCoords.length === 0) {
+      console.log('[Weather] Aucune étape avec coordonnées');
+      return;
+    }
 
     setWeatherLoading(true);
     try {
@@ -134,10 +150,20 @@ export default function RoadbookPreviewScreen({ route, navigation }) {
         })),
       };
       console.log('[Weather] Fetching for', body.steps.length, 'steps');
-      const res = await client.post('/api/weather/batch', body);
-      console.log('[Weather] Response:', res.data?.weather ? Object.keys(res.data.weather).length + ' results' : 'no data');
-      if (res.data?.weather) {
-        setWeatherMap(res.data.weather);
+
+      // Utiliser fetch direct au lieu de client axios (évite les intercepteurs)
+      const res = await fetch(`${API_URL}/api/weather/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      console.log('[Weather] Response:', data?.weather ? Object.keys(data.weather).length + ' results' : 'no data');
+      if (data?.weather) {
+        setWeatherMap(data.weather);
+        weatherFetchedRef.current = true;
       }
     } catch (err) {
       console.error('[Weather] Erreur:', err.message);
@@ -256,11 +282,13 @@ export default function RoadbookPreviewScreen({ route, navigation }) {
                     <View style={styles.weatherBadge}>
                       <Text style={styles.weatherIcon}>{weatherMap[step.id].icon || '🌡️'}</Text>
                       <Text style={styles.weatherTemp}>
-                        {weatherMap[step.id].tempMax != null
+                        {weatherMap[step.id].tempMorning != null
+                          ? `${Math.round(weatherMap[step.id].tempMorning)}°`
+                          : weatherMap[step.id].tempMax != null
                           ? `${Math.round(weatherMap[step.id].tempMax)}°`
                           : ''}
-                        {weatherMap[step.id].tempMin != null
-                          ? `/ ${Math.round(weatherMap[step.id].tempMin)}°`
+                        {weatherMap[step.id].tempAfternoon != null
+                          ? `/${Math.round(weatherMap[step.id].tempAfternoon)}°`
                           : ''}
                       </Text>
                     </View>

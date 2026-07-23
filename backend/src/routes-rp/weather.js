@@ -78,6 +78,7 @@ async function fetchWeather(lat, lng, dateStr) {
   const url = `${baseUrl}` +
     `?latitude=${lat}&longitude=${lng}` +
     `&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_sum` +
+    `&hourly=temperature_2m` +
     `&timezone=auto` +
     `&start_date=${dateStr}&end_date=${dateStr}`;
 
@@ -89,9 +90,23 @@ async function fetchWeather(lat, lng, dateStr) {
     if (!data.daily) return null;
 
     const idx = 0; // On demande un seul jour
+
+    // Extraire températures matin (9h) et après-midi (15h) depuis hourly
+    let morningTemp = null;
+    let afternoonTemp = null;
+    if (data.hourly?.time && data.hourly?.temperature_2m) {
+      for (let i = 0; i < data.hourly.time.length; i++) {
+        const h = parseInt(data.hourly.time[i].slice(11, 13), 10);
+        if (h >= 8 && h <= 10 && morningTemp == null) morningTemp = data.hourly.temperature_2m[i];
+        if (h >= 14 && h <= 16 && afternoonTemp == null) afternoonTemp = data.hourly.temperature_2m[i];
+      }
+    }
+
     return {
       tempMax: data.daily.temperature_2m_max?.[idx] ?? null,
       tempMin: data.daily.temperature_2m_min?.[idx] ?? null,
+      tempMorning: morningTemp,
+      tempAfternoon: afternoonTemp,
       weatherCode: data.daily.weathercode?.[idx] ?? null,
       precipitation: data.daily.precipitation_sum?.[idx] ?? null,
       icon: getWeatherIcon(data.daily.weathercode?.[idx]),
