@@ -212,7 +212,7 @@ if [ -f "$APK_RAW" ]; then
     echo -e "${YELLOW}⚠ Pas de téléphone connecté — installe manuellement l'APK.${RESET}"
   fi
 
-  echo -e "\n${YELLOW}[5/6]${RESET} Upload APK vers le serveur..."
+  echo -e "\n${YELLOW}[5/5]${RESET} Upload APK vers le serveur..."
   # Upload via Proxmox (copie dans le conteneur)
   if ssh -o ConnectTimeout=5 proxmox "pct exec 117 -- ls /opt/planyourtrip/downloads" &>/dev/null; then
     # Copier l'APK sur Proxmox d'abord, puis dans le conteneur
@@ -224,7 +224,7 @@ if [ -f "$APK_RAW" ]; then
   fi
 
   # ─── Déploiement backend sur le serveur ─────────────────────────────────
-  echo -e "\n${YELLOW}[6/6]${RESET} Déploiement backend sur le serveur..."
+  echo -e "\n${YELLOW}[6/5]${RESET} Déploiement backend sur le serveur..."
   if ssh -o ConnectTimeout=5 proxmox "pct exec 117 -- bash -c 'cd /opt/planyourtrip && echo ok'" &>/dev/null; then
     ssh proxmox "pct exec 117 -- bash -c '
       set -e
