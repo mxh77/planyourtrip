@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator, Image,
 } from 'react-native';
 import { useQuery } from '@powersync/react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import client from '../api/client';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDate(d) {
@@ -114,6 +115,41 @@ export default function RoadbookPreviewScreen({ route, navigation }) {
   }, [accommodations, activities]);
   const totalBalance = totalAccomPrice + totalActivityCost - totalDeposits;
 
+  // ─── Météo ──────────────────────────────────────────────────────────────────
+  const [weatherMap, setWeatherMap] = useState({});
+  const [weatherLoading, setWeatherLoading] = useState(false);
+
+  const fetchWeather = useCallback(async () => {
+    const stepsWithCoords = steps.filter(s => s.latitude && s.longitude && s.startDate);
+    if (stepsWithCoords.length === 0) return;
+
+    setWeatherLoading(true);
+    try {
+      const body = {
+        steps: stepsWithCoords.map(s => ({
+          id: s.id,
+          lat: s.latitude,
+          lng: s.longitude,
+          date: s.startDate.slice(0, 10),
+        })),
+      };
+      console.log('[Weather] Fetching for', body.steps.length, 'steps');
+      const res = await client.post('/api/weather/batch', body);
+      console.log('[Weather] Response:', res.data?.weather ? Object.keys(res.data.weather).length + ' results' : 'no data');
+      if (res.data?.weather) {
+        setWeatherMap(res.data.weather);
+      }
+    } catch (err) {
+      console.error('[Weather] Erreur:', err.message);
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, [steps]);
+
+  useEffect(() => {
+    if (steps.length > 0) fetchWeather();
+  }, [steps, fetchWeather]);
+
   useEffect(() => {
     navigation.setOptions({
       title: roadtripTitle ? `Roadbook — ${roadtripTitle}` : 'Roadbook',
@@ -209,9 +245,33 @@ export default function RoadbookPreviewScreen({ route, navigation }) {
             <View key={step.id} style={styles.stepCard}>
               {/* Header */}
               <View style={[styles.stepHeader, { backgroundColor: color }]}>
-                <Text style={styles.stepDay}>Jour {idx + 1}</Text>
-                <Text style={styles.stepTitle}>{step.name}</Text>
-                {step.location && <Text style={styles.stepLocation}>{step.location}</Text>}
+                <View style={styles.stepHeaderRow}>
+                  <View style={styles.stepHeaderInfo}>
+                    <Text style={styles.stepDay}>Jour {idx + 1}</Text>
+                    <Text style={styles.stepTitle}>{step.name}</Text>
+                    {step.location && <Text style={styles.stepLocation}>{step.location}</Text>}
+                  </View>
+                  {/* Météo */}
+                  {weatherMap[step.id] ? (
+                    <View style={styles.weatherBadge}>
+                      <Text style={styles.weatherIcon}>{weatherMap[step.id].icon || '🌡️'}</Text>
+                      <Text style={styles.weatherTemp}>
+                        {weatherMap[step.id].tempMax != null
+                          ? `${Math.round(weatherMap[step.id].tempMax)}°`
+                          : ''}
+                        {weatherMap[step.id].tempMin != null
+                          ? `/ ${Math.round(weatherMap[step.id].tempMin)}°`
+                          : ''}
+                      </Text>
+                    </View>
+                  ) : weatherLoading ? (
+                    <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+                  ) : step.latitude && step.startDate ? (
+                    <View style={styles.weatherBadgeEmpty}>
+                      <Text style={styles.weatherIcon}>🌡️</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text style={styles.stepDates}>
                   {step.startDate ? formatShortDate(step.startDate) : ''}
                   {step.endDate ? ` → ${formatShortDate(step.endDate)}` : ''}
@@ -455,11 +515,19 @@ const styles = StyleSheet.create({
   // ── Step card ──
   stepCard: { marginHorizontal: CARD_MARGIN, marginBottom: 16, backgroundColor: '#fff', borderWidth: 2, borderColor: '#e6a817', overflow: 'hidden' },
   stepHeader: { padding: 16 },
+  stepHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  stepHeaderInfo: { flex: 1, marginRight: 12 },
   stepDay: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', fontWeight: '700' },
   stepTitle: { fontSize: 22, fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 },
   stepLocation: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   stepDates: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 },
   stepTimes: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+
+  // ── Weather ──
+  weatherBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, minWidth: 55 },
+  weatherBadgeEmpty: { alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, minWidth: 40 },
+  weatherIcon: { fontSize: 24 },
+  weatherTemp: { fontSize: 11, fontWeight: '700', color: '#fff', marginTop: 1 },
 
   // ── Photos ──
   photoStrip: { paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#fef6e9' },
