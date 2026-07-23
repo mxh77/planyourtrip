@@ -10,6 +10,7 @@ import client from '../api/client';
 const CATEGORIES = [
   { key: null,    label: 'Tout',      icon: '📋' },
   { key: 'equipement', label: 'Équipement', icon: '🎒' },
+  { key: 'sante',      label: 'Santé',      icon: '💊' },
   { key: 'courses',    label: 'Courses',    icon: '🛒' },
   { key: 'admin',      label: 'Admin',      icon: '📄' },
   { key: 'divers',     label: 'Divers',     icon: '🔧' },
