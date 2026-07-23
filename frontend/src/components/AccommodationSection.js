@@ -316,7 +316,7 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
       totalPrice: a.totalPrice != null ? a.totalPrice.toFixed(2) : '',
       depositPaid: a.depositPaid != null ? a.depositPaid.toFixed(2) : '',
       currency: a.currency ?? 'EUR',
-      amenities: a.amenities ?? '[]',
+      amenities: a['amenities'] ?? '[]',
       notes: a.notes ?? '',
     });
     setEditingId(a.id);

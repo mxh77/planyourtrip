@@ -444,6 +444,27 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const [showSearchResultModal, setShowSearchResultModal] = useState(false);  // Modal d'options
   const [menuMarker, setMenuMarker] = useState(null); // { item, type: 'accommodation'|'activity', stepId }
   const [showMarkerMenu, setShowMarkerMenu] = useState(false);
+
+  // ─── Météo ──────────────────────────────────────────────────────────────────
+  const [weatherMap, setWeatherMap] = useState({});
+  const weatherFetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (steps.length === 0 || weatherFetchedRef.current) return;
+    const stepsWithCoords = steps.filter(s => s.latitude != null && s.latitude !== 0 && s.longitude != null && s.longitude !== 0 && s.startDate?.length >= 10);
+    if (stepsWithCoords.length === 0) return;
+    weatherFetchedRef.current = true;
+    fetch(`${API_URL}/api/weather/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        steps: stepsWithCoords.map(s => ({ id: s.id, lat: s.latitude, lng: s.longitude, date: s.startDate.slice(0, 10) })),
+      }),
+    }).then(r => r.json()).then(data => {
+      if (data?.weather) setWeatherMap(data.weather);
+    }).catch(err => console.error('[Weather]', err.message));
+  }, [steps]);
+
   // Note: polylinesLoaded est déclaré plus haut (avant le useMemo transformedSteps)
   const shouldRefreshRef = useRef(false);  // Ref pour éviter infinite loop sur refreshingRoutes
   const [refreshCounter, setRefreshCounter] = useState(0);  // Trigger pour le useEffect directions
@@ -1660,6 +1681,7 @@ export default function RoadtripDetailScreen({ route, navigation }) {
         {/* ─── CARROUSEL HORIZONTAL (permanent) ────────────────────────── */}
         <StepCarousel
           steps={steps}
+          weatherMap={weatherMap}
           selectedIndex={selectedIndex}
           onEditStep={(index) => openEditStep(index)}
           onScrollIndexChange={(index) => {

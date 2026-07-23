@@ -173,7 +173,7 @@ export async function localDeleteDocument(id) {
 
 export async function localCreateAccommodation({
   stepId, roadtripId, type, name, address, latitude, longitude, checkIn, checkOut,
-  bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid, currency, notes, status,
+  bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status,
 }, userId) {
   const id = generateId();
   const createdAt = now();

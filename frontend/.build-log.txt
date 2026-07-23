@@ -1,22 +1,22 @@
 Configuration on demand is an incubating feature.
 > Task :expo-gradle-plugin:expo-autolinking-settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-gradle-plugin:expo-autolinking-settings-plugin:pluginDescriptors UP-TO-DATE
 > Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
-> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:processResources UP-TO-DATE
 > Task :gradle-plugin:settings-plugin:processResources UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:processResources UP-TO-DATE
 > Task :gradle-plugin:shared:compileKotlin UP-TO-DATE
 > Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileKotlin UP-TO-DATE
 > Task :gradle-plugin:shared:compileJava NO-SOURCE
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileJava NO-SOURCE
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:processResources NO-SOURCE
 > Task :gradle-plugin:shared:processResources NO-SOURCE
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:classes UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileJava NO-SOURCE
 > Task :gradle-plugin:shared:classes UP-TO-DATE
-> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:processResources NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:classes UP-TO-DATE
 > Task :gradle-plugin:shared:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar UP-TO-DATE
 > Task :gradle-plugin:settings-plugin:compileKotlin UP-TO-DATE
 > Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
 > Task :gradle-plugin:settings-plugin:classes UP-TO-DATE
@@ -29,8 +29,8 @@ Configuration on demand is an incubating feature.
 > Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-module-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :expo-module-gradle-plugin:pluginDescriptors UP-TO-DATE
-> Task :expo-module-gradle-plugin:processResources UP-TO-DATE
 > Task :expo-gradle-plugin:expo-autolinking-plugin:compileKotlin UP-TO-DATE
+> Task :expo-module-gradle-plugin:processResources UP-TO-DATE
 > Task :expo-gradle-plugin:expo-autolinking-plugin:compileJava NO-SOURCE
 > Task :expo-gradle-plugin:expo-autolinking-plugin:pluginDescriptors UP-TO-DATE
 > Task :expo-gradle-plugin:expo-autolinking-plugin:processResources UP-TO-DATE
@@ -75,66 +75,66 @@ Using expo modules
   - [33m[📦][0m [32mexpo-sharing[0m (14.0.8)
 
 
-> Task :react-native-maps:generateCodegenSchemaFromJavaScript SKIPPED
-> Task :expo-modules-core:preBuild UP-TO-DATE
 > Task :journeyapps_react-native-quick-sqlite:preBuild UP-TO-DATE
-> Task :expo-modules-core:preDebugBuild UP-TO-DATE
+> Task :expo-modules-core:preBuild UP-TO-DATE
 > Task :journeyapps_react-native-quick-sqlite:preDebugBuild UP-TO-DATE
+> Task :expo-modules-core:preDebugBuild UP-TO-DATE
+> Task :react-native-maps:generateCodegenSchemaFromJavaScript SKIPPED
 > Task :react-native-maps:generateCodegenArtifactsFromSchema SKIPPED
 > Task :react-native-maps:preBuild UP-TO-DATE
 > Task :react-native-maps:preDebugBuild UP-TO-DATE
-> Task :react-native-maps:writeDebugAarMetadata
-> Task :expo-modules-core:writeDebugAarMetadata
 > Task :journeyapps_react-native-quick-sqlite:generateDebugResValues FROM-CACHE
 > Task :expo-modules-core:generateDebugResValues FROM-CACHE
-> Task :journeyapps_react-native-quick-sqlite:writeDebugAarMetadata
-> Task :react-native-maps:generateDebugResValues FROM-CACHE
-> Task :app:generateAutolinkingNewArchitectureFiles
-> Task :react-native-maps:generateDebugResources FROM-CACHE
-> Task :expo-modules-core:generateDebugResources FROM-CACHE
 > Task :journeyapps_react-native-quick-sqlite:generateDebugResources FROM-CACHE
+> Task :react-native-maps:writeDebugAarMetadata
+> Task :expo-modules-core:writeDebugAarMetadata
+> Task :journeyapps_react-native-quick-sqlite:writeDebugAarMetadata
+> Task :expo-modules-core:generateDebugResources FROM-CACHE
+> Task :react-native-maps:generateDebugResValues FROM-CACHE
+> Task :react-native-maps:generateDebugResources FROM-CACHE
+> Task :app:generateAutolinkingNewArchitectureFiles
+> Task :expo-modules-core:packageDebugResources FROM-CACHE
 > Task :app:generateAutolinkingPackageList
 > Task :app:generateCodegenSchemaFromJavaScript SKIPPED
 > Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :react-native-maps:packageDebugResources FROM-CACHE
+> Task :expo-modules-core:extractDeepLinksDebug FROM-CACHE
+> Task :journeyapps_react-native-quick-sqlite:packageDebugResources FROM-CACHE
 > Task :app:generateReactNativeEntryPoint
 > Task :app:preBuild
 > Task :app:preDebugBuild
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :react-native-maps:packageDebugResources FROM-CACHE
-> Task :journeyapps_react-native-quick-sqlite:packageDebugResources FROM-CACHE
-> Task :expo-modules-core:packageDebugResources FROM-CACHE
-> Task :expo-modules-core:extractDeepLinksDebug FROM-CACHE
-> Task :journeyapps_react-native-quick-sqlite:extractDeepLinksDebug FROM-CACHE
 > Task :react-native-maps:extractDeepLinksDebug FROM-CACHE
+> Task :journeyapps_react-native-quick-sqlite:extractDeepLinksDebug FROM-CACHE
 > Task :app:generateDebugBuildConfig FROM-CACHE
-> Task :app:generateDebugResValues FROM-CACHE
 > Task :expo-modules-core:processDebugManifest FROM-CACHE
-> Task :react-native-maps:processDebugManifest FROM-CACHE
+> Task :expo-modules-core:compileDebugLibraryResources FROM-CACHE
+> Task :app:generateDebugResValues FROM-CACHE
 > Task :journeyapps_react-native-quick-sqlite:processDebugManifest FROM-CACHE
 > Task :journeyapps_react-native-quick-sqlite:compileDebugLibraryResources FROM-CACHE
-> Task :expo-modules-core:compileDebugLibraryResources FROM-CACHE
-> Task :react-native-maps:compileDebugLibraryResources FROM-CACHE
-> Task :app:generateDebugResources FROM-CACHE
-> Task :expo-modules-core:parseDebugLocalResources FROM-CACHE
-> Task :react-native-maps:parseDebugLocalResources FROM-CACHE
 > Task :journeyapps_react-native-quick-sqlite:parseDebugLocalResources FROM-CACHE
+> Task :expo-modules-core:parseDebugLocalResources FROM-CACHE
+> Task :journeyapps_react-native-quick-sqlite:generateDebugRFile FROM-CACHE
 > Task :expo-modules-core:generateDebugRFile FROM-CACHE
 > Task :expo-modules-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugResources FROM-CACHE
+> Task :journeyapps_react-native-quick-sqlite:generateDebugBuildConfig FROM-CACHE
+> Task :journeyapps_react-native-quick-sqlite:javaPreCompileDebug FROM-CACHE
+> Task :expo-modules-core:generateDebugBuildConfig FROM-CACHE
+> Task :react-native-maps:processDebugManifest FROM-CACHE
+> Task :react-native-maps:compileDebugLibraryResources FROM-CACHE
+> Task :react-native-maps:parseDebugLocalResources FROM-CACHE
+> Task :app:packageDebugResources FROM-CACHE
 > Task :react-native-maps:generateDebugRFile FROM-CACHE
 > Task :react-native-maps:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :journeyapps_react-native-quick-sqlite:generateDebugRFile FROM-CACHE
-> Task :app:packageDebugResources FROM-CACHE
-> Task :react-native-maps:generateDebugBuildConfig FROM-CACHE
-> Task :journeyapps_react-native-quick-sqlite:generateDebugBuildConfig FROM-CACHE
-> Task :expo-modules-core:generateDebugBuildConfig FROM-CACHE
-> Task :react-native-maps:compileDebugKotlin NO-SOURCE
 > Task :app:parseDebugLocalResources FROM-CACHE
-> Task :react-native-maps:javaPreCompileDebug FROM-CACHE
-> Task :journeyapps_react-native-quick-sqlite:javaPreCompileDebug FROM-CACHE
+> Task :react-native-maps:generateDebugBuildConfig FROM-CACHE
+> Task :react-native-maps:compileDebugKotlin NO-SOURCE
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug FROM-CACHE
 > Task :app:javaPreCompileDebug FROM-CACHE
+> Task :react-native-maps:javaPreCompileDebug FROM-CACHE
 > Task :app:mergeDebugShaders
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
@@ -146,238 +146,262 @@ The NODE_ENV environment variable is required but was not specified. Ensure the 
 
 > Task :expo-constants:preBuild
 > Task :expo-constants:preDebugBuild
-> Task :expo-constants:writeDebugAarMetadata
-> Task :expo-constants:generateDebugResValues FROM-CACHE
-> Task :expo-constants:generateDebugResources FROM-CACHE
-> Task :expo-constants:packageDebugResources FROM-CACHE
-> Task :expo-constants:extractDeepLinksDebug FROM-CACHE
-> Task :expo-constants:processDebugManifest FROM-CACHE
-> Task :expo-constants:compileDebugLibraryResources FROM-CACHE
+> Task :react-native-community_datetimepicker:generateCodegenSchemaFromJavaScript
 > Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript
-> Task :expo-constants:parseDebugLocalResources FROM-CACHE
-> Task :expo-constants:generateDebugRFile FROM-CACHE
-> Task :expo-constants:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :expo-constants:generateDebugBuildConfig FROM-CACHE
-> Task :expo-constants:javaPreCompileDebug FROM-CACHE
 > Task :react-native-screens:generateCodegenSchemaFromJavaScript
 > Task :expo:generatePackagesList
 > Task :expo:preBuild
 > Task :expo:preDebugBuild
-> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
-> Task :react-native-async-storage_async-storage:preBuild
-> Task :react-native-async-storage_async-storage:preDebugBuild
-> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
-> Task :react-native-safe-area-context:preBuild
-> Task :react-native-safe-area-context:preDebugBuild
-> Task :react-native-safe-area-context:writeDebugAarMetadata
+> Task :expo:writeDebugAarMetadata
 > Task :expo:generateDebugResValues FROM-CACHE
-> Task :react-native-community_datetimepicker:generateCodegenSchemaFromJavaScript
 > Task :expo:generateDebugResources FROM-CACHE
 > Task :expo:packageDebugResources FROM-CACHE
-> Task :react-native-async-storage_async-storage:generateDebugResValues FROM-CACHE
-> Task :expo:writeDebugAarMetadata
-> Task :react-native-async-storage_async-storage:generateDebugResources FROM-CACHE
-> Task :react-native-safe-area-context:generateDebugResValues FROM-CACHE
-> Task :react-native-safe-area-context:generateDebugResources FROM-CACHE
-> Task :react-native-async-storage_async-storage:packageDebugResources FROM-CACHE
+> Task :expo-constants:generateDebugResValues FROM-CACHE
+> Task :expo-constants:generateDebugResources FROM-CACHE
+> Task :expo-constants:packageDebugResources FROM-CACHE
 > Task :expo:extractDeepLinksDebug FROM-CACHE
-> Task :react-native-safe-area-context:packageDebugResources FROM-CACHE
-> Task :react-native-async-storage_async-storage:extractDeepLinksDebug FROM-CACHE
 > Task :expo:processDebugManifest FROM-CACHE
-> Task :react-native-safe-area-context:extractDeepLinksDebug FROM-CACHE
-> Task :react-native-async-storage_async-storage:processDebugManifest FROM-CACHE
+> Task :expo-constants:extractDeepLinksDebug FROM-CACHE
+> Task :expo-constants:processDebugManifest FROM-CACHE
 > Task :expo:compileDebugLibraryResources FROM-CACHE
 > Task :expo:parseDebugLocalResources FROM-CACHE
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
 > Task :expo:generateDebugRFile FROM-CACHE
-> Task :react-native-async-storage_async-storage:compileDebugLibraryResources FROM-CACHE
-> Task :react-native-async-storage_async-storage:parseDebugLocalResources FROM-CACHE
-> Task :react-native-async-storage_async-storage:generateDebugRFile FROM-CACHE
-> Task :expo:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :expo:generateDebugBuildConfig FROM-CACHE
-> Task :expo:javaPreCompileDebug FROM-CACHE
-> Task :react-native-async-storage_async-storage:generateDebugBuildConfig FROM-CACHE
-> Task :react-native-async-storage_async-storage:javaPreCompileDebug FROM-CACHE
-> Task :expo-constants:mergeDebugShaders
+> Task :react-native-safe-area-context:preBuild
+> Task :react-native-safe-area-context:preDebugBuild
+> Task :expo-constants:compileDebugLibraryResources FROM-CACHE
+> Task :react-native-safe-area-context:generateDebugResValues FROM-CACHE
+> Task :react-native-safe-area-context:generateDebugResources FROM-CACHE
+> Task :react-native-safe-area-context:packageDebugResources FROM-CACHE
+> Task :react-native-safe-area-context:extractDeepLinksDebug FROM-CACHE
 > Task :react-native-safe-area-context:processDebugManifest FROM-CACHE
+> Task :expo-constants:parseDebugLocalResources FROM-CACHE
+> Task :expo-constants:generateDebugRFile FROM-CACHE
 > Task :react-native-safe-area-context:compileDebugLibraryResources FROM-CACHE
 > Task :react-native-safe-area-context:parseDebugLocalResources FROM-CACHE
 > Task :react-native-safe-area-context:generateDebugRFile FROM-CACHE
+> Task :expo:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo:generateDebugBuildConfig FROM-CACHE
+> Task :expo-constants:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-constants:generateDebugBuildConfig FROM-CACHE
+> Task :expo-constants:javaPreCompileDebug FROM-CACHE
+> Task :expo:javaPreCompileDebug FROM-CACHE
 > Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :react-native-safe-area-context:generateDebugBuildConfig FROM-CACHE
-> Task :react-native-screens:generateCodegenArtifactsFromSchema
-> Task :react-native-screens:preBuild
-> Task :react-native-screens:preDebugBuild
-> Task :react-native-screens:writeDebugAarMetadata
-> Task :react-native-async-storage_async-storage:writeDebugAarMetadata
-> Task :react-native-screens:generateDebugResValues FROM-CACHE
-> Task :expo-constants:compileDebugShaders NO-SOURCE
-> Task :expo-constants:generateDebugAssets UP-TO-DATE
-> Task :expo:mergeDebugShaders
-> Task :expo:compileDebugShaders NO-SOURCE
-> Task :expo:generateDebugAssets UP-TO-DATE
-> Task :expo:mergeDebugAssets
-> Task :expo-constants:mergeDebugAssets
 > Task :react-native-community_datetimepicker:generateCodegenArtifactsFromSchema
 > Task :react-native-community_datetimepicker:preBuild
 > Task :react-native-community_datetimepicker:preDebugBuild
-> Task :react-native-community_datetimepicker:generateDebugResValues FROM-CACHE
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+> Task :react-native-async-storage_async-storage:preBuild
+> Task :react-native-async-storage_async-storage:preDebugBuild
 > Task :react-native-community_datetimepicker:writeDebugAarMetadata
-> Task :expo-constants:mergeDebugJniLibFolders
-> Task :expo:mergeDebugJniLibFolders
-> Task :expo-constants:mergeDebugNativeLibs NO-SOURCE
-> Task :expo:mergeDebugNativeLibs NO-SOURCE
-> Task :expo-constants:stripDebugDebugSymbols NO-SOURCE
-> Task :expo:stripDebugDebugSymbols NO-SOURCE
-> Task :expo:copyDebugJniLibsProjectOnly
-> Task :expo-constants:copyDebugJniLibsProjectOnly
-> Task :expo:copyDebugJniLibsProjectAndLocalJars
-> Task :expo-constants:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-community_datetimepicker:generateDebugResValues FROM-CACHE
+> Task :react-native-async-storage_async-storage:generateDebugResValues FROM-CACHE
+> Task :react-native-async-storage_async-storage:generateDebugResources FROM-CACHE
+> Task :react-native-async-storage_async-storage:packageDebugResources FROM-CACHE
+> Task :react-native-screens:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:preBuild
+> Task :react-native-screens:preDebugBuild
+> Task :react-native-safe-area-context:writeDebugAarMetadata
+> Task :react-native-async-storage_async-storage:extractDeepLinksDebug FROM-CACHE
+> Task :react-native-screens:generateDebugResValues FROM-CACHE
+> Task :react-native-async-storage_async-storage:processDebugManifest FROM-CACHE
+> Task :react-native-async-storage_async-storage:compileDebugLibraryResources FROM-CACHE
+> Task :react-native-async-storage_async-storage:parseDebugLocalResources FROM-CACHE
 > Task :react-native-screens:generateDebugResources FROM-CACHE
-> Task :expo:extractDeepLinksForAarDebug FROM-CACHE
-> Task :expo-constants:extractDeepLinksForAarDebug FROM-CACHE
-> Task :expo:prepareDebugArtProfile
-> Task :expo-constants:prepareDebugArtProfile
-> Task :react-native-community_datetimepicker:generateDebugResources FROM-CACHE
-> Task :expo:prepareLintJarForPublish
-> Task :expo-constants:prepareLintJarForPublish
-> Task :react-native-community_datetimepicker:packageDebugResources FROM-CACHE
-> Task :react-native-community_datetimepicker:extractDeepLinksDebug FROM-CACHE
+> Task :react-native-async-storage_async-storage:generateDebugRFile FROM-CACHE
+> Task :react-native-async-storage_async-storage:generateDebugBuildConfig FROM-CACHE
+> Task :react-native-async-storage_async-storage:javaPreCompileDebug FROM-CACHE
 > Task :react-native-screens:packageDebugResources FROM-CACHE
 > Task :react-native-screens:extractDeepLinksDebug FROM-CACHE
+> Task :react-native-screens:processDebugManifest FROM-CACHE
+> Task :react-native-screens:compileDebugLibraryResources FROM-CACHE
+> Task :react-native-screens:parseDebugLocalResources FROM-CACHE
+> Task :react-native-screens:generateDebugRFile FROM-CACHE
+> Task :react-native-screens:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-screens:generateDebugBuildConfig FROM-CACHE
+> Task :react-native-community_datetimepicker:generateDebugResources FROM-CACHE
+> Task :react-native-community_datetimepicker:packageDebugResources FROM-CACHE
+> Task :react-native-community_datetimepicker:extractDeepLinksDebug FROM-CACHE
 > Task :react-native-community_datetimepicker:processDebugManifest FROM-CACHE
 > Task :react-native-community_datetimepicker:compileDebugLibraryResources FROM-CACHE
-> Task :react-native-screens:processDebugManifest FROM-CACHE
 > Task :react-native-community_datetimepicker:parseDebugLocalResources FROM-CACHE
 > Task :react-native-community_datetimepicker:generateDebugRFile FROM-CACHE
 > Task :react-native-community_datetimepicker:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :react-native-community_datetimepicker:generateDebugBuildConfig FROM-CACHE
+> Task :expo-constants:writeDebugAarMetadata
+> Task :expo:mergeDebugShaders
+> Task :expo:compileDebugShaders NO-SOURCE
+> Task :react-native-screens:writeDebugAarMetadata
+> Task :expo:generateDebugAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:writeDebugAarMetadata
+> Task :expo-constants:mergeDebugShaders
+> Task :expo-constants:compileDebugShaders NO-SOURCE
+> Task :expo-constants:generateDebugAssets UP-TO-DATE
+> Task :expo:mergeDebugAssets
+> Task :expo:mergeDebugJniLibFolders
+> Task :expo:mergeDebugNativeLibs NO-SOURCE
+> Task :expo:stripDebugDebugSymbols NO-SOURCE
+> Task :expo:copyDebugJniLibsProjectOnly
+> Task :expo:extractDeepLinksForAarDebug FROM-CACHE
+> Task :expo:prepareDebugArtProfile
+> Task :expo-constants:mergeDebugAssets
+> Task :expo:prepareLintJarForPublish
+> Task :expo-constants:mergeDebugJniLibFolders
+> Task :expo-constants:mergeDebugNativeLibs NO-SOURCE
+> Task :expo-constants:copyDebugJniLibsProjectOnly
+> Task :expo-constants:stripDebugDebugSymbols NO-SOURCE
+> Task :expo-constants:extractDeepLinksForAarDebug FROM-CACHE
+> Task :expo-constants:prepareDebugArtProfile
+> Task :expo:copyDebugJniLibsProjectAndLocalJars
+> Task :app:checkDebugDuplicateClasses
 > Task :react-native-safe-area-context:compileDebugKotlin FROM-CACHE
 > Task :react-native-safe-area-context:javaPreCompileDebug FROM-CACHE
+> Task :react-native-community_datetimepicker:compileDebugKotlin FROM-CACHE
+> Task :react-native-community_datetimepicker:javaPreCompileDebug FROM-CACHE
+> Task :expo-constants:prepareLintJarForPublish
 > Task :journeyapps_react-native-quick-sqlite:compileDebugJavaWithJavac FROM-CACHE
-> Task :react-native-async-storage_async-storage:compileDebugJavaWithJavac FROM-CACHE
 > Task :journeyapps_react-native-quick-sqlite:mergeDebugShaders
 > Task :journeyapps_react-native-quick-sqlite:compileDebugShaders NO-SOURCE
 > Task :journeyapps_react-native-quick-sqlite:generateDebugAssets UP-TO-DATE
+> Task :journeyapps_react-native-quick-sqlite:mergeDebugAssets
+> Task :react-native-async-storage_async-storage:compileDebugJavaWithJavac FROM-CACHE
 > Task :react-native-async-storage_async-storage:mergeDebugShaders
 > Task :react-native-async-storage_async-storage:compileDebugShaders NO-SOURCE
 > Task :react-native-async-storage_async-storage:generateDebugAssets UP-TO-DATE
-> Task :journeyapps_react-native-quick-sqlite:mergeDebugAssets
 > Task :react-native-async-storage_async-storage:mergeDebugAssets
+> Task :react-native-maps:compileDebugJavaWithJavac FROM-CACHE
+> Task :react-native-async-storage_async-storage:bundleLibCompileToJarDebug
 > Task :journeyapps_react-native-quick-sqlite:bundleLibCompileToJarDebug
 > Task :react-native-async-storage_async-storage:processDebugJavaRes NO-SOURCE
-> Task :react-native-maps:compileDebugJavaWithJavac FROM-CACHE
+> Task :react-native-screens:compileDebugKotlin FROM-CACHE
 > Task :react-native-async-storage_async-storage:mergeDebugJniLibFolders
-> Task :react-native-async-storage_async-storage:bundleLibRuntimeToDirDebug
 > Task :react-native-async-storage_async-storage:mergeDebugNativeLibs NO-SOURCE
-> Task :react-native-safe-area-context:compileDebugJavaWithJavac FROM-CACHE
+> Task :react-native-async-storage_async-storage:copyDebugJniLibsProjectOnly
 > Task :react-native-async-storage_async-storage:bundleLibRuntimeToJarDebug
-> Task :react-native-maps:mergeDebugShaders
-> Task :react-native-maps:compileDebugShaders NO-SOURCE
-> Task :react-native-maps:generateDebugAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-screens:javaPreCompileDebug FROM-CACHE
+> Task :react-native-async-storage_async-storage:bundleLibRuntimeToDirDebug
+> Task :react-native-safe-area-context:compileDebugJavaWithJavac FROM-CACHE
 > Task :react-native-safe-area-context:mergeDebugShaders
 > Task :react-native-safe-area-context:compileDebugShaders NO-SOURCE
 > Task :react-native-safe-area-context:generateDebugAssets UP-TO-DATE
-> Task :journeyapps_react-native-quick-sqlite:bundleLibRuntimeToJarDebug
-> Task :react-native-async-storage_async-storage:copyDebugJniLibsProjectOnly
 > Task :react-native-safe-area-context:mergeDebugAssets
-> Task :react-native-screens:compileDebugLibraryResources FROM-CACHE
-> Task :react-native-async-storage_async-storage:bundleLibCompileToJarDebug
-> Task :journeyapps_react-native-quick-sqlite:processDebugJavaRes NO-SOURCE
-> Task :react-native-screens:parseDebugLocalResources FROM-CACHE
-> Task :react-native-maps:mergeDebugAssets
-> Task :journeyapps_react-native-quick-sqlite:bundleLibRuntimeToDirDebug
-> Task :react-native-maps:processDebugJavaRes NO-SOURCE
-> Task :react-native-screens:generateDebugRFile FROM-CACHE
-> Task :react-native-screens:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :react-native-screens:generateDebugBuildConfig FROM-CACHE
 > Task :react-native-safe-area-context:processDebugJavaRes
-> Task :react-native-safe-area-context:bundleLibRuntimeToJarDebug
 > Task :react-native-safe-area-context:bundleLibCompileToJarDebug
-> Task :react-native-community_datetimepicker:compileDebugKotlin FROM-CACHE
-> Task :react-native-maps:mergeDebugJniLibFolders
-> Task :react-native-community_datetimepicker:javaPreCompileDebug FROM-CACHE
-> Task :react-native-maps:mergeDebugNativeLibs NO-SOURCE
 > Task :react-native-safe-area-context:mergeDebugJniLibFolders
 > Task :react-native-safe-area-context:mergeDebugNativeLibs NO-SOURCE
-> Task :react-native-maps:copyDebugJniLibsProjectOnly
-> Task :react-native-async-storage_async-storage:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-safe-area-context:bundleLibRuntimeToJarDebug
 > Task :react-native-safe-area-context:copyDebugJniLibsProjectOnly
-> Task :react-native-async-storage_async-storage:copyDebugJniLibsProjectAndLocalJars
-> Task :react-native-maps:stripDebugDebugSymbols NO-SOURCE
-> Task :react-native-maps:copyDebugJniLibsProjectAndLocalJars
-> Task :react-native-maps:extractDebugAnnotations FROM-CACHE
-> Task :react-native-async-storage_async-storage:extractDebugAnnotations FROM-CACHE
+> Task :react-native-maps:bundleLibCompileToJarDebug
+> Task :react-native-safe-area-context:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-safe-area-context:copyDebugJniLibsProjectAndLocalJars
 > Task :react-native-safe-area-context:bundleLibRuntimeToDirDebug
-> Task :react-native-maps:extractDeepLinksForAarDebug FROM-CACHE
-> Task :react-native-maps:mergeDebugGeneratedProguardFiles
-> Task :react-native-maps:mergeDebugConsumerProguardFiles
-> Task :react-native-maps:prepareDebugArtProfile
+> Task :expo-constants:copyDebugJniLibsProjectAndLocalJars
 > Task :react-native-community_datetimepicker:compileDebugJavaWithJavac FROM-CACHE
-> Task :react-native-maps:prepareLintJarForPublish
+> Task :journeyapps_react-native-quick-sqlite:processDebugJavaRes NO-SOURCE
+> Task :react-native-maps:mergeDebugShaders
+> Task :react-native-maps:compileDebugShaders NO-SOURCE
+> Task :react-native-maps:generateDebugAssets UP-TO-DATE
+> Task :react-native-screens:compileDebugJavaWithJavac FROM-CACHE
+> Task :journeyapps_react-native-quick-sqlite:bundleLibRuntimeToJarDebug
+> Task :react-native-safe-area-context:extractDebugAnnotations FROM-CACHE
 > Task :react-native-community_datetimepicker:mergeDebugShaders
 > Task :react-native-community_datetimepicker:compileDebugShaders NO-SOURCE
 > Task :react-native-community_datetimepicker:generateDebugAssets UP-TO-DATE
-> Task :react-native-community_datetimepicker:mergeDebugAssets
-> Task :react-native-maps:mergeDebugJavaResource
-> Task :react-native-community_datetimepicker:processDebugJavaRes
-> Task :react-native-community_datetimepicker:bundleLibRuntimeToDirDebug
-> Task :react-native-community_datetimepicker:bundleLibRuntimeToJarDebug
-> Task :react-native-community_datetimepicker:bundleLibCompileToJarDebug
-> Task :react-native-community_datetimepicker:mergeDebugJniLibFolders
-> Task :react-native-community_datetimepicker:mergeDebugNativeLibs NO-SOURCE
-> Task :react-native-community_datetimepicker:copyDebugJniLibsProjectOnly
-> Task :react-native-community_datetimepicker:stripDebugDebugSymbols NO-SOURCE
-> Task :react-native-community_datetimepicker:copyDebugJniLibsProjectAndLocalJars
-> Task :react-native-community_datetimepicker:extractDebugAnnotations FROM-CACHE
-> Task :react-native-community_datetimepicker:extractDeepLinksForAarDebug FROM-CACHE
-> Task :react-native-maps:syncDebugLibJars FROM-CACHE
-> Task :react-native-safe-area-context:stripDebugDebugSymbols NO-SOURCE
-> Task :react-native-community_datetimepicker:mergeDebugGeneratedProguardFiles
-> Task :react-native-community_datetimepicker:mergeDebugConsumerProguardFiles
-> Task :react-native-safe-area-context:copyDebugJniLibsProjectAndLocalJars
-> Task :react-native-community_datetimepicker:prepareDebugArtProfile
-> Task :react-native-community_datetimepicker:prepareLintJarForPublish
-> Task :react-native-safe-area-context:extractDebugAnnotations FROM-CACHE
+> Task :react-native-maps:mergeDebugAssets
 > Task :react-native-safe-area-context:extractDeepLinksForAarDebug FROM-CACHE
+> Task :app:mapDebugSourceSetPaths
 > Task :react-native-safe-area-context:mergeDebugGeneratedProguardFiles
+> Task :react-native-community_datetimepicker:bundleLibCompileToJarDebug
+> Task :react-native-screens:mergeDebugShaders
+> Task :react-native-community_datetimepicker:mergeDebugAssets
+> Task :react-native-maps:processDebugJavaRes NO-SOURCE
+> Task :react-native-screens:compileDebugShaders NO-SOURCE
+> Task :react-native-screens:generateDebugAssets UP-TO-DATE
 > Task :react-native-safe-area-context:mergeDebugConsumerProguardFiles
-> Task :react-native-community_datetimepicker:mergeDebugJavaResource
 > Task :react-native-safe-area-context:prepareDebugArtProfile
-> Task :react-native-safe-area-context:prepareLintJarForPublish
-> Task :react-native-maps:bundleDebugAar
-> Task :react-native-maps:assembleDebug
-> Task :react-native-community_datetimepicker:syncDebugLibJars FROM-CACHE
-> Task :react-native-safe-area-context:mergeDebugJavaResource
-> Task :react-native-safe-area-context:syncDebugLibJars FROM-CACHE
-> Task :react-native-community_datetimepicker:bundleDebugAar
-> Task :react-native-community_datetimepicker:assembleDebug
-> Task :expo-modules-core:compileDebugKotlin FROM-CACHE
-> Task :expo-modules-core:javaPreCompileDebug FROM-CACHE
+> Task :journeyapps_react-native-quick-sqlite:bundleLibRuntimeToDirDebug
+> Task :react-native-async-storage_async-storage:extractDebugAnnotations FROM-CACHE
+> Task :react-native-community_datetimepicker:processDebugJavaRes
 > Task :react-native-async-storage_async-storage:extractDeepLinksForAarDebug FROM-CACHE
 > Task :react-native-async-storage_async-storage:mergeDebugGeneratedProguardFiles
 > Task :react-native-async-storage_async-storage:mergeDebugConsumerProguardFiles
 > Task :react-native-async-storage_async-storage:prepareDebugArtProfile
 > Task :react-native-async-storage_async-storage:prepareLintJarForPublish
-> Task :app:mapDebugSourceSetPaths
+> Task :react-native-maps:mergeDebugJniLibFolders
+> Task :react-native-screens:mergeDebugAssets
+> Task :react-native-community_datetimepicker:mergeDebugJniLibFolders
+> Task :react-native-maps:mergeDebugNativeLibs NO-SOURCE
+> Task :react-native-community_datetimepicker:mergeDebugNativeLibs NO-SOURCE
+> Task :react-native-community_datetimepicker:bundleLibRuntimeToDirDebug
+> Task :react-native-maps:copyDebugJniLibsProjectOnly
+> Task :react-native-maps:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-safe-area-context:prepareLintJarForPublish
+> Task :react-native-community_datetimepicker:copyDebugJniLibsProjectOnly
+> Task :react-native-community_datetimepicker:stripDebugDebugSymbols NO-SOURCE
+> Task :react-native-community_datetimepicker:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-community_datetimepicker:bundleLibRuntimeToJarDebug
+> Task :react-native-maps:bundleLibRuntimeToJarDebug
+> Task :react-native-community_datetimepicker:extractDebugAnnotations FROM-CACHE
+> Task :react-native-maps:copyDebugJniLibsProjectAndLocalJars
+> Task :react-native-community_datetimepicker:extractDeepLinksForAarDebug FROM-CACHE
+> Task :react-native-community_datetimepicker:mergeDebugGeneratedProguardFiles
+> Task :react-native-community_datetimepicker:mergeDebugConsumerProguardFiles
+> Task :react-native-maps:extractDebugAnnotations FROM-CACHE
+> Task :react-native-community_datetimepicker:prepareDebugArtProfile
+> Task :react-native-community_datetimepicker:prepareLintJarForPublish
+> Task :react-native-maps:extractDeepLinksForAarDebug FROM-CACHE
+> Task :react-native-maps:mergeDebugGeneratedProguardFiles
+> Task :react-native-maps:mergeDebugConsumerProguardFiles
+> Task :react-native-maps:prepareDebugArtProfile
+> Task :react-native-maps:prepareLintJarForPublish
+> Task :expo-modules-core:compileDebugKotlin FROM-CACHE
+> Task :expo-modules-core:javaPreCompileDebug FROM-CACHE
+> Task :app:checkDebugAarMetadata
+> Task :react-native-screens:processDebugJavaRes
 > Task :react-native-async-storage_async-storage:mergeDebugJavaResource
+> Task :react-native-maps:mergeDebugJavaResource
 > Task :react-native-async-storage_async-storage:syncDebugLibJars FROM-CACHE
-> Task :react-native-safe-area-context:bundleDebugAar
-> Task :react-native-safe-area-context:assembleDebug
+> Task :react-native-maps:syncDebugLibJars FROM-CACHE
+> Task :react-native-safe-area-context:mergeDebugJavaResource
+> Task :react-native-community_datetimepicker:mergeDebugJavaResource
 > Task :react-native-async-storage_async-storage:bundleDebugAar
 > Task :react-native-async-storage_async-storage:assembleDebug
+> Task :react-native-community_datetimepicker:syncDebugLibJars FROM-CACHE
+> Task :react-native-safe-area-context:syncDebugLibJars FROM-CACHE
 > Task :react-native-maps:bundleLibRuntimeToDirDebug
-> Task :react-native-maps:bundleLibCompileToJarDebug
-> Task :react-native-maps:bundleLibRuntimeToJarDebug
+> Task :react-native-maps:bundleDebugAar
+> Task :react-native-maps:assembleDebug
+> Task :react-native-community_datetimepicker:bundleDebugAar
+> Task :react-native-community_datetimepicker:assembleDebug
+> Task :react-native-safe-area-context:bundleDebugAar
+> Task :react-native-safe-area-context:assembleDebug
+> Task :react-native-screens:bundleLibCompileToJarDebug
+> Task :react-native-screens:bundleLibRuntimeToJarDebug
 > Task :journeyapps_react-native-quick-sqlite:configureCMakeDebug[arm64-v8a]
-> Task :app:checkDebugDuplicateClasses
-> Task :app:checkDebugAarMetadata
-> Task :react-native-screens:compileDebugKotlin FROM-CACHE
-> Task :react-native-screens:javaPreCompileDebug FROM-CACHE
-> Task :react-native-screens:compileDebugJavaWithJavac FROM-CACHE
-> Task :react-native-screens:mergeDebugShaders
-> Task :react-native-screens:compileDebugShaders NO-SOURCE
-> Task :react-native-screens:generateDebugAssets UP-TO-DATE
-> Task :react-native-screens:mergeDebugAssets
+> Task :react-native-screens:configureCMakeDebug[arm64-v8a]
+> Task :app:mergeDebugResources FROM-CACHE
+> Task :react-native-screens:bundleLibRuntimeToDirDebug
+> Task :app:processDebugMainManifest FROM-CACHE
+> Task :app:processDebugManifest FROM-CACHE
+> Task :app:processDebugManifestForPackage FROM-CACHE
+> Task :app:processDebugResources FROM-CACHE
+> Task :expo-modules-core:compileDebugJavaWithJavac FROM-CACHE
+> Task :expo-modules-core:mergeDebugShaders
+> Task :expo-modules-core:compileDebugShaders NO-SOURCE
+> Task :expo-modules-core:generateDebugAssets UP-TO-DATE
+> Task :expo-modules-core:mergeDebugAssets
+> Task :expo-modules-core:processDebugJavaRes
+> Task :expo-modules-core:configureCMakeDebug[arm64-v8a]
+> Task :app:mergeExtDexDebug FROM-CACHE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets FROM-CACHE
+> Task :expo-modules-core:bundleLibRuntimeToJarDebug
+> Task :expo-modules-core:bundleLibCompileToJarDebug
+> Task :expo-modules-core:bundleLibRuntimeToDirDebug
+> Task :app:configureCMakeDebug[arm64-v8a]
 
 > Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[arm64-v8a]
 C/C++: ninja: Entering directory `C:\PlanYourTrip\frontend\node_modules\@journeyapps\react-native-quick-sqlite\android\.cxx\Debug\6m34h1f1\arm64-v8a'
@@ -386,13 +410,6 @@ C/C++:   129 |       results->push_back(move(row));
 C/C++:       |                          ^
 C/C++:       |                          std::
 C/C++: 1 warning generated.
-
-> Task :react-native-screens:processDebugJavaRes
-> Task :react-native-screens:configureCMakeDebug[arm64-v8a]
-> Task :react-native-screens:bundleLibCompileToJarDebug
-> Task :react-native-screens:bundleLibRuntimeToJarDebug
-
-> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[arm64-v8a]
 C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:191:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
 C/C++:   191 |       array.setValueAtIndex(rt, i, move(rowObject));
 C/C++:       |                                    ^
@@ -432,7 +449,8 @@ C/C++:   102 |         .errorMessage = e.what(),
 C/C++:       |                         ^~~~~~~~
 C/C++: 2 warnings generated.
 
-> Task :react-native-screens:bundleLibRuntimeToDirDebug
+> Task :react-native-screens:buildCMakeDebug[arm64-v8a]
+> Task :expo-modules-core:buildCMakeDebug[arm64-v8a]
 
 > Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[arm64-v8a]
 C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:36:11: warning: extra qualification on member 'clearState' [-Wextra-qualification]
@@ -548,20 +566,8 @@ C/C++:       |                                                     std::
 C/C++: 28 warnings generated.
 
 > Task :journeyapps_react-native-quick-sqlite:configureCMakeDebug[armeabi-v7a]
-
-> Task :app:processDebugMainManifest
-C:\PlanYourTrip\frontend\android\app\src\debug\AndroidManifest.xml Warning:
-	activity#expo.modules.imagepicker.ExpoCropImageActivity@android:exported was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
-C:\PlanYourTrip\frontend\android\app\src\debug\AndroidManifest.xml Warning:
-	provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
-
-> Task :app:processDebugManifest
-> Task :app:mergeDebugResources
-> Task :expo-modules-core:compileDebugJavaWithJavac FROM-CACHE
-> Task :expo-modules-core:mergeDebugShaders
-> Task :expo-modules-core:compileDebugShaders NO-SOURCE
-> Task :expo-modules-core:generateDebugAssets UP-TO-DATE
-> Task :expo-modules-core:mergeDebugAssets
+> Task :app:buildCMakeDebug[arm64-v8a]
+> Task :react-native-screens:configureCMakeDebug[armeabi-v7a]
 
 > Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[armeabi-v7a]
 C/C++: ninja: Entering directory `C:\PlanYourTrip\frontend\node_modules\@journeyapps\react-native-quick-sqlite\android\.cxx\Debug\6m34h1f1\armeabi-v7a'
@@ -570,11 +576,6 @@ C/C++:   129 |       results->push_back(move(row));
 C/C++:       |                          ^
 C/C++:       |                          std::
 C/C++: 1 warning generated.
-
-> Task :expo-modules-core:processDebugJavaRes
-> Task :expo-modules-core:configureCMakeDebug[arm64-v8a]
-
-> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[armeabi-v7a]
 C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:191:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
 C/C++:   191 |       array.setValueAtIndex(rt, i, move(rowObject));
 C/C++:       |                                    ^
@@ -614,184 +615,9 @@ C/C++:   102 |         .errorMessage = e.what(),
 C/C++:       |                         ^~~~~~~~
 C/C++: 2 warnings generated.
 
-> Task :expo-modules-core:bundleLibRuntimeToJarDebug
-> Task :expo-modules-core:bundleLibCompileToJarDebug
-> Task :app:mergeDebugAssets
-> Task :app:compressDebugAssets FROM-CACHE
-> Task :react-native-screens:buildCMakeDebug[arm64-v8a]
-> Task :react-native-screens:configureCMakeDebug[armeabi-v7a]
-
-> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[armeabi-v7a]
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:36:11: warning: extra qualification on member 'clearState' [-Wextra-qualification]
-C/C++:    36 | void osp::clearState() { sqliteCloseAll(); }
-C/C++:       |           ^
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:61:38: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:    61 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiTableName),
-C/C++:       |                                      ^
-C/C++:       |                                      std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:61:55: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:    61 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiTableName),
-C/C++:       |                                                       ^
-C/C++:       |                                                       std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:62:28: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:    62 |                            move(jsiOpType), move(jsiRowId));
-C/C++:       |                            ^
-C/C++:       |                            std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:62:45: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:    62 |                            move(jsiOpType), move(jsiRowId));
-C/C++:       |                                             ^
-C/C++:       |                                             std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:99:38: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:    99 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiEventType));
-C/C++:       |                                      ^
-C/C++:       |                                      std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:99:55: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:    99 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiEventType));
-C/C++:       |                                                       ^
-C/C++:       |                                                       std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:123:38: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   123 |       handlerFunction.call(*runtime, move(jsiDBName), move(jsiLockID));
-C/C++:       |                                      ^
-C/C++:       |                                      std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:123:55: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   123 |       handlerFunction.call(*runtime, move(jsiDBName), move(jsiLockID));
-C/C++:       |                                                       ^
-C/C++:       |                                                       std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:132:11: warning: extra qualification on member 'install' [-Wextra-qualification]
-C/C++:   132 | void osp::install(jsi::Runtime &rt,
-C/C++:       |           ^
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:380:30: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   380 |                status_copy = move(status), resolve, reject] {
-C/C++:       |                              ^
-C/C++:       |                              std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:385:61: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   385 |                                                             move(jsiResult));
-C/C++:       |                                                             ^
-C/C++:       |                                                             std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:450:35: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   450 |               [&rt, batchResult = move(batchResult), resolve, reject] {
-C/C++:       |                                   ^
-C/C++:       |                                   std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:455:65: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   455 |                   resolve->asObject(rt).asFunction(rt).call(rt, move(res));
-C/C++:       |                                                                 ^
-C/C++:       |                                                                 std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:495:30: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   495 |               [&rt, result = move(importResult), resolve, reject] {
-C/C++:       |                              ^
-C/C++:       |                              std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:501:65: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   501 |                   resolve->asObject(rt).asFunction(rt).call(rt, move(res));
-C/C++:       |                                                                 ^
-C/C++:       |                                                                 std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:563:34: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   563 |   module.setProperty(rt, "open", move(open));
-C/C++:       |                                  ^
-C/C++:       |                                  std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:564:41: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   564 |   module.setProperty(rt, "requestLock", move(requestLock));
-C/C++:       |                                         ^
-C/C++:       |                                         std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:565:41: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   565 |   module.setProperty(rt, "releaseLock", move(releaseLock));
-C/C++:       |                                         ^
-C/C++:       |                                         std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:566:46: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   566 |   module.setProperty(rt, "executeInContext", move(executeInContext));
-C/C++:       |                                              ^
-C/C++:       |                                              std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:567:35: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   567 |   module.setProperty(rt, "close", move(close));
-C/C++:       |                                   ^
-C/C++:       |                                   std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:568:43: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   568 |   module.setProperty(rt, "refreshSchema", move(refreshSchema));
-C/C++:       |                                           ^
-C/C++:       |                                           std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:570:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   570 |   module.setProperty(rt, "attach", move(attach));
-C/C++:       |                                    ^
-C/C++:       |                                    std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:571:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   571 |   module.setProperty(rt, "detach", move(detach));
-C/C++:       |                                    ^
-C/C++:       |                                    std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:572:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   572 |   module.setProperty(rt, "delete", move(remove));
-C/C++:       |                                    ^
-C/C++:       |                                    std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:573:42: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   573 |   module.setProperty(rt, "executeBatch", move(executeBatch));
-C/C++:       |                                          ^
-C/C++:       |                                          std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:574:43: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   574 |   module.setProperty(rt, "loadFileAsync", move(loadFileAsync));
-C/C++:       |                                           ^
-C/C++:       |                                           std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:576:53: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   576 |   rt.global().setProperty(rt, "__QuickSQLiteProxy", move(module));
-C/C++:       |                                                     ^
-C/C++:       |                                                     std::
-C/C++: 28 warnings generated.
-
-> Task :app:mergeExtDexDebug
-> Task :app:processDebugManifestForPackage
-> Task :journeyapps_react-native-quick-sqlite:configureCMakeDebug[x86]
-> Task :expo-modules-core:bundleLibRuntimeToDirDebug
-> Task :expo-modules-core:buildCMakeDebug[arm64-v8a]
-> Task :app:configureCMakeDebug[arm64-v8a]
 > Task :react-native-screens:buildCMakeDebug[armeabi-v7a]
-> Task :react-native-screens:configureCMakeDebug[x86]
 
-> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[x86]
-C/C++: ninja: Entering directory `C:\PlanYourTrip\frontend\node_modules\@journeyapps\react-native-quick-sqlite\android\.cxx\Debug\6m34h1f1\x86'
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/sqliteExecute.cpp:129:26: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   129 |       results->push_back(move(row));
-C/C++:       |                          ^
-C/C++:       |                          std::
-C/C++: 1 warning generated.
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:191:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   191 |       array.setValueAtIndex(rt, i, move(rowObject));
-C/C++:       |                                    ^
-C/C++:       |                                    std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:193:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   193 |     rows.setProperty(rt, "_array", move(array));
-C/C++:       |                                    ^
-C/C++:       |                                    std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:194:33: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   194 |     res.setProperty(rt, "rows", move(rows));
-C/C++:       |                                 ^
-C/C++:       |                                 std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:207:43: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   207 |       column_array.setValueAtIndex(rt, i, move(column_object));
-C/C++:       |                                           ^
-C/C++:       |                                           std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:209:37: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   209 |     res.setProperty(rt, "metadata", move(column_array));
-C/C++:       |                                     ^
-C/C++:       |                                     std::
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:213:10: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
-C/C++:   213 |   return move(res);
-C/C++:       |          ^
-C/C++:       |          std::
-C/C++: 6 warnings generated.
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:94:17: warning: ISO C++ requires field designators to be specified in declaration order; field 'errorMessage' will be initialized after field 'type' [-Wreorder-init-list]
-C/C++:    94 |         .type = SQLiteError,
-C/C++:       |         ~~~~~~~~^~~~~~~~~~~
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:93:25: note: previous initialization for field 'errorMessage' is here
-C/C++:    93 |         .errorMessage = "Context is no longer available",
-C/C++:       |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:103:17: warning: ISO C++ requires field designators to be specified in declaration order; field 'errorMessage' will be initialized after field 'type' [-Wreorder-init-list]
-C/C++:   103 |         .type = SQLiteError,
-C/C++:       |         ~~~~~~~~^~~~~~~~~~~
-C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:102:25: note: previous initialization for field 'errorMessage' is here
-C/C++:   102 |         .errorMessage = e.what(),
-C/C++:       |                         ^~~~~~~~
-C/C++: 2 warnings generated.
-
-> Task :expo-modules-core:configureCMakeDebug[armeabi-v7a]
-
-> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[x86]
+> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[armeabi-v7a]
 C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:36:11: warning: extra qualification on member 'clearState' [-Wextra-qualification]
 C/C++:    36 | void osp::clearState() { sqliteCloseAll(); }
 C/C++:       |           ^
@@ -904,26 +730,38 @@ C/C++:       |                                                     ^
 C/C++:       |                                                     std::
 C/C++: 28 warnings generated.
 
+> Task :journeyapps_react-native-quick-sqlite:configureCMakeDebug[x86]
+> Task :expo-modules-core:configureCMakeDebug[armeabi-v7a]
 > Task :expo-constants:compileDebugKotlin FROM-CACHE
 > Task :expo-constants:compileDebugJavaWithJavac FROM-CACHE
 > Task :expo-constants:processDebugJavaRes
 > Task :expo-constants:extractDebugAnnotations FROM-CACHE
 > Task :expo-constants:mergeDebugGeneratedProguardFiles
-> Task :expo-constants:mergeDebugConsumerProguardFiles
 > Task :expo-constants:bundleLibRuntimeToDirDebug
-> Task :expo-constants:mergeDebugJavaResource
+> Task :expo-constants:mergeDebugConsumerProguardFiles
 > Task :expo-constants:bundleLibRuntimeToJarDebug
-> Task :expo-constants:syncDebugLibJars FROM-CACHE
 > Task :expo-constants:bundleLibCompileToJarDebug
+> Task :expo-constants:mergeDebugJavaResource
+> Task :expo-constants:syncDebugLibJars FROM-CACHE
 > Task :expo-constants:bundleDebugAar
 > Task :expo-constants:assembleDebug
-> Task :journeyapps_react-native-quick-sqlite:configureCMakeDebug[x86_64]
-> Task :app:buildCMakeDebug[arm64-v8a]
-> Task :react-native-screens:buildCMakeDebug[x86]
-> Task :react-native-screens:configureCMakeDebug[x86_64]
+> Task :expo:compileDebugKotlin FROM-CACHE
+> Task :expo:compileDebugJavaWithJavac FROM-CACHE
+> Task :expo:processDebugJavaRes
+> Task :expo:extractDebugAnnotations FROM-CACHE
+> Task :expo:mergeDebugGeneratedProguardFiles
+> Task :expo:mergeDebugConsumerProguardFiles
+> Task :expo:bundleLibCompileToJarDebug
+> Task :expo:mergeDebugJavaResource
+> Task :expo:syncDebugLibJars FROM-CACHE
+> Task :expo:bundleDebugAar
+> Task :expo:assembleDebug
+> Task :react-native-screens:configureCMakeDebug[x86]
+> Task :expo:bundleLibRuntimeToDirDebug
+> Task :expo:bundleLibRuntimeToJarDebug
 
-> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[x86_64]
-C/C++: ninja: Entering directory `C:\PlanYourTrip\frontend\node_modules\@journeyapps\react-native-quick-sqlite\android\.cxx\Debug\6m34h1f1\x86_64'
+> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[x86]
+C/C++: ninja: Entering directory `C:\PlanYourTrip\frontend\node_modules\@journeyapps\react-native-quick-sqlite\android\.cxx\Debug\6m34h1f1\x86'
 C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:191:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
 C/C++:   191 |       array.setValueAtIndex(rt, i, move(rowObject));
 C/C++:       |                                    ^
@@ -969,30 +807,179 @@ C/C++:       |                         ^~~~~~~~
 C/C++: 2 warnings generated.
 
 > Task :expo-modules-core:buildCMakeDebug[armeabi-v7a]
-> Task :expo:compileDebugKotlin
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ExpoModulesPackage.kt:34:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ExpoReactHostFactory.kt:8:8 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ExpoReactHostFactory.kt:80:22 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:24:8 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:58:33 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:105:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:105:38 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:113:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:114:21 'val reactInstanceManager: ReactInstanceManager' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:168:36 'constructor(activity: Activity, reactNativeHost: ReactNativeHost?, appKey: String?, launchOptions: Bundle?, fabricEnabled: Boolean): ReactDelegate' is deprecated. Deprecated since 0.81.0, use one of the other constructors instead.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:279:77 'val reactInstanceManager: ReactInstanceManager' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:282:22 'val reactInstanceManager: ReactInstanceManager' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:286:54 'val reactInstanceManager: ReactInstanceManager' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactNativeHostWrapper.kt:6:8 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactNativeHostWrapper.kt:15:9 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactNativeHostWrapper.kt:47:60 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactNativeHostWrapperBase.kt:7:8 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactNativeHostWrapperBase.kt:16:23 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactNativeHostWrapperBase.kt:89:16 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/ReactNativeHostWrapperBase.kt:101:38 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt:30:39 'constructor(reactContext: ReactContext): ForwardingCookieHandler' is deprecated. Use the default constructor.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:42:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
-w: file:///C:/PlanYourTrip/frontend/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:44:11 'fun deallocate(): Unit' is deprecated. Use sharedObjectDidRelease() instead.
+> Task :react-native-screens:buildCMakeDebug[x86]
+
+> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[x86]
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:36:11: warning: extra qualification on member 'clearState' [-Wextra-qualification]
+C/C++:    36 | void osp::clearState() { sqliteCloseAll(); }
+C/C++:       |           ^
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:61:38: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:    61 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiTableName),
+C/C++:       |                                      ^
+C/C++:       |                                      std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:61:55: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:    61 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiTableName),
+C/C++:       |                                                       ^
+C/C++:       |                                                       std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:62:28: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:    62 |                            move(jsiOpType), move(jsiRowId));
+C/C++:       |                            ^
+C/C++:       |                            std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:62:45: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:    62 |                            move(jsiOpType), move(jsiRowId));
+C/C++:       |                                             ^
+C/C++:       |                                             std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:99:38: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:    99 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiEventType));
+C/C++:       |                                      ^
+C/C++:       |                                      std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:99:55: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:    99 |       handlerFunction.call(*runtime, move(jsiDbName), move(jsiEventType));
+C/C++:       |                                                       ^
+C/C++:       |                                                       std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:123:38: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   123 |       handlerFunction.call(*runtime, move(jsiDBName), move(jsiLockID));
+C/C++:       |                                      ^
+C/C++:       |                                      std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:123:55: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   123 |       handlerFunction.call(*runtime, move(jsiDBName), move(jsiLockID));
+C/C++:       |                                                       ^
+C/C++:       |                                                       std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:132:11: warning: extra qualification on member 'install' [-Wextra-qualification]
+C/C++:   132 | void osp::install(jsi::Runtime &rt,
+C/C++:       |           ^
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:380:30: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   380 |                status_copy = move(status), resolve, reject] {
+C/C++:       |                              ^
+C/C++:       |                              std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:385:61: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   385 |                                                             move(jsiResult));
+C/C++:       |                                                             ^
+C/C++:       |                                                             std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:450:35: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   450 |               [&rt, batchResult = move(batchResult), resolve, reject] {
+C/C++:       |                                   ^
+C/C++:       |                                   std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:455:65: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   455 |                   resolve->asObject(rt).asFunction(rt).call(rt, move(res));
+C/C++:       |                                                                 ^
+C/C++:       |                                                                 std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:495:30: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   495 |               [&rt, result = move(importResult), resolve, reject] {
+C/C++:       |                              ^
+C/C++:       |                              std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:501:65: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   501 |                   resolve->asObject(rt).asFunction(rt).call(rt, move(res));
+C/C++:       |                                                                 ^
+C/C++:       |                                                                 std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:563:34: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   563 |   module.setProperty(rt, "open", move(open));
+C/C++:       |                                  ^
+C/C++:       |                                  std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:564:41: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   564 |   module.setProperty(rt, "requestLock", move(requestLock));
+C/C++:       |                                         ^
+C/C++:       |                                         std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:565:41: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   565 |   module.setProperty(rt, "releaseLock", move(releaseLock));
+C/C++:       |                                         ^
+C/C++:       |                                         std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:566:46: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   566 |   module.setProperty(rt, "executeInContext", move(executeInContext));
+C/C++:       |                                              ^
+C/C++:       |                                              std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:567:35: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   567 |   module.setProperty(rt, "close", move(close));
+C/C++:       |                                   ^
+C/C++:       |                                   std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:568:43: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   568 |   module.setProperty(rt, "refreshSchema", move(refreshSchema));
+C/C++:       |                                           ^
+C/C++:       |                                           std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:570:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   570 |   module.setProperty(rt, "attach", move(attach));
+C/C++:       |                                    ^
+C/C++:       |                                    std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:571:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   571 |   module.setProperty(rt, "detach", move(detach));
+C/C++:       |                                    ^
+C/C++:       |                                    std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:572:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   572 |   module.setProperty(rt, "delete", move(remove));
+C/C++:       |                                    ^
+C/C++:       |                                    std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:573:42: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   573 |   module.setProperty(rt, "executeBatch", move(executeBatch));
+C/C++:       |                                          ^
+C/C++:       |                                          std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:574:43: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   574 |   module.setProperty(rt, "loadFileAsync", move(loadFileAsync));
+C/C++:       |                                           ^
+C/C++:       |                                           std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:576:53: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   576 |   rt.global().setProperty(rt, "__QuickSQLiteProxy", move(module));
+C/C++:       |                                                     ^
+C/C++:       |                                                     std::
+C/C++: 28 warnings generated.
+
+> Task :journeyapps_react-native-quick-sqlite:configureCMakeDebug[x86_64]
+> Task :app:compileDebugKotlin FROM-CACHE
+> Task :app:compileDebugJavaWithJavac FROM-CACHE
+> Task :app:dexBuilderDebug FROM-CACHE
+> Task :app:mergeDebugGlobalSynthetics FROM-CACHE
+> Task :app:processDebugJavaRes
+> Task :app:mergeLibDexDebug FROM-CACHE
+> Task :app:mergeProjectDexDebug FROM-CACHE
+
+> Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[x86_64]
+C/C++: ninja: Entering directory `C:\PlanYourTrip\frontend\node_modules\@journeyapps\react-native-quick-sqlite\android\.cxx\Debug\6m34h1f1\x86_64'
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/sqliteExecute.cpp:129:26: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   129 |       results->push_back(move(row));
+C/C++:       |                          ^
+C/C++:       |                          std::
+C/C++: 1 warning generated.
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:191:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   191 |       array.setValueAtIndex(rt, i, move(rowObject));
+C/C++:       |                                    ^
+C/C++:       |                                    std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:193:36: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   193 |     rows.setProperty(rt, "_array", move(array));
+C/C++:       |                                    ^
+C/C++:       |                                    std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:194:33: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   194 |     res.setProperty(rt, "rows", move(rows));
+C/C++:       |                                 ^
+C/C++:       |                                 std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:207:43: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   207 |       column_array.setValueAtIndex(rt, i, move(column_object));
+C/C++:       |                                           ^
+C/C++:       |                                           std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:209:37: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   209 |     res.setProperty(rt, "metadata", move(column_array));
+C/C++:       |                                     ^
+C/C++:       |                                     std::
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/JSIHelper.cpp:213:10: warning: unqualified call to 'std::move' [-Wunqualified-std-cast-call]
+C/C++:   213 |   return move(res);
+C/C++:       |          ^
+C/C++:       |          std::
+C/C++: 6 warnings generated.
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:94:17: warning: ISO C++ requires field designators to be specified in declaration order; field 'errorMessage' will be initialized after field 'type' [-Wreorder-init-list]
+C/C++:    94 |         .type = SQLiteError,
+C/C++:       |         ~~~~~~~~^~~~~~~~~~~
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:93:25: note: previous initialization for field 'errorMessage' is here
+C/C++:    93 |         .errorMessage = "Context is no longer available",
+C/C++:       |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:103:17: warning: ISO C++ requires field designators to be specified in declaration order; field 'errorMessage' will be initialized after field 'type' [-Wreorder-init-list]
+C/C++:   103 |         .type = SQLiteError,
+C/C++:       |         ~~~~~~~~^~~~~~~~~~~
+C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/ConnectionPool.cpp:102:25: note: previous initialization for field 'errorMessage' is here
+C/C++:   102 |         .errorMessage = e.what(),
+C/C++:       |                         ^~~~~~~~
+C/C++: 2 warnings generated.
+
+> Task :react-native-screens:configureCMakeDebug[x86_64]
+> Task :expo-modules-core:configureCMakeDebug[x86]
+> Task :app:configureCMakeDebug[armeabi-v7a]
 
 > Task :journeyapps_react-native-quick-sqlite:buildCMakeDebug[x86_64]
 C/C++: C:/PlanYourTrip/frontend/node_modules/@journeyapps/react-native-quick-sqlite/cpp/bindings.cpp:36:11: warning: extra qualification on member 'clearState' [-Wextra-qualification]
@@ -1117,13 +1104,15 @@ C/C++: 28 warnings generated.
 > Task :journeyapps_react-native-quick-sqlite:mergeDebugJavaResource
 > Task :journeyapps_react-native-quick-sqlite:syncDebugLibJars FROM-CACHE
 > Task :journeyapps_react-native-quick-sqlite:mergeDebugNativeLibs
+> Task :app:mergeDebugJavaResource
 > Task :journeyapps_react-native-quick-sqlite:copyDebugJniLibsProjectOnly
 > Task :journeyapps_react-native-quick-sqlite:stripDebugDebugSymbols
 > Task :journeyapps_react-native-quick-sqlite:copyDebugJniLibsProjectAndLocalJars
-> Task :react-native-screens:buildCMakeDebug[x86_64]
 > Task :journeyapps_react-native-quick-sqlite:bundleDebugAar
 > Task :journeyapps_react-native-quick-sqlite:assembleDebug
-> Task :expo-modules-core:configureCMakeDebug[x86]
+> Task :react-native-screens:buildCMakeDebug[x86_64]
+> Task :expo-modules-core:buildCMakeDebug[x86]
+> Task :app:buildCMakeDebug[armeabi-v7a]
 > Task :react-native-screens:mergeDebugJniLibFolders
 > Task :react-native-screens:extractDebugAnnotations FROM-CACHE
 > Task :react-native-screens:extractDeepLinksForAarDebug FROM-CACHE
@@ -1132,31 +1121,15 @@ C/C++: 28 warnings generated.
 > Task :react-native-screens:prepareDebugArtProfile
 > Task :react-native-screens:prepareLintJarForPublish
 > Task :react-native-screens:mergeDebugJavaResource
-> Task :react-native-screens:mergeDebugNativeLibs
 > Task :react-native-screens:syncDebugLibJars FROM-CACHE
+> Task :react-native-screens:mergeDebugNativeLibs
 > Task :react-native-screens:copyDebugJniLibsProjectOnly
-> Task :expo:compileDebugJavaWithJavac
 > Task :react-native-screens:stripDebugDebugSymbols
 > Task :react-native-screens:copyDebugJniLibsProjectAndLocalJars
 > Task :react-native-screens:bundleDebugAar
 > Task :react-native-screens:assembleDebug
-> Task :expo:processDebugJavaRes
-> Task :expo:extractDebugAnnotations
-> Task :expo:mergeDebugGeneratedProguardFiles
-> Task :expo:bundleLibCompileToJarDebug
-> Task :expo:mergeDebugConsumerProguardFiles
-> Task :expo:bundleLibRuntimeToJarDebug
-> Task :expo:mergeDebugJavaResource
-> Task :expo:syncDebugLibJars
-> Task :expo:bundleDebugAar
-> Task :expo:assembleDebug
-> Task :expo:bundleLibRuntimeToDirDebug
-> Task :expo-modules-core:buildCMakeDebug[x86]
 > Task :expo-modules-core:configureCMakeDebug[x86_64]
-> Task :app:configureCMakeDebug[armeabi-v7a]
-> Task :app:mergeLibDexDebug
 > Task :expo-modules-core:buildCMakeDebug[x86_64]
-> Task :app:buildCMakeDebug[armeabi-v7a]
 > Task :expo-modules-core:mergeDebugJniLibFolders
 > Task :expo-modules-core:extractDebugAnnotations FROM-CACHE
 > Task :expo-modules-core:extractDeepLinksForAarDebug FROM-CACHE
@@ -1165,11 +1138,11 @@ C/C++: 28 warnings generated.
 > Task :expo-modules-core:prepareDebugArtProfile
 > Task :expo-modules-core:prepareLintJarForPublish
 > Task :expo-modules-core:mergeDebugJavaResource
-> Task :expo-modules-core:syncDebugLibJars FROM-CACHE
 > Task :expo-modules-core:mergeDebugNativeLibs
+> Task :expo-modules-core:syncDebugLibJars FROM-CACHE
 > Task :expo-modules-core:stripDebugDebugSymbols
-> Task :expo-modules-core:copyDebugJniLibsProjectAndLocalJars
 > Task :expo-modules-core:copyDebugJniLibsProjectOnly
+> Task :expo-modules-core:copyDebugJniLibsProjectAndLocalJars
 > Task :expo-modules-core:bundleDebugAar
 > Task :expo-modules-core:assembleDebug
 > Task :app:configureCMakeDebug[x86]
@@ -1180,21 +1153,8 @@ C/C++: 28 warnings generated.
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
-> Task :app:processDebugResources
 > Task :app:mergeDebugNativeLibs
 > Task :app:stripDebugDebugSymbols
-
-> Task :app:compileDebugKotlin
-w: file:///C:/PlanYourTrip/frontend/android/app/src/main/java/com/mxh7777/planyourtrip/MainApplication.kt:9:8 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-w: file:///C:/PlanYourTrip/frontend/android/app/src/main/java/com/mxh7777/planyourtrip/MainApplication.kt:21:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
-w: file:///C:/PlanYourTrip/frontend/android/app/src/main/java/com/mxh7777/planyourtrip/MainApplication.kt:21:33 'class ReactNativeHost : Any' is deprecated. Deprecated in Java.
-
-> Task :app:compileDebugJavaWithJavac
-> Task :app:dexBuilderDebug
-> Task :app:mergeDebugGlobalSynthetics FROM-CACHE
-> Task :app:processDebugJavaRes
-> Task :app:mergeProjectDexDebug
-> Task :app:mergeDebugJavaResource
 > Task :app:packageDebug
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
@@ -1207,5 +1167,5 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD SUCCESSFUL in 7m 28s
-385 actionable tasks: 223 executed, 138 from cache, 24 up-to-date
+BUILD SUCCESSFUL in 6m 54s
+385 actionable tasks: 208 executed, 153 from cache, 24 up-to-date
