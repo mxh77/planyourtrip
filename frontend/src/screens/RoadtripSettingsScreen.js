@@ -204,15 +204,11 @@ export default function RoadtripSettingsScreen({ navigation, route }) {
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
-  // Header natif (identique à RoadtripDetail)
+  // Header natif
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
       headerTitle: 'Paramètres',
-      headerTitleAlign: 'center',
-      headerTitleStyle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-      headerStyle: { backgroundColor: 'rgba(26,26,38,1)' },
-      headerTintColor: '#fff',
     });
   }, [navigation]);
 

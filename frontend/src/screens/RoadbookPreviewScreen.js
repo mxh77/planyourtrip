@@ -178,14 +178,14 @@ export default function RoadbookPreviewScreen({ route, navigation }) {
 
   useEffect(() => {
     navigation.setOptions({
-      title: roadtripTitle ? `Roadbook — ${roadtripTitle}` : 'Roadbook',
+      title: 'Aperçu',
     });
-  }, [navigation, roadtripTitle]);
+  }, [navigation]);
 
   if (!rt) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#8b5cf6" />
+        <ActivityIndicator size="large" color={COLORS.accent} />
       </View>
     );
   }

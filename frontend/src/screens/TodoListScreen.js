@@ -47,8 +47,8 @@ export default function TodoListScreen({ route, navigation }) {
   }, [fetchTodos]);
 
   useEffect(() => {
-    navigation.setOptions({ title: roadtripTitle ? `Todo — ${roadtripTitle}` : 'Todo list' });
-  }, [navigation, roadtripTitle]);
+    navigation.setOptions({ title: 'Todo list' });
+  }, [navigation]);
 
   const addTodo = async () => {
     if (!newText.trim()) return;

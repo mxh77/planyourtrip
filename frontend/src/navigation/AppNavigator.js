@@ -26,7 +26,8 @@ const Stack = createNativeStackNavigator();
 const screenOptions = {
   headerStyle: { backgroundColor: COLORS.bg },
   headerTintColor: COLORS.text,
-  headerTitleStyle: { fontFamily: 'CormorantGaramond_700Bold', fontSize: 20 },
+  headerTitleStyle: { color: COLORS.text, fontSize: 18, fontWeight: '700' },
+  headerTitleAlign: 'center',
   headerBackTitleVisible: false,
   contentStyle: { backgroundColor: COLORS.bg },
 };
@@ -122,7 +123,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Budget"
               component={BudgetScreen}
-              options={{ title: '💰 Budget', headerShown: true }}
+              options={{ title: 'Budget', headerShown: true }}
             />
           </>
         )}

@@ -326,9 +326,9 @@ export default function BudgetScreen({ route, navigation }) {
   // ── Navigation ───────────────────────────────────────────────────────
   useEffect(() => {
     navigation.setOptions({
-      title: roadtripTitle ? `💰 ${roadtripTitle}` : '💰 Budget',
+      title: 'Budget',
     });
-  }, [navigation, roadtripTitle]);
+  }, [navigation]);
 
   // PowerSync réactif = pas besoin d'attendre l'API pour afficher
   if (!roadtrip) {

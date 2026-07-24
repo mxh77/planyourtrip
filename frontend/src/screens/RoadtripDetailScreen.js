@@ -724,12 +724,21 @@ export default function RoadtripDetailScreen({ route, navigation }) {
   const lastDepArrKeyRef = useRef(null);
   // Ref pour stocker l'état des flags item par item (détection précise des changements)
   const lastDepArrKeysRef = useRef({});
+  // Guard contre les exécutions concurrentes de loadRoutes (race condition)
+  const loadingRoutesRef = useRef(false);
 
   // Charger les itinéraires : d'abord depuis la BD, puis recalculer si refreshing + SAUVEGARDER
   useEffect(() => {
     const depArrChanged = directionsCalculatedRef.current && lastDepArrKeyRef.current !== psDepArrKey;
     log('DIRECTIONS', `useEffect déclenché: stepsLength=${stepsLength}, refreshCounter=${refreshCounter}, shouldRefresh=${shouldRefreshRef.current}, depArrChanged=${depArrChanged}`);
     const loadRoutes = async () => {
+      // 🛑 Guard contre les exécutions concurrentes (race condition)
+      if (loadingRoutesRef.current) {
+        log('DIRECTIONS', '[SKIP] loadRoutes déjà en cours, on ignore cette exécution');
+        return;
+      }
+      loadingRoutesRef.current = true;
+      try {
       const needsRefresh = shouldRefreshRef.current;  // Manuel (bouton refresh) → toutes les routes
       // Flag changé → routes impactées uniquement. Ignorer au premier chargement (lastDepArrKeyRef === null)
       // car les polylines en cache DB sont déjà bonnes
@@ -1067,6 +1076,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
       }
       // Forcer le re-render natif des Polyline react-native-maps
       setRoutesVersion(v => v + 1);
+      } finally {
+        loadingRoutesRef.current = false;
+      }
     };
 
     loadRoutes();
@@ -1079,13 +1091,9 @@ export default function RoadtripDetailScreen({ route, navigation }) {
     navigation.setOptions({
       headerShown: true,
       headerTitle: roadtrip.title,
-      headerTitleAlign: 'center',
-      headerTitleStyle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-      headerStyle: { backgroundColor: 'rgba(26,26,38,1)' },
-      headerTintColor: '#fff',
       headerRight: () => (
         <TouchableOpacity style={{ marginRight: 12 }} onPress={() => setMenuVisible(true)}>
-          <Text style={{ fontSize: 18, color: '#fff' }}>☰</Text>
+          <Text style={{ fontSize: 18, color: COLORS.text }}>☰</Text>
         </TouchableOpacity>
       ),
     });

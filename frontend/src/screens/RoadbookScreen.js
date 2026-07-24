@@ -153,9 +153,9 @@ export default function RoadbookScreen({ route, navigation }) {
   // ── Header ────────────────────────────────────────────────────────────────
   useEffect(() => {
     navigation.setOptions({
-      title: roadtripTitle ? `Roadbook — ${roadtripTitle}` : 'Roadbook',
+      title: 'Roadbook',
     });
-  }, [navigation, roadtripTitle]);
+  }, [navigation]);
 
   // ── Render item ───────────────────────────────────────────────────────────
   const renderItem = ({ item }) => {
@@ -238,7 +238,7 @@ export default function RoadbookScreen({ route, navigation }) {
       {/* Liste */}
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
+          <ActivityIndicator size="large" color={COLORS.accent} />
         </View>
       ) : roadbooks.length === 0 ? (
         <View style={styles.center}>
@@ -293,13 +293,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#8b5cf6',
+    backgroundColor: COLORS.accent,
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
     paddingVertical: 14,
     borderRadius: RADIUS.lg,
-    shadowColor: '#8b5cf6',
+    shadowColor: COLORS.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -313,28 +313,28 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   generateBtnText: {
-    color: '#fff',
+    color: COLORS.bg,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   previewBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1e1e2e',
+    backgroundColor: COLORS.surfaceElevated,
     marginHorizontal: 16,
     marginBottom: 8,
     paddingVertical: 12,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: '#e6a817',
+    borderColor: COLORS.accent,
   },
   previewBtnIcon: {
     fontSize: 18,
     marginRight: 8,
   },
   previewBtnText: {
-    color: '#e6a817',
+    color: COLORS.accent,
     fontSize: 15,
     fontWeight: '600',
   },
