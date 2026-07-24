@@ -37,6 +37,7 @@ export async function runMigrations() {
     `ALTER TABLE accommodations ADD COLUMN depositPaid REAL`,
     `ALTER TABLE activities ADD COLUMN depositPaid REAL`,
     `ALTER TABLE accommodations ADD COLUMN amenities TEXT`,
+    `ALTER TABLE accommodations ADD COLUMN website TEXT`,
     `ALTER TABLE roadtrips ADD COLUMN budgetTarget REAL`,
     `ALTER TABLE roadtrips ADD COLUMN budgetCurrency TEXT DEFAULT 'EUR'`,
     `ALTER TABLE roadtrips ADD COLUMN fuelConsumption REAL`,

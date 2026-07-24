@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput, Modal,
   ScrollView, Alert, StyleSheet, Pressable, Keyboard, Platform,
@@ -148,18 +148,28 @@ const ACCOM_TYPES = [
   { key: 'OTHER', label: 'Autre', icon: '🏪' },
 ];
 
-const AMENITY_TAGS = [
+export const DEFAULT_AMENITY_TAGS = [
   { key: 'POOL', label: 'Piscine', icon: '🏊' },
   { key: 'RESTAURANT', label: 'Restaurant', icon: '🍽️' },
-  { key: 'SUPERMARKET', label: 'Supermarché', icon: '🛒' },
+  { key: 'SUPERMARKET', label: 'Supermarché / Épicerie', icon: '🛒' },
   { key: 'WIFI', label: 'WiFi', icon: '📶' },
   { key: 'PARKING', label: 'Parking', icon: '🅿️' },
   { key: 'LAUNDRY', label: 'Laverie', icon: '🧺' },
   { key: 'KITCHEN', label: 'Cuisine', icon: '🍳' },
-  { key: 'BREAKFAST', label: 'Petit-déjeuner', icon: '🥐' },
+  { key: 'BAKERY', label: 'Boulangerie', icon: '🥖' },
   { key: 'SHOWER', label: 'Douche', icon: '🚿' },
   { key: 'ELECTRICITY', label: 'Électricité', icon: '⚡' },
+  { key: 'PLAYGROUND', label: 'Terrain de jeu', icon: '🛝' },
+  { key: 'DUMPSITE', label: 'Vidange CC', icon: '🚐' },
 ];
+
+// Calcule la liste effective des tags équipements (défauts - désactivés + customs)
+function computeAmenityTags(disabledKeys, customTags) {
+  const disabled = disabledKeys || [];
+  const customs = customTags || [];
+  const defaults = DEFAULT_AMENITY_TAGS.filter(t => !disabled.includes(t.key));
+  return [...defaults, ...customs];
+}
 
 // ─── Conversion de devises ──────────────────────────────────────────────────
 let cachedRates = null;
@@ -207,11 +217,12 @@ const EMPTY_FORM = {
   totalPrice: '',
   depositPaid: '',
   currency: 'EUR',
+  website: '',
   amenities: '[]',
   notes: '',
 };
 
-export default function AccommodationSection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, stepArrivalTime, stepDepartureTime, initialEditId }) {
+export default function AccommodationSection({ stepId, roadtripId, userId, latitude, longitude, allowedTypes, radius, stepStartDate, stepEndDate, stepArrivalTime, stepDepartureTime, initialEditId, customAmenityTags }) {
   const { data: rows } = useQuery(
     stepId
       ? 'SELECT * FROM accommodations WHERE stepId = ? ORDER BY createdAt ASC'
@@ -234,6 +245,16 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEditId, accommodations.length]);
+  // Calculer la liste effective des équipements (défauts - désactivés + perso)
+  const effectiveAmenityTags = useMemo(() => {
+    const tags = !customAmenityTags
+      ? DEFAULT_AMENITY_TAGS
+      : computeAmenityTags(customAmenityTags.disabled, customAmenityTags.custom);
+    console.log('[AmenityTags] customAmenityTags:', JSON.stringify(customAmenityTags));
+    console.log('[AmenityTags] effectiveTags:', tags.map(t => t.key));
+    return tags;
+  }, [customAmenityTags]);
+
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState(null);
@@ -243,6 +264,8 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
   const [searchError, setSearchError] = useState(null);
   const [coherenceIssues, setCoherenceIssues] = useState(null);
   const [pendingCorrectionItem, setPendingCorrectionItem] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false); // Analyse IA en cours
+  const [analyzeResult, setAnalyzeResult] = useState(null); // { detected, existing, merged } pour le modal de résultat
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [dtPickerVisible, setDtPickerVisible] = useState(false);
   const [dtPickerTarget, setDtPickerTarget] = useState(null); // 'checkin' | 'checkout'
@@ -322,6 +345,7 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
       totalPrice: a.totalPrice != null ? a.totalPrice.toFixed(2) : '',
       depositPaid: a.depositPaid != null ? a.depositPaid.toFixed(2) : '',
       currency: a.currency ?? 'EUR',
+      website: a.website ?? '',
       amenities: a['amenities'] ?? '[]',
       notes: a.notes ?? '',
     });
@@ -360,6 +384,7 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
         totalPrice: form.totalPrice ? parseFloat(form.totalPrice) : null,
         depositPaid: form.depositPaid ? parseFloat(form.depositPaid) : null,
         currency: form.currency || 'EUR',
+        website: form.website.trim() || null,
         amenities: form.amenities || '[]',
         notes: form.notes.trim() || null,
       };
@@ -459,6 +484,64 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
     ]);
   };
 
+  // ── Analyse IA des équipements (via Google Places) ────────────────────
+  const handleAnalyze = async () => {
+    if (!form.name.trim()) {
+      Alert.alert('Champ requis', 'Saisis d\'abord le nom de l\'hébergement.');
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      const token = useAuthStore.getState().token;
+      // Envoyer les équipements personnalisés à l'IA pour qu'elle les détecte aussi
+      const customList = customAmenityTags?.custom || [];
+      const aiModel = customAmenityTags?.aiModel || 'gpt-4o-mini';
+      const res = await fetch(`${API_URL}/api/accommodations/analyze-amenities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          address: form.address.trim() || null,
+          latitude: form.latitude,
+          longitude: form.longitude,
+          customTags: customList.map(t => ({ key: t.key, label: t.label })),
+          website: form.website.trim() || null,
+          model: aiModel,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err);
+      }
+      const data = await res.json();
+      // Auto-remplir le site web si détecté par Google
+      if (data.website && !form.website.trim()) {
+        setForm((f) => ({ ...f, website: data.website }));
+      }
+      const existing = JSON.parse(form.amenities || '[]');
+      const detected = data.amenities || [];
+      const merged = Array.from(new Set([...existing, ...detected]));
+      const newItems = detected.filter(k => !existing.includes(k));
+      console.log('[Analyze] detected:', JSON.stringify(detected));
+      console.log('[Analyze] existing:', JSON.stringify(existing));
+      console.log('[Analyze] newItems:', JSON.stringify(newItems));
+      console.log('[Analyze] merged:', JSON.stringify(merged));
+      if (detected.length > 0) {
+        if (newItems.length > 0) {
+          setAnalyzeResult({ detected, existing, merged });
+        } else {
+          Alert.alert('✅ Analyse complétée', 'Tous les équipements détectés sont déjà renseignés.');
+        }
+      } else {
+        Alert.alert('Aucun équipement détecté', 'Je n\'ai pas trouvé d\'informations sur cet hébergement.');
+      }
+    } catch (err) {
+      Alert.alert('Erreur', `Impossible d'analyser les équipements : ${err.message}`);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -532,9 +615,39 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
           <Pressable style={[styles.overlay, { paddingBottom: keyboardHeight }]} onPress={() => { setDtPickerVisible(false); setModalVisible(false); }}>
             <Pressable style={styles.sheet} onPress={() => { }}>
               <View style={styles.handle} />
-              <Text style={styles.sheetTitle}>
-                {editingId ? 'Modifier' : 'Ajouter'} un hébergement
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={styles.sheetTitle}>
+                  {editingId ? 'Modifier' : 'Ajouter'} un hébergement
+                </Text>
+                <TouchableOpacity
+                  onPress={handleSave}
+                  disabled={saving}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color={COLORS.accent} />
+                  ) : (
+                    <Text style={{ color: COLORS.accent, fontWeight: '700', fontSize: 15 }}>Enregistrer</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: 'row', marginBottom: SPACING.md, marginTop: 4 }}>
+                <TouchableOpacity
+                  onPress={handleAnalyze}
+                  disabled={analyzing}
+                  style={styles.analyzeBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {analyzing ? (
+                    <ActivityIndicator size="small" color={COLORS.accent} />
+                  ) : (
+                    <>
+                      <Text style={{ fontSize: 13 }}>✨</Text>
+                      <Text style={styles.analyzeBtnText}>Analyser</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
 
               {!editingId && (
                 <View style={styles.tabBar}>
@@ -862,10 +975,35 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
                       />
                     </View>
 
+                    {/* Site web */}
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase' }}>Site web</Text>
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <TextInput
+                          style={[styles.input, { flex: 1 }]}
+                          value={form.website}
+                          onChangeText={(v) => setForm((f) => ({ ...f, website: v }))}
+                          placeholder="https://www.camping-exemple.fr"
+                          placeholderTextColor={COLORS.textDim}
+                          keyboardType="url"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                        {form.website ? (
+                          <TouchableOpacity
+                            onPress={() => Linking.openURL(form.website)}
+                            style={styles.websiteOpenBtn}
+                          >
+                            <Text style={{ fontSize: 18 }}>🌐</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                    </View>
+
                     {/* Équipements */}
                     <Text style={styles.label}>Équipements</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-                      {AMENITY_TAGS.map((tag) => {
+                      {effectiveAmenityTags.map((tag) => {
                         const active = JSON.parse(form.amenities || '[]').includes(tag.key);
                         return (
                           <TouchableOpacity key={tag.key}
@@ -899,16 +1037,6 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
                       placeholderTextColor={COLORS.textDim}
                       multiline
                     />
-
-                    <TouchableOpacity
-                      style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-                      onPress={handleSave}
-                      disabled={saving}
-                    >
-                      <Text style={styles.saveBtnText}>
-                        {saving ? 'Enregistrement…' : 'Enregistrer'}
-                      </Text>
-                    </TouchableOpacity>
                   </ScrollView>
                 </>
               )}
@@ -942,6 +1070,90 @@ export default function AccommodationSection({ stepId, roadtripId, userId, latit
             }).catch(e => console.warn('[Suggestion]', e));
           }}
         />
+      )}
+
+      {/* ─── Modal résultat analyse IA ───────────────────────────────── */}
+      {analyzeResult && (
+        <Modal transparent animationType="fade" onRequestClose={() => setAnalyzeResult(null)}>
+          <Pressable style={styles.overlay} onPress={() => setAnalyzeResult(null)}>
+            <Pressable style={styles.analyzeResultSheet} onPress={() => {}}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 12 }}>
+                ✨ Analyse terminée
+              </Text>
+
+              {/* Équipements déjà présents */}
+              {analyzeResult.existing.length > 0 && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.textMuted, marginBottom: 6 }}>
+                    Déjà renseignés
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {analyzeResult.existing.map((k) => {
+                      const tag = effectiveAmenityTags.find(t => t.key === k);
+                      return tag ? (
+                        <View key={k} style={styles.analyzeResultChip}>
+                          <Text style={{ fontSize: 12 }}>{tag.icon}</Text>
+                          <Text style={{ fontSize: 12, color: COLORS.textMuted }}>{tag.label}</Text>
+                        </View>
+                      ) : null;
+                    })}
+                  </View>
+                </View>
+              )}
+
+              {/* Nouveaux équipements détectés (uniquement ceux pas déjà présents) */}
+              {(() => {
+                const newItems = analyzeResult.detected.filter(k => !analyzeResult.existing.includes(k));
+                if (newItems.length === 0) return null;
+                return (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.accent, marginBottom: 6 }}>
+                      Nouveaux équipements détectés
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {newItems.map((k) => {
+                        const tag = effectiveAmenityTags.find(t => t.key === k);
+                        return tag ? (
+                          <View key={k} style={[styles.analyzeResultChip, { backgroundColor: 'rgba(232,164,53,0.2)', borderColor: 'rgba(232,164,53,0.4)' }]}>
+                            <Text style={{ fontSize: 12 }}>{tag.icon}</Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: COLORS.accent }}>{tag.label}</Text>
+                            <Text style={{ fontSize: 10, color: COLORS.accent, marginLeft: 2 }}>✨</Text>
+                          </View>
+                        ) : null;
+                      })}
+                    </View>
+                  </View>
+                );
+              })()}
+
+              {/* Aucun nouveau */}
+              {analyzeResult.detected.filter(k => !analyzeResult.existing.includes(k)).length === 0 && (
+                <Text style={{ fontSize: 14, color: COLORS.textMuted, marginBottom: 16, textAlign: 'center' }}>
+                  Aucun équipement supplémentaire trouvé.
+                </Text>
+              )}
+
+              {/* Boutons */}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  style={[styles.saveBtn, { flex: 1, backgroundColor: 'rgba(255,255,255,0.08)' }]}
+                  onPress={() => setAnalyzeResult(null)}
+                >
+                  <Text style={[styles.saveBtnText, { color: COLORS.text }]}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.saveBtn, { flex: 1 }]}
+                  onPress={() => {
+                    setForm((f) => ({ ...f, amenities: JSON.stringify(analyzeResult.merged) }));
+                    setAnalyzeResult(null);
+                  }}
+                >
+                  <Text style={styles.saveBtnText}>Appliquer</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
       )}
     </View>
   );
@@ -987,6 +1199,39 @@ const styles = StyleSheet.create({
   cardTitle: { color: COLORS.text, fontSize: 14, fontWeight: '600' },
   cardSub: { color: COLORS.textMuted, fontSize: 12 },
   actionBtn: { padding: SPACING.xs },
+  websiteOpenBtn: {
+    width: 44, height: 44, borderRadius: RADIUS.sm,
+    backgroundColor: 'rgba(232,164,53,0.12)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(232,164,53,0.25)',
+  },
+  analyzeBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: 'rgba(232,164,53,0.12)',
+    borderWidth: 1, borderColor: 'rgba(232,164,53,0.25)',
+  },
+  analyzeBtnText: {
+    fontSize: 11, fontWeight: '700', color: COLORS.accent,
+  },
+  analyzeResultSheet: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    borderTopWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xl,
+  },
+  analyzeResultChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1024,7 +1269,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: SPACING.md,
   },
   label: {
     color: COLORS.textDim,

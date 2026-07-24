@@ -55,6 +55,8 @@ module.exports = ({ config }) => {
 
   return withAndroidManifest(finalConfig, (cfg) => {
     const app = cfg.modResults.manifest.application[0];
+    // Force adjustResize pour que le clavier pousse le contenu au lieu de le chevaucher
+    app.$['android:windowSoftInputMode'] = 'adjustResize';
     if (!app['meta-data']) app['meta-data'] = [];
     app['meta-data'] = app['meta-data'].filter(
       (m) => m.$['android:name'] !== 'com.google.android.geo.API_KEY'

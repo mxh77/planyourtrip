@@ -53,6 +53,7 @@ const accommodations = new Table({
   checkOut: column.text,
   bookingRef: column.text,
   bookingUrl: column.text,
+  website: column.text,
   pricePerNight: column.real,
   totalPrice: column.real,
   depositPaid: column.real,

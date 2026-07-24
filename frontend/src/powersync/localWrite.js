@@ -203,31 +203,32 @@ export async function localDeleteDocument(id) {
 
 export async function localCreateAccommodation({
   stepId, roadtripId, type, name, address, latitude, longitude, checkIn, checkOut,
-  bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status,
+  bookingRef, bookingUrl, website, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status,
 }, userId) {
   const id = generateId();
   const createdAt = now();
   await db.execute(
     `INSERT INTO accommodations (id, stepId, roadtripId, userId, type, name, address, latitude, longitude, checkIn, checkOut,
-      bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      bookingRef, bookingUrl, website, pricePerNight, totalPrice, depositPaid, currency, amenities, notes, status, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, stepId, roadtripId ?? null, userId, type ?? 'HOTEL', name, address ?? null,
      latitude ?? null, longitude ?? null,
-     checkIn ?? null, checkOut ?? null, bookingRef ?? null, bookingUrl ?? null,
+     checkIn ?? null, checkOut ?? null, bookingRef ?? null, bookingUrl ?? null, website ?? null,
      pricePerNight ?? null, totalPrice ?? null, depositPaid ?? null, currency ?? 'EUR', amenities ?? '[]', notes ?? null, status ?? 'PLANNED',
      createdAt, createdAt]
   );
   return {
     id, stepId, roadtripId: roadtripId ?? null, userId, type: type ?? 'HOTEL', name, address,
     latitude: latitude ?? null, longitude: longitude ?? null,
-    checkIn, checkOut, bookingRef, bookingUrl, pricePerNight, totalPrice, depositPaid,
+    checkIn, checkOut, bookingRef, bookingUrl, website,
+    pricePerNight, totalPrice, depositPaid,
     currency: currency ?? 'EUR', amenities: amenities ?? '[]', notes, status: status ?? 'PLANNED',
     createdAt, updatedAt: createdAt,
   };
 }
 
 export async function localUpdateAccommodation(id, data) {
-  const allowed = ['stepId', 'type', 'name', 'address', 'latitude', 'longitude', 'isDeparture', 'isArrival', 'checkIn', 'checkOut', 'bookingRef', 'bookingUrl', 'pricePerNight', 'totalPrice', 'depositPaid', 'currency', 'amenities', 'notes', 'status']; 
+  const allowed = ['stepId', 'type', 'name', 'address', 'latitude', 'longitude', 'isDeparture', 'isArrival', 'checkIn', 'checkOut', 'bookingRef', 'bookingUrl', 'website', 'pricePerNight', 'totalPrice', 'depositPaid', 'currency', 'amenities', 'notes', 'status']; 
   const fields = [];
   const values = [];
   for (const key of allowed) {

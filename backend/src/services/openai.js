@@ -3,6 +3,7 @@
  * Chat assistant enrichi du contexte de l'itinéraire + appels d'outils réels
  */
 const OpenAI = require('openai');
+const axios  = require('axios');
 const path   = require('path');
 const fs     = require('fs');
 const { execFile } = require('child_process');
@@ -10,6 +11,8 @@ const { promisify } = require('util');
 const gm     = require('./googleMaps');
 const camping = require('./camping');
 const trails  = require('./trails');
+const googleSearch = require('./googleSearch');
+const scraper = require('./scraper');
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 const execFileAsync = promisify(execFile);
@@ -492,4 +495,344 @@ Tu peux utiliser des outils pour rechercher des campings réels, des sentiers, c
   return prompt;
 }
 
-module.exports = { chat, suggestItinerary, analyzeCampingConstraints };
+// ── Détection d'équipements (pour le bouton magique ✨) ──────────────────────
+
+function buildAmenityPrompt(customTags) {
+  const defaults = [
+    'POOL (piscine)',
+    'RESTAURANT (restaurant / snack / café)',
+    'SUPERMARKET (supermarché / épicerie à proximité)',
+    'WIFI (WiFi / internet)',
+    'PARKING (parking)',
+    'LAUNDRY (laverie)',
+    'KITCHEN (cuisine / kitchenette)',
+    'BAKERY (boulangerie / dépôt de pain)',
+    'SHOWER (douche / sanitaires)',
+    'ELECTRICITY (électricité / bornes)',
+    'PLAYGROUND (terrain de jeu / aire de jeux)',
+    'DUMPSITE (vidange camping-car / aire de vidange)',
+  ];
+
+  // Ajouter les équipements personnalisés de l'utilisateur
+  const allTags = [...defaults];
+  if (customTags && Array.isArray(customTags)) {
+    for (const ct of customTags) {
+      if (ct.key && ct.label) {
+        allTags.push(`${ct.key} (${ct.label})`);
+      }
+    }
+  }
+
+  return `Tu reçois ci-dessous le contenu du site web d'un hébergement de voyage (camping, hôtel, etc.).
+
+Analyse ce texte et extrais les équipements mentionnés.
+Réponds UNIQUEMENT par un tableau JSON des équipements trouvés parmi cette liste :
+${allTags.map(t => `- ${t}`).join('\n')}
+
+Règles IMPORTANTES :
+- Cherche dans le texte TOUS les mots qui peuvent correspondre à un équipement de la liste
+- Chaque équipement a un identifiant (ex: POOL). Utilise CET identifiant dans ta réponse.
+- Exemple : "piscine", "espace aquatique", "piscine chauffée", "jeux d'eau" → POOL
+- Exemple : "snack", "restaurant", "bar", "cafétéria", "bistrot" → RESTAURANT
+- Exemple : "supermarché", "épicerie", "alimentation", "commerces", "supérette" → SUPERMARKET (l'épicerie du camping et le supermarché sont la même chose)
+- Exemple : "wifi", "internet", "connexion" → WIFI
+- Exemple : "parking", "stationnement", "garage" → PARKING
+- Exemple : "laverie", "linge", "buanderie" → LAUNDRY
+- Exemple : "boulangerie", "fournil", "pain", "viennoiseries", "dépôt de pain" → BAKERY
+- Exemple : "douche", "sanitaire", "bloc sanitaire" → SHOWER
+- Exemple : "électricité", "bornes", "branchement", "raccordement" → ELECTRICITY
+- Exemple : "jeux", "enfant", "club enfant", "terrain de jeu", "balançoire", "toboggan", "aire de jeux" → PLAYGROUND
+- Exemple : "vidange", "aire de vidange", "camping-car", "cc", "vidange cc", "eaux grises" → DUMPSITE
+- Exemple : "cuisine", "kitchenette", "cuisinette" → KITCHEN
+- C'est un camping → rajoute TOUJOURS SHOWER et ELECTRICITY
+- Pour les équipements personnalisés (identifiants != ceux ci-dessus), cherche dans le texte des mots similaires au NOM de l'équipement
+- Exemple : si "Terrain de jeu" est dans la liste, cherche "jeux", "enfant", "club enfant", "terrain", "balançoire", "toboggan"
+- Exemple : si "Vidange CC" est dans la liste, cherche "vidange", "aire de vidange", "camping-car"
+- Exemple : si "Boulangerie" est dans la liste, cherche "pain", "viennoiserie", "boulangerie"
+- Ne retourne QUE les équipements de la liste ci-dessus
+- PRIORISE les avis clients : si un visiteur confirme un équipement, inclus-le
+- Si un avis dit explicitement qu'un équipement n'est PAS présent, ne l'inclus PAS
+- ATTENTION : les données des annuaires listent parfois des équipements éloignés (marqués d'une distance comme "1 km" ou "0,5 km"). Ne les inclus PAS.
+- Inclus les équipements SUR le camping OU juste à côté / attenants (ex: "à côté du camping", "juste à côté").
+- En l'absence d'avis, utilise les données du site officiel uniquement
+- Exemple de réponse : ["POOL", "RESTAURANT", "WIFI", "SHOWER", "ELECTRICITY", "LAUNDRY", "BAKERY"]
+
+Réponds uniquement au format JSON, sans texte avant ni après.
+Trouve et scrappe le site de l'hébergement pour trouver les informations et être le plus précis possible`;
+}
+
+async function detectAmenities(name, address, customTags, placeSummary, websiteUrl, model) {
+  const client = resolveClient(model);
+  const query = [name, address].filter(Boolean).join(', ');
+  const prompt = buildAmenityPrompt(customTags);
+
+  let content = `${prompt}\n\nHébergement : "${query}"`;
+
+  // Ajouter les avis Google SEPAREMENT avec une note de fiabilité
+  if (placeSummary && placeSummary.includes('Avis Google')) {
+    const parts = placeSummary.split('Avis Google');
+    const before = parts[0].trim();
+    const reviews = parts.slice(1).join('Avis Google').trim();
+    if (before) content += `\n\nDescription Google :\n${before}`;
+    if (reviews) content += `\n\nAvis clients (peuvent mentionner des équipements présents ou absents) :\n${reviews}`;
+  } else if (placeSummary) {
+    content += `\n\nDescription :\n${placeSummary}`;
+  }
+
+  // Essayer de récupérer le contenu du site web + sous-pages
+  let websiteContent = '';
+  let fullSiteText = ''; // Texte complet (avant troncature) pour le fallback par mots-clés
+  const crawledUrls = new Set();
+  const MAX_PAGES = 10; // Pages max à scraper
+
+  // ── Google Custom Search : trouver des pages web pertinentes ────────────
+  const pagesToFetch = [];
+  if (googleSearch.isConfigured()) {
+    const searchResults = await googleSearch.searchCamping(query, 5);
+    for (const r of searchResults) {
+      if (!pagesToFetch.includes(r.url)) pagesToFetch.push(r.url);
+    }
+  }
+
+  // Ajouter le site web officiel (sera scrapé en priorité)
+  if (websiteUrl) {
+    const baseUrl = websiteUrl.replace(/\/+$/, '');
+    if (!pagesToFetch.includes(baseUrl)) pagesToFetch.unshift(baseUrl);
+  }
+
+  if (pagesToFetch.length > 0) {
+    for (let pageIdx = 0; pageIdx < pagesToFetch.length && pageIdx < MAX_PAGES; pageIdx++) {
+      const url = pagesToFetch[pageIdx];
+      if (crawledUrls.has(url)) continue;
+      crawledUrls.add(url);
+
+      try {
+        console.log('[detectAmenities] Fetching page:', url);
+
+        let pageText = '';
+        let html = '';
+
+        if (pageIdx === 0) {
+          // 1ère page : Playwright pour exécuter le JS (React, onglets)
+          // + axios pour récupérer le HTML (nécessaire pour détecter les sous-liens)
+          const [renderResult, axiosResp] = await Promise.allSettled([
+            scraper.fetchPageText(url, { waitAfterLoad: 4000 }),
+            axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } }),
+          ]);
+          if (renderResult.status === 'fulfilled' && renderResult.value.text) {
+            pageText = renderResult.value.text;
+            websiteContent += `\n--- Page: ${url} (rendu JS) ---\n${pageText}\n`;
+          }
+          if (axiosResp.status === 'fulfilled') {
+            html = axiosResp.value.data;
+          }
+        }
+
+        if (!pageText) {
+          // Pages suivantes : axios simple (plus rapide, pas de JS)
+          const resp = await axios.get(url, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } });
+          html = resp.data;
+          if (typeof html !== 'string') continue;
+
+          pageText = html
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/p>/gi, '\n')
+            .replace(/<\/li>/gi, '\n')
+            .replace(/<\/h[1-6]>/gi, '\n')
+            .replace(/<\/div>/gi, '\n')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&[a-z]+;/g, ' ')
+            .replace(/&#[0-9]+;/g, ' ')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/\n\s*\n/g, '\n')
+            .replace(/[ \t]+/g, ' ')
+            .trim();
+
+          websiteContent += `\n--- Page: ${url} ---\n${pageText}\n`;
+        }
+
+        // Sur la première page, chercher des sous-pages pertinentes
+        if (pageIdx === 0) {
+          const firstUrl = pagesToFetch[0];
+          const urlObj = new URL(firstUrl);
+          const rootBase = `${urlObj.protocol}//${urlObj.host}`;
+          const linkRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi;
+          let match;
+          const pageDir = new URL(firstUrl).pathname.replace(/\/+$/, '');
+
+          // 1ère priorité : sous-pages du camping (ex: equipements-et-infrastructures)
+          const commonPaths = ['/equipements-et-infrastructures/', '/services/', '/activites/', '/equipements/', '/prestations/'];
+          for (const sub of commonPaths) {
+            const fullUrl = `${rootBase}${pageDir}${sub}`;
+            if (!crawledUrls.has(fullUrl) && !pagesToFetch.includes(fullUrl)) {
+              pagesToFetch.push(fullUrl);
+              console.log('[detectAmenities] Added camping sub-page:', fullUrl);
+            }
+          }
+
+          // 2ème priorité : liens <a> spécifiques au camping (même chemin de base)
+          while ((match = linkRegex.exec(html)) !== null) {
+            const href = match[1].trim();
+            if (href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) continue;
+            let fullUrl;
+            if (href.startsWith('http')) fullUrl = href;
+            else if (href.startsWith('/')) fullUrl = rootBase + href;
+            else continue;
+            if (crawledUrls.has(fullUrl) || pagesToFetch.includes(fullUrl) || !fullUrl.startsWith(rootBase) || fullUrl.includes('#') || fullUrl.includes('.pdf') || fullUrl.includes('.jpg') || fullUrl.includes('.png')) continue;
+            // Prioriser les liens qui sont dans le même répertoire que le camping
+            if (fullUrl.includes(pageDir)) {
+              pagesToFetch.push(fullUrl);
+              console.log('[detectAmenities] Added sub-page:', fullUrl, `("${match[2].trim()}")`);
+            }
+          }
+        }
+      } catch (fetchErr) {
+        console.warn('[detectAmenities] Failed to fetch:', url, fetchErr.message);
+      }
+    }
+
+    fullSiteText = websiteContent;
+    console.log('[detectAmenities] URLs crawlées:', [...crawledUrls].join(', '));
+
+    // Scrapper aussi des annuaires externes
+    const externalSources = [
+      { name: 'pincamp.ch', searchUrl: (q) => `https://www.pincamp.ch/suche/?q=${encodeURIComponent(q)}` },
+      { name: 'camping.info', searchUrl: (q) => `https://www.camping.info/fr/suche?q=${encodeURIComponent(q)}` },
+    ];
+    for (const source of externalSources) {
+      try {
+        const searchUrl = source.searchUrl(name.replace(/Camping\s+/i, '').trim());
+        console.log('[detectAmenities] Searching external source:', searchUrl);
+        const searchResp = await axios.get(searchUrl, {
+          timeout: 10000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        });
+        const searchHtml = typeof searchResp.data === 'string' ? searchResp.data : '';
+        const nameParts = name.replace(/Camping\s+/i, '').toLowerCase().slice(0, 20).split(' ').filter(Boolean);
+        const linkRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi;
+        let linkMatch;
+        let foundUrl = null;
+        let bestScore = 0;
+        while ((linkMatch = linkRegex.exec(searchHtml)) !== null) {
+          const href = linkMatch[1];
+          const linkText = linkMatch[2].toLowerCase();
+          const score = nameParts.filter(p => linkText.includes(p)).length;
+          if (score > bestScore && (href.includes(source.name.split('.')[0]) || href.includes('/fr/') || href.includes('/platz/'))) {
+            bestScore = score;
+            foundUrl = href.startsWith('http') ? href : `https://www.${source.name}${href}`;
+          }
+        }
+        if (foundUrl && bestScore >= Math.max(1, nameParts.length - 1)) {
+          console.log('[detectAmenities] Fetching external source:', foundUrl);
+          const extResp = await axios.get(foundUrl, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
+          const extHtml = extResp.data;
+          if (typeof extHtml === 'string') {
+            const extText = extHtml
+              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+              .replace(/<br\s*\/?>/gi, '\n')
+              .replace(/<\/p>/gi, '\n')
+              .replace(/<\/li>/gi, '\n')
+              .replace(/<\/h[1-6]>/gi, '\n')
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/&[a-z]+;/g, ' ')
+              .replace(/&nbsp;/gi, ' ')
+              .replace(/\n\s*\n/g, '\n')
+              .replace(/[ \t]+/g, ' ')
+              .trim()
+              .slice(0, 4000);
+            if (extText.length > 200) {
+              websiteContent += `\n--- Page: ${foundUrl} (${source.name}) ---\n${extText}\n`;
+              console.log('[detectAmenities] External content added:', source.name, extText.length, 'chars');
+            }
+          }
+        } else {
+          console.log('[detectAmenities] No relevant result on', source.name, '(best score:', bestScore, '/', nameParts.length, ')');
+        }
+      } catch (extErr) {
+        console.warn('[detectAmenities] External source failed:', source.name, extErr.message);
+      }
+    }
+
+    const totalChars = websiteContent.length;
+    websiteContent = websiteContent.slice(0, 50000);
+    console.log('[detectAmenities] Total crawled:', crawledUrls.size, 'pages + externes,', totalChars, 'chars →', websiteContent.length, 'chars utiles');
+  }
+  if (websiteContent) {
+    // Donner la priorité au contenu des annuaires (camping.info, pincamp) qui est plus structuré
+    // et limiter le site du camping à 3000 chars max pour éviter de noyer l'IA
+    const lines = websiteContent.split('\n');
+    let prioritized = '';
+    let campingSite = '';
+    for (const line of lines) {
+      if (line.includes('(camping.info)') || line.includes('(pincamp.ch)')) {
+        prioritized += line + '\n';
+      } else if (!line.startsWith('--- Page:')) {
+        if (campingSite.length < 15000) campingSite += line + '\n';
+      }
+    }
+    const finalContent = prioritized + (campingSite.length > 0 ? '\nSite officiel du camping :\n' + campingSite : '');
+    content += `\n\nInformations sur l'hébergement :\n${finalContent.slice(0, 40000)}`;
+  } else if (websiteUrl) {
+    content += `\n\nSite web : ${websiteUrl} (contenu non accessible)`;
+  }
+
+  const actualModel = model || 'deepseek-v4-flash';
+  console.log('[detectAmenities] Modèle:', actualModel);
+  console.log('[detectAmenities] Prompt complet:');
+  console.log(content);
+  console.log('[detectAmenities] --- FIN DU PROMPT ---');
+
+  const resp = await client.chat.completions.create({
+    model: actualModel,
+    messages: [
+      { role: 'user', content },
+    ],
+    temperature: 0.1,
+    max_tokens: 3000,
+  });
+
+  const text = resp.choices?.[0]?.message?.content?.trim() || '[]';
+  const clean = text.replace(/^```(?:json)?\s*|\s*```$/gi, '');
+  console.log('[detectAmenities] Réponse brute:', text.slice(0, 300));
+  console.log('[detectAmenities] Parsed:', clean.slice(0, 200));
+  const parsed = JSON.parse(clean);
+  const result = Array.isArray(parsed) ? parsed : [];
+
+  // ── Fallback mots-clés si l'IA n'a rien trouvé ─────────────────────────
+  const fullLower = (fullSiteText || websiteContent || '') + ' ' + (placeSummary || '') + ' ' + (query || '');
+  if (result.length === 0) {
+    const keywordMap = [
+      { key: 'DUMPSITE',   words: ['vidange', 'aire de vidange', 'eaux grises', 'toilettes chimiques', 'entleerung'] },
+      { key: 'PLAYGROUND', words: ['terrain de jeu', 'aire de jeux', 'spielplatz'] },
+      { key: 'BAKERY',     words: ['boulangerie', 'fournil', 'dépôt de pain'] },
+      { key: 'LAUNDRY',    words: ['laverie', 'buanderie', 'machine à laver', 'waschmaschine', 'tumbler'] },
+      { key: 'POOL',       words: ['piscine', 'espace aquatique', 'schwimmbad'] },
+      { key: 'RESTAURANT', words: ['restaurant', 'cafétéria', 'bistrot'] },
+      { key: 'WIFI',       words: ['wifi', 'wi-fi', 'wlan'] },
+      { key: 'SUPERMARKET',words: ['supermarché', 'épicerie', 'supermarkt'] },
+      { key: 'SHOWER',     words: ['douche', 'sanitaire', 'duschen', 'sanitäranlagen'] },
+      { key: 'ELECTRICITY',words: ['électricité', 'stromanschlüsse', 'strom'] },
+      { key: 'KITCHEN',    words: ['cuisine', 'kitchenette', 'koch', 'küche'] },
+      { key: 'PARKING',    words: ['parking', 'parkplatz', 'stellplatz'] },
+    ];
+    for (const { key, words } of keywordMap) {
+      if (!result.includes(key)) {
+        for (const w of words) {
+          if (fullLower.includes(w)) {
+            result.push(key);
+            console.log('[detectAmenities] Keyword fallback:', w, '→', key);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  console.log('[detectAmenities] Résultat final (après fallback):', JSON.stringify(result));
+  return result;
+}
+
+module.exports = { chat, suggestItinerary, analyzeCampingConstraints, detectAmenities };

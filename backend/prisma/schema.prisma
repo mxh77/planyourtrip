@@ -142,6 +142,7 @@ model Accommodation {
   checkOut      DateTime?
   bookingRef    String?
   bookingUrl    String?
+  website       String?
   pricePerNight Float?
   totalPrice    Float?
   depositPaid   Float?

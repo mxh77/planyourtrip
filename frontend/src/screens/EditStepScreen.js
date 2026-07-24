@@ -478,6 +478,7 @@ export default function EditStepScreen({ route, navigation }) {
           stepArrivalTime={dispArrivalTime ?? null}
           stepDepartureTime={dispDepartureTime ?? null}
           initialEditId={initialEditAccommodationId}
+          customAmenityTags={roadtripSettings?.customAmenityTags}
         />
 
         {/* ─── Activités ───────────────────────────────────────────────────── */}

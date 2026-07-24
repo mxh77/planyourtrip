@@ -136,7 +136,7 @@ async function getPlaceDetails({ placeId, sessionToken, language = 'fr' }) {
     const resp = await axios.get(url, {
       headers: {
         'X-Goog-Api-Key': KEY(),
-        'X-Goog-FieldMask': 'displayName,formattedAddress,location,types',
+        'X-Goog-FieldMask': 'displayName,formattedAddress,location,types,editorialSummary,websiteUri,rating,userRatingCount,reviews.text,reviews.rating,reviews.publishTime',
       },
     });
     
@@ -149,6 +149,15 @@ async function getPlaceDetails({ placeId, sessionToken, language = 'fr' }) {
       lat: place.location?.latitude,
       lng: place.location?.longitude,
       types: place.types || [],
+      editorialSummary: place.editorialSummary?.text || '',
+      websiteUri: place.websiteUri || '',
+      rating: place.rating || null,
+      userRatingCount: place.userRatingCount || null,
+      reviews: (place.reviews || []).map(r => ({
+        text: r.text?.text || '',
+        rating: r.rating || null,
+        publishTime: r.publishTime || null,
+      })).filter(r => r.text.length > 20).slice(0, 5),
     };
   } catch (err) {
     console.error('[getPlaceDetails] Error:', JSON.stringify(err.response?.data || err.message, null, 2));
