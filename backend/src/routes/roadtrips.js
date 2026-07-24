@@ -281,15 +281,25 @@ router.patch('/:id/settings', checkMemberRole('OWNER'), async (req, res) => {
   });
   if (!roadtrip) return res.status(404).json({ error: 'Roadtrip not found' });
 
-  const current = roadtrip.settings ?? {};
-  const updated = { ...current, ...req.body };
+  // Sauvegarder les settings via SQL brut pour contourner le sérialiseur Prisma
+  // (parfois buggé avec les hex escapes dans les valeurs JSON)
+  let jsonStr;
+  try {
+    jsonStr = JSON.stringify(req.body);
+  } catch (e) {
+    return res.status(400).json({ error: 'Cannot serialize settings' });
+  }
 
-  const result = await prisma.roadtrip.update({
-    where: { id: req.params.id },
-    data: { settings: updated },
-    select: { settings: true },
-  });
-  res.json(result.settings);
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "roadtrips" SET "settings" = $1::jsonb WHERE "id" = $2`,
+      jsonStr, req.params.id
+    );
+    res.json(req.body);
+  } catch (e) {
+    console.error('[roadtrips] Settings error:', e.message);
+    res.status(500).json({ error: 'Settings update failed' });
+  }
 });
 
 module.exports = router;

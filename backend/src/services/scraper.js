@@ -53,7 +53,7 @@ async function fetchPageText(url, options = {}) {
 
   try {
     console.log('[scraper] Fetching:', url);
-    await page.goto(url, { waitUntil: 'networkidle', timeout });
+    await page.goto(url, { waitUntil: 'load', timeout });
 
     // Attendre des sélecteurs spécifiques si demandé
     for (const selector of waitForSelectors) {

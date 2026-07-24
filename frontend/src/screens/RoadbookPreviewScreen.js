@@ -5,6 +5,7 @@ import {
 import { useQuery } from '@powersync/react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import API_URL from '../api/config';
+import { COLORS } from '../theme';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDate(d) {
@@ -68,6 +69,33 @@ const ACTIVITY_ICONS = {
 };
 const BOOKING_STATUS = { PLANNED: '📋', BOOKED: '✅', DONE: '✔️', CANCELLED: '❌' };
 const MEMBER_ROLES = { OWNER: '👑', EDITOR: '✏️', VIEWER: '👁️' };
+
+// ─── Amenity tags ────────────────────────────────────────────────────────────
+const AMENITY_MAP = {
+  POOL: { label: 'Piscine', icon: '🏊' },
+  RESTAURANT: { label: 'Restaurant', icon: '🍽️' },
+  SUPERMARKET: { label: 'Supermarché', icon: '🛒' },
+  WIFI: { label: 'WiFi', icon: '📶' },
+  PARKING: { label: 'Parking', icon: '🅿️' },
+  LAUNDRY: { label: 'Laverie', icon: '🧺' },
+  KITCHEN: { label: 'Cuisine', icon: '🍳' },
+  BAKERY: { label: 'Boulangerie', icon: '🥖' },
+  SHOWER: { label: 'Douche', icon: '🚿' },
+  ELECTRICITY: { label: 'Électricité', icon: '⚡' },
+  PLAYGROUND: { label: 'Terrain de jeu', icon: '🛝' },
+  DUMPSITE: { label: 'Vidange CC', icon: '🚐' },
+};
+
+function parseAmenities(amenitiesStr) {
+  if (!amenitiesStr) return [];
+  try {
+    let arr = amenitiesStr;
+    if (typeof arr === 'string') arr = JSON.parse(arr);
+    if (typeof arr === 'string') arr = JSON.parse(arr); // double-encoding
+    if (!Array.isArray(arr)) return [];
+    return arr.map(key => AMENITY_MAP[key] || { label: key, icon: '🏷️' });
+  } catch { return []; }
+}
 
 const ORDER_COLORS = [
   '#f59e0b', '#3b82f6', '#22c55e', '#a855f7', '#ef4444',
@@ -350,6 +378,17 @@ export default function RoadbookPreviewScreen({ route, navigation }) {
                         <Text style={styles.accomName}>{a.name}</Text>
                         {a.address && <Text style={styles.accomAddress}>📍 {a.address}</Text>}
 
+                        {/* Amenities */}
+                        {parseAmenities(a.amenities).length > 0 && (
+                          <View style={styles.amenityRow}>
+                            {parseAmenities(a.amenities).map((am, ai) => (
+                              <View key={ai} style={styles.amenityChip}>
+                                <Text style={styles.amenityChipText}>{am.icon} {am.label}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+
                         {(a.checkIn || a.checkOut) && (
                           <View style={styles.accomDates}>
                             {a.checkIn && (
@@ -576,6 +615,9 @@ const styles = StyleSheet.create({
   accomStatus: { fontSize: 16 },
   accomName: { fontSize: 15, fontWeight: '700', color: '#3d2e1e' },
   accomAddress: { fontSize: 12, color: '#8a7a6a', marginTop: 2 },
+  amenityRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
+  amenityChip: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e6a817', paddingHorizontal: 8, paddingVertical: 2 },
+  amenityChipText: { fontSize: 10, color: '#6a5a4a' },
   accomDates: { marginTop: 6, padding: 6, backgroundColor: '#fff', borderRadius: 4 },
   accomDateRow: { fontSize: 12, color: '#6a5a4a', marginVertical: 1 },
   accomMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
